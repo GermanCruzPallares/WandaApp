@@ -1,0 +1,374 @@
+@use '../base/variables' as *;
+@use '../base/mixins' as *;
+@use '../components/buttons.scss' as *;
+
+
+body {
+    background-color: $background-principal;
+}
+
+.hero {
+    background-image: url(../images/ImagenPrincipal2.jpg);
+    background-size: cover;
+    background-position: center;
+    min-height: 100vh;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    align-items: center;
+
+
+    &__title {
+        color: rgb(253, 253, 253);
+        text-align: center;
+        margin-top: 7vh;
+
+        &-principal {
+            font-size: $title__principal-size;
+            font-family: $font-titles;
+
+        }
+
+        &-secondary {
+            padding: 5px 7%;
+            font-size: 1.8vh;
+            font-weight: 200;
+            line-height: 2.5vh;
+            font-family: $font-titles;
+
+        }
+    }
+
+    &__bt {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 45vh;
+
+        button {
+            @include standardBt;
+        }
+
+    }
+
+
+    &__card {
+        display: none;
+    }
+}
+
+.benefits {
+
+    margin-top: 10vh;
+
+    &__title {
+        display: none;
+    }
+
+    &__card {
+        display: flex;
+        margin: 4em 1em;
+        gap: 15px;
+
+        img {
+            width: 10em;
+        }
+
+        &-text {
+            p {
+                font-size: 14px;
+            }
+
+            &--reverse {
+
+                align-items: center;
+                text-align: right;
+            }
+
+        }
+
+        &--reverse {
+            flex-direction: row-reverse;
+        }
+
+
+    }
+}
+
+.aspirational__video {
+    position: relative;
+    width: 100%;
+    height: 30vh;
+    overflow: hidden;
+
+    video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+}
+
+
+.faq {
+    padding: 1rem;
+
+    &__container {
+        width: 100%;
+        margin: 0 auto;
+    }
+
+    &__title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: $color-text;
+    }
+
+    &__list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+
+
+    &__item {
+        background-color: $color-bg-item;
+        border-radius: 4px;
+        overflow: hidden;
+        @include transition(background-color);
+
+        &:hover {
+            background-color: $color-bg-item--dk;
+        }
+
+        &--active {
+            .faq__answer {
+                max-height: 500px;
+                padding: 0.75rem 1rem;
+            }
+
+            .faq__icon {
+                transform: rotate(45deg);
+            }
+
+            .faq__question {
+                font-weight: 600;
+            }
+        }
+    }
+
+    &__question {
+        width: 100%;
+        @include flex-center;
+        justify-content: space-between;
+        padding: 1rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        text-align: left;
+        font-size: 0.95rem;
+        color: $color-text;
+        font-family: inherit;
+        @include transition;
+
+        &:hover {
+            opacity: 0.8;
+        }
+
+        &:focus {
+            outline: 2px solid rgba(0, 0, 0, 0.2);
+            outline-offset: -2px;
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+            padding: 1.25rem 1rem;
+        }
+    }
+
+    &__question-text {
+        flex: 1;
+        font-weight: 500;
+        padding-right: 0.5rem;
+
+    }
+
+    &__icon {
+        font-size: 1.5rem;
+        font-weight: 300;
+        line-height: 1;
+        @include transition(transform);
+        flex-shrink: 0;
+    }
+
+    &__answer {
+        max-height: 0;
+        overflow: hidden;
+        padding: 0 1rem;
+        @include transition(all);
+
+    }
+
+    &__answer-content {
+        padding-bottom: 0.75rem;
+        color: $color-text--dk;
+        font-size: 0.9rem;
+
+    }
+}
+
+
+
+@media (min-width: 1440px) {
+
+    .hero {
+        padding-top: 60px;
+
+        &__bt {
+
+            margin-top: 1vh;
+        }
+
+        &__card {
+            display: block;
+            width: 100%;
+            position: relative;
+            justify-content: center;
+            padding: 7vh 13vw 0;
+
+
+            &::after {
+                content: "";
+                display: table;
+                clear: both;
+            }
+
+
+            h2 {
+                line-height: 1.3em;
+                font-size: 3.9vh;
+                font-family: "Inter", sans-serif;
+
+            }
+
+            img {
+                width: 15vw;
+                transition: transform 0.3s ease;
+
+                &:hover {
+                    transform: scale(1.05);
+                }
+            }
+
+            &--right {
+                float: right;
+
+                img {
+                    float: right;
+                }
+
+                h2 {
+                    text-align: right;
+                    color: #EAE2FA;
+                    width: 10em;
+                    margin-bottom: 2vh;
+                    font-family: "Inter", sans-serif;
+                }
+
+            }
+
+            &--left {
+                float: left;
+
+                h2 {
+                    width: 8em;
+                    color: #E9D7D7;
+                    margin-bottom: 2vh;
+
+                }
+
+
+            }
+
+
+
+        }
+    }
+
+    .benefits {
+        margin-top: 6vh;
+
+        &__title {
+            display: block;
+            color: #353535;
+            text-align: center;
+            width: 50vw;
+            margin: 0 auto;
+
+            h1 {
+                font-size: 4.5vh;
+            }
+        }
+
+        &__card {
+            margin: 4em 15em;
+
+            gap: 50px;
+
+            img {
+                width: 15em;
+            }
+
+            &-text {
+
+                width: 35vw;
+
+                p {
+                    padding-top: 4vh;
+                    font-size: 17px;
+                }
+
+                h3 {
+                    font-size: 25px;
+
+                }
+
+            }
+
+
+
+        }
+    }
+
+    .aspirational__video {
+
+        height: 60vh;
+        overflow: hidden;
+    }
+
+    .faq {
+
+        padding: 3rem 2rem;
+
+        &__container {
+            max-width: 800px;
+        }
+
+        &__title {
+            font-size: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        &__list {
+            gap: 1rem;
+        }
+    }
+
+
+
+}
