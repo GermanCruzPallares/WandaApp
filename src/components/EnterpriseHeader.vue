@@ -41,8 +41,8 @@ function changeStatus() {
           <li><a href="./services.html">Servicios</a></li>
           <li><a href="#Sobre Nosotros">Sobre Nosotros</a></li>
           <li><a href="./contact.html">Contacto</a></li>
-          <li class="push-right"><a href="#InicioSesión">Inicio Sesión</a></li>
-          <li><a href="#Registro" class="btn-highlight">Registro</a></li>
+          <li class="push-right"><RouterLink to="/login"><a href="#InicioSesión">Inicio Sesión</a></RouterLink></li>
+          <li><RouterLink to="/register"><a href="#Registro" class="btn-highlight">Registro</a></RouterLink></li>
         </ul>
       </nav>
     </div>

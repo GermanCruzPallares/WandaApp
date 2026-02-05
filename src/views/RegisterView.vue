@@ -7,7 +7,7 @@ import EnterpriseHeader from '../components/EnterpriseHeader.vue';
   <header>
     <EnterpriseHeader />
   </header>
-  <body class="login">
+  <body class="signUp">
   <main>
     <RegisterComponent />
   </main>
