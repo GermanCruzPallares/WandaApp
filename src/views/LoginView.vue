@@ -4,8 +4,14 @@ import EnterpriseHeader from '../components/EnterpriseHeader.vue';
 </script>
 
 <template>
-  <main class="login">
+  <header>
     <EnterpriseHeader />
+  </header>
+
+  <body class="login">
+  <main>
+
     <LoginComponent />
   </main>
+  </body>
 </template>

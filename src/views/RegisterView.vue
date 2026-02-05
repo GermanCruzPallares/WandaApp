@@ -4,8 +4,12 @@ import EnterpriseHeader from '../components/EnterpriseHeader.vue';
 </script>
 
 <template>
-  <main class="signUp">
+  <header>
     <EnterpriseHeader />
+  </header>
+  <body class="login">
+  <main>
     <RegisterComponent />
   </main>
+  </body>
 </template>
