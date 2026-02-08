@@ -21,7 +21,6 @@ import FooterComponent from '@/components/FooterComponent.vue';
   </main>
 
   <footer class="footer footerDesktop">
-
     <FooterComponent></FooterComponent>
   </footer>
 </template>
