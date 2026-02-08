@@ -40,7 +40,7 @@ function changeStatus() {
         <ul class="nav-list" :class="{ active: NavBtnStatus }">
           <li><RouterLink to="/services"><a href="./services.html">Servicios</a></RouterLink></li>
           <li><a href="#Sobre Nosotros">Sobre Nosotros</a></li>
-          <li><a href="./contact.html">Contacto</a></li>
+          <li><RouterLink to="/contact"><a href="./contact.html">Contacto</a></RouterLink></li>
           <li class="push-right"><RouterLink to="/login"><a href="#InicioSesión">Inicio Sesión</a></RouterLink></li>
           <li><RouterLink to="/register"><a href="#Registro" class="btn-highlight">Registro</a></RouterLink></li>
         </ul>

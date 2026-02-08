@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import HeroServiceComponent from '@/components/ServicesView/heroServiceComponent.vue';
+import HeroServiceComponent from '@/components/ServicesView/HeroServiceComponent.vue';
 import EnterpriseHeader from '../components/EnterpriseHeader.vue';
 import FeaturesComponent from '@/components/ServicesView/FeaturesComponent.vue';
 import InfoGridComponent from '@/components/ServicesView/InfoGridComponent.vue';
