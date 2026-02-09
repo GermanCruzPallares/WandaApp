@@ -13,14 +13,20 @@
     
     <div class="dashboard-card__stats">
       <div class="stat">
-        <div class="stat__label">Gasto mensual</div>
+        <div class="stat__labels">
+          <div class="stat__label">Gasto mensual</div>
+          <div class="stat__label">Ingreso mensual</div>
+        </div>
         <div class="stat__bar stat__bar--expense">
           <div 
             class="stat__bar-fill stat__bar-fill--expense" 
             :style="{ width: expensePercentage + '%' }"
           ></div>
         </div>
-        <div class="stat__amount stat__amount--expense">{{ monthlyExpense }}</div>
+        <div class="stat__amounts">
+          <div class="stat__amount stat__amount--expense">{{ monthlyExpense }}</div>
+          <div class="stat__amount stat__amount--income">{{ monthlyIncome }}</div>
+        </div>
       </div>
     </div>
   </div>
@@ -118,9 +124,15 @@ const handleEdit = () => {
 }
 
 .stat {
+  // Nuevo: contenedor para los dos labels
+  &__labels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  
   &__label {
     font-size: 13px;
-    margin-bottom: 6px;
     opacity: 0.95;
     font-weight: 400;
   }
@@ -148,7 +160,11 @@ const handleEdit = () => {
     &--expense {
       background: #F70D0D;
     }
-    
+  }
+  
+  &__amounts {
+    display: flex;
+    justify-content: space-between;
   }
   
   &__amount {
@@ -156,11 +172,11 @@ const handleEdit = () => {
     font-weight: 600;
     
     &--expense {
-      color: #ff6b7a;
+      color: #F70D0D;
     }
     
     &--income {
-      color: #2ecc71;
+      color: #0DF744;
     }
   }
 }
