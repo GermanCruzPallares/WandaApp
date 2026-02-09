@@ -125,12 +125,12 @@ const isOnTrack = computed(() => {
 const spendingStatus = computed(() => {
   const diff = difference.value;
   
-  if (diff <= -10) {
-    return 'good'; // Verde - vas muy bien
-  } else if (diff > -10 && diff <= 10) {
-    return 'warning'; // Amarillo - estás cerca del límite
+  if (diff <= 0) {
+    return 'good'; 
+  } else if (diff <= 15) {
+    return 'warning'; 
   } else {
-    return 'danger'; // Rojo - te pasaste
+    return 'danger'; 
   }
 });
 
@@ -198,6 +198,8 @@ const isToday = (day: string): boolean => {
 
 <style lang="scss">
 .balance-section {
+
+position: relative;
   padding: 16px;
   
   &__title {

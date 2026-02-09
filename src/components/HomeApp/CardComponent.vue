@@ -111,7 +111,6 @@ const handleEdit = () => {
   
   &__balance {
     font-size: 25px;
-    font-weight: 600;
     margin-bottom: 32px;
     letter-spacing: -0.5px;
   }

@@ -37,6 +37,12 @@ const handleAvatarClick = () => {
 
 <style scoped lang="scss">
 .header-nav {
+  position: fixed;  
+  top: 0;            
+  left: 0;           
+  width: 100%;       
+  z-index: 1000;     
+  box-sizing: border-box;
   background-color: #e5e5e5;
   padding: 20px 16px;
   display: flex;
