@@ -7,10 +7,16 @@
     xmlns="http://www.w3.org/2000/svg"
     :class="{ active: isActive }"
   >
-    <path
-      d="M10 20V14H14V20H19V12H22L12 3L2 12H5V20H10Z"
-      :fill="isActive ? '#000000' : '#000000'"
-      :fill-opacity="isActive ? '1' : '0.4'"
+    <rect
+      x="5"
+      y="4"
+      width="14"
+      height="16"
+      rx="1"
+      :stroke="isActive ? '#000000' : '#000000'"
+      :stroke-opacity="isActive ? '1' : '0.4'"
+      stroke-width="2"
+      fill="none"
     />
   </svg>
 </template>
@@ -30,12 +36,12 @@ svg {
   cursor: pointer;
   transition: opacity 0.2s ease;
   
-  path {
-    transition: fill-opacity 0.2s ease;
+  rect {
+    transition: stroke-opacity 0.2s ease;
   }
   
-  &:hover path {
-    fill-opacity: 0.6;
+  &:hover rect {
+    stroke-opacity: 0.6 !important;
   }
 }
 </style>
