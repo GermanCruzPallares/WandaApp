@@ -14,7 +14,25 @@
         class="weekly-balance__message"
         :class="messageClass"
       >
-        <span class="message-icon">{{ messageIcon }}</span>
+        <span class="message-icon">
+          <!-- Icono de éxito -->
+          <svg v-if="spendingStatus === 'good'" width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M7 13l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          
+          <!-- Icono de advertencia -->
+          <svg v-else-if="spendingStatus === 'warning'" width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          
+          <!-- Icono de peligro -->
+          <svg v-else width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+            <line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
         <div class="message-content">
           <div class="message-title">{{ messageTitle }}</div>
           <div class="message-subtitle">{{ messageSubtitle }}</div>
@@ -169,12 +187,6 @@ const differenceClass = computed(() => {
 });
 
 // Mensajes dinámicos
-const messageIcon = computed(() => {
-  if (spendingStatus.value === 'good') return '📈';
-  if (spendingStatus.value === 'warning') return '⚠️';
-  return '🚨';
-});
-
 const messageTitle = computed(() => {
   if (spendingStatus.value === 'good') return '¡Excelente ritmo!';
   if (spendingStatus.value === 'warning') return '¡Atención al gasto!';
@@ -232,54 +244,71 @@ const isToday = (day: string): boolean => {
     }
   }
   
-  &__message {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 12px 16px;
-    border-radius: $small-border-radius;
-    margin-bottom: 20px;
+&__message {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: $small-border-radius;
+  margin-bottom: 20px;
+  
+  &--success {
+    background-color: $bg-success;
     
-    &--success {
-      background-color: $bg-success;
-      
-      .message-title {
-        color: $bg-success-text;
-      }
-      
-      .message-subtitle {
-        color: $bg-success-text-light;
-      }
+    .message-icon {
+      color: $bg-success-text; 
     }
     
-    &--warning {
-      background-color: $bg-warning;
-      
-      .message-title {
-        color: $bg-warning-text;
-      }
-      
-      .message-subtitle {
-        color: $bg-warning-text-light;
-      }
+    .message-title {
+      color: $bg-success-text;
     }
     
-    &--danger {
-      background-color: $bg-danger;
-      
-      .message-title {
-        color: $bg-danger-text;
-      }
-      
-      .message-subtitle {
-        color: $bg-danger-text-light;
-      }
+    .message-subtitle {
+      color: $bg-success-text-light;
     }
   }
   
+  &--warning {
+    background-color: $bg-warning;
+    
+    .message-icon {
+      color: $bg-warning-text; 
+    }
+    
+    .message-title {
+      color: $bg-warning-text;
+    }
+    
+    .message-subtitle {
+      color: $bg-warning-text-light;
+    }
+  }
+  
+  &--danger {
+    background-color: $bg-danger;
+    
+    .message-icon {
+      color: $bg-danger-text; 
+    }
+    
+    .message-title {
+      color: $bg-danger-text;
+    }
+    
+    .message-subtitle {
+      color: $bg-danger-text-light;
+    }
+  }
+}
+  
   .message-icon {
-    font-size: $icon-size-md;
-    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    margin-top: 10px;
   }
   
   .message-content {

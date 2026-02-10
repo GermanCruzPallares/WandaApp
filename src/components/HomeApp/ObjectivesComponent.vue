@@ -17,10 +17,8 @@
           <div class="objective-card__header">
             <div class="objective-card__icon-title">
               <div class="objective-card__icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-                  <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="2"/>
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                 </svg>
               </div>
               <h3 class="objective-card__name">{{ objective.name }}</h3>
@@ -155,6 +153,7 @@ const handleInfo = (id: string) => {
     align-items: center;
     justify-content: center;
     transition: color $transition-speed $transition-ease;
+    margin-top: -1.5rem; 
 
     &:hover {
       color: $color-text;

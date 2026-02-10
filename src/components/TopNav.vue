@@ -6,7 +6,7 @@
     
     <div class="header-nav__avatar">
       <img 
-        :src="avatarSrc" 
+        :src="currentAvatar" 
         alt="User avatar"
         class="avatar-image"
         @click="handleAvatarClick"
@@ -16,19 +16,31 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+
+export interface Account {
+  id: string;
+  name: string;
+  avatar: string;
+  isActive: boolean;
+}
+
 interface Props {
-  avatarSrc?: string;
+  accounts?: Account[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  avatarSrc: 'https://i.pravatar.cc/150?img=5'
+  accounts: () => []
 });
-
-
 
 const emit = defineEmits<{
   avatarClick: [];
 }>();
+
+const currentAvatar = computed(() => {
+  const activeAccount = props.accounts.find(acc => acc.isActive);
+  return activeAccount?.avatar || 'https://i.pravatar.cc/150?img=5';
+});
 
 const handleAvatarClick = () => {
   emit('avatarClick');
@@ -61,6 +73,15 @@ const handleAvatarClick = () => {
   
   &__avatar {
     cursor: pointer;
+    transition: transform 0.2s ease;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
     
     .avatar-image {
       width: 40px;
@@ -68,6 +89,7 @@ const handleAvatarClick = () => {
       border-radius: 50%;
       object-fit: cover;
       display: block;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
   }
 }
