@@ -1,6 +1,6 @@
 <template>
-  <div class="balance-section">
-    <h3 class="balance-section__title">| Balance</h3>
+  <div>
+    <SectionTitle title="| Balance" />
     
     <div class="weekly-balance">
       <div class="weekly-balance__header">
@@ -88,6 +88,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import SectionTitle from '@/components/SectionTitle.vue';
 
 interface Props {
   weeklyBudget?: number;        // Presupuesto semanal
@@ -197,23 +198,13 @@ const isToday = (day: string): boolean => {
 </script>
 
 <style lang="scss">
-.balance-section {
-
-position: relative;
-  padding: 16px;
-  
-  &__title {
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 16px;
-    color: #1a1a1a;
-  }
-}
+@import '@/styles/base/variables.scss';
 
 .weekly-balance {
-  background-color: #D9D9D9;
-  border-radius: 16px;
-  padding: 20px;
+  margin: 0 $section-margin-horizontal;
+  padding: $section-padding;
+  background-color: $section-bg-primary;
+  border-radius: $section-border-radius;
   
   &__header {
     display: flex;
@@ -226,7 +217,7 @@ position: relative;
     font-size: 16px;
     font-weight: 600;
     margin: 0;
-    color: #1a1a1a;
+    color: $color-text;
   }
   
   &__info-btn {
@@ -236,7 +227,7 @@ position: relative;
     padding: 4px;
     
     .info-icon {
-      color: #666;
+      color: $color-text-gray;
       font-size: 18px;
     }
   }
@@ -246,48 +237,48 @@ position: relative;
     align-items: flex-start;
     gap: 12px;
     padding: 12px 16px;
-    border-radius: 5px;
+    border-radius: $small-border-radius;
     margin-bottom: 20px;
     
     &--success {
-      background-color: #A2DBB7;
+      background-color: $bg-success;
       
       .message-title {
-        color: #1d6f42;
+        color: $bg-success-text;
       }
       
       .message-subtitle {
-        color: #2d8659;
+        color: $bg-success-text-light;
       }
     }
     
     &--warning {
-      background-color: #ffe0b2;
+      background-color: $bg-warning;
       
       .message-title {
-        color: #e65100;
+        color: $bg-warning-text;
       }
       
       .message-subtitle {
-        color: #f57c00;
+        color: $bg-warning-text-light;
       }
     }
     
     &--danger {
-      background-color: #ffcccb;
+      background-color: $bg-danger;
       
       .message-title {
-        color: #c41e3a;
+        color: $bg-danger-text;
       }
       
       .message-subtitle {
-        color: #d64545;
+        color: $bg-danger-text-light;
       }
     }
   }
   
   .message-icon {
-    font-size: 24px;
+    font-size: $icon-size-md;
     line-height: 1;
   }
   
@@ -315,11 +306,11 @@ position: relative;
     justify-content: space-between;
     margin-bottom: 8px;
     font-size: 13px;
-    color: #1a1a1a;
+    color: $color-text;
     font-weight: 500;
     
     .progress-amount {
-      color: #666;
+      color: $color-text-gray;
     }
   }
   
@@ -337,18 +328,18 @@ position: relative;
     &__fill {
       height: 100%;
       border-radius: 4px;
-      transition: width 0.3s ease;
+      transition: width $transition-speed $transition-ease;
       
       &--good {
-        background: linear-gradient(90deg, #4caf50 0%, #66bb6a 100%);
+        background: linear-gradient(90deg, $color-success 0%, $color-success-light 100%);
       }
       
       &--warning {
-        background: linear-gradient(90deg, #ffa726 0%, #ffb74d 100%);
+        background: linear-gradient(90deg, $color-warning-light 0%, $color-warning 100%);
       }
       
       &--danger {
-        background: linear-gradient(90deg, #f44336 0%, #e57373 100%);
+        background: linear-gradient(90deg, $color-danger 0%, $color-danger-light 100%);
       }
     }
   }
@@ -361,7 +352,7 @@ position: relative;
     &__line {
       width: 2px;
       height: 8px;
-      background-color: #333;
+      background-color: $color-text--dk;
       position: relative;
       
       &::before {
@@ -372,7 +363,7 @@ position: relative;
         transform: translateX(-50%);
         width: 8px;
         height: 8px;
-        background-color: #333;
+        background-color: $color-text--dk;
         border-radius: 50%;
       }
     }
@@ -386,7 +377,7 @@ position: relative;
   
   .week-day {
     font-size: 11px;
-    color: #666;
+    color: $color-text-gray;
     font-weight: 500;
     
     &--today {
@@ -403,32 +394,32 @@ position: relative;
 }
 
 .stat-card {
-  background-color: #ECECEC;
-  border-radius: 5px;
+  background-color: $section-bg-tertiary;
+  border-radius: $small-border-radius;
   padding: 16px;
   text-align: center;
   
   &__value {
     font-size: 18px;
     margin-bottom: 4px;
-    color: #1a1a1a;
+    color: $color-text;
     
     &--positive {
-      color: #4caf50;
+      color: $color-success;
     }
     
     &--warning {
-      color: #ff9800;
+      color: $color-warning;
     }
     
     &--negative {
-      color: #f44336;
+      color: $color-danger;
     }
   }
   
   &__label {
     font-size: 11px;
-    color: #666;
+    color: $color-text-gray;
     font-weight: 500;
   }
 }

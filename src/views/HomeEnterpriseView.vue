@@ -5,6 +5,7 @@ import HeroComponent from '@/components/HomeView/HeroComponent.vue';
 import AspirationalComponent from '@/components/HomeView/AspirationalComponent.vue';
 import QuestionsComponent from '@/components/HomeView/QuestionsComponent.vue';
 import FooterComponent from '@/components/FooterComponent.vue';
+
 </script>
 
 <template>
