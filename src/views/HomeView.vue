@@ -245,7 +245,7 @@ const handleNavigate = (itemId: string) => {
         />
       </div>
 
-      <!-- Columna derecha: Historial -->
+      <!-- Columna derecha: Historial de Transacciones -->
       <div class="home-content__right">
         <TransactionsHistoryComponent
           :transactions="transactions"

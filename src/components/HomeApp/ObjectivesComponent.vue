@@ -1,237 +1,193 @@
 <template>
-  <div class="objective-contributions-page">
-    <!-- AsideNav para desktop -->
-    <AsideNav 
-      :active-item="activeMenuItem"
-      :accounts="accounts"
-      @navigate="handleNavigate"
-      @avatar-click="handleAvatarClick"
+  <div>
+    <SectionTitle 
+      :title="`| Objetivos (${objectives.length})`"
+      :show-add-button="true"
+      add-button-text="Añadir objetivo +"
+      @add="handleAddObjective"
     />
+    
+    <section class="objectives">
+      <div class="objectives__list">
+        <div
+          v-for="objective in objectives"
+          :key="objective.id"
+          class="objective-card"
+        >
+          <div class="objective-card__header">
+            <div class="objective-card__icon-title">
+              <div class="objective-card__icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+              </div>
+              <h3 class="objective-card__name">{{ objective.name }}</h3>
+            </div>
 
-    <!-- Header con navegación -->
-    <HeaderNav 
-      title="Historial de Aportaciones" 
-      @back="handleBack"
-    />
+          </div>
 
-    <!-- Contenido principal -->
-    <main class="contributions-content">
-      <ContributionHistory
-        :objectives="objectives"
-        :contributions="contributions"
-        @contribution-click="handleContributionClick"
-      />
-    </main>
+          <div class="objective-card__progress">
+            <div class="objective-card__progress-bar">
+              <div
+                class="objective-card__progress-fill"
+                :style="{ width: `${objective.progress}%` }"
+              ></div>
+            </div>
+            <span class="objective-card__percentage">{{ objective.progress }}%</span>
+          </div>
 
-    <!-- Bottom Nav solo en móvil -->
-    <BottomNav class="mobile-only" />
-
-    <!-- Modal de cambio de cuenta -->
-    <AccountSwitcherModal
-      :is-open="isAccountModalOpen"
-      :accounts="accounts"
-      @close="handleCloseModal"
-      @select-account="handleSelectAccount"
-      @add-account="handleAddAccount"
-    />
+          <div class="objective-card__amounts">
+            <span class="objective-card__current">{{ formatCurrency(objective.currentAmount) }}</span>
+            <span class="objective-card__target">{{ formatCurrency(objective.targetAmount) }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import HeaderNav from '@/components/HeaderNav.vue';
-import ContributionHistory from '@/components/ContributionHistory.vue';
-import BottomNav from '@/components/BottomNav.vue';
-import AsideNav from '@/components/AsideNav.vue';
-import AccountSwitcherModal from '@/components/AccountSwitcherModal.vue';
-import type { Objective, Contribution } from '@/components/ContributionHistory.vue';
-import type { Account } from '@/components/AsideNav.vue';
+import SectionTitle from '@/components/SectionTitle.vue';
 
-const router = useRouter();
+interface Objective {
+  id: string;
+  name: string;
+  currentAmount: number;
+  targetAmount: number;
+  progress: number;
+}
 
-// Estado del menú
-const activeMenuItem = ref('libro'); // O el que corresponda
+interface Props {
+  objectives: Objective[];
+}
 
-// Estado de cuentas
-const accounts = ref<Account[]>([
-  {
-    id: '1',
-    name: 'Clara',
-    avatar: 'https://i.pravatar.cc/150?img=5',
-    isActive: true
-  },
-]);
+const props = defineProps<Props>();
 
-const isAccountModalOpen = ref(false);
+const emit = defineEmits<{
+  addObjective: [];
+  showInfo: [id: string];
+}>();
 
-// Datos de ejemplo de objetivos (vendrán del backend)
-const objectives = ref<Objective[]>([
-  {
-    objective_id: 1,
-    account_id: 1,
-    name: 'Coche nuevo',
-    target_amount: 10000,
-    current_save: 7500,
-    deadline: new Date(2026, 11, 31),
-    objective_picture_url: ''
-  },
-  {
-    objective_id: 2,
-    account_id: 1,
-    name: 'Casa nuevo',
-    target_amount: 50000,
-    current_save: 15000,
-    deadline: new Date(2028, 5, 30),
-    objective_picture_url: ''
-  },
-  {
-    objective_id: 3,
-    account_id: 1,
-    name: 'Vacaciones',
-    target_amount: 3000,
-    current_save: 1200,
-    deadline: new Date(2026, 6, 15),
-    objective_picture_url: ''
-  }
-]);
-
-// Datos de ejemplo de aportaciones (vendrán del backend)
-const contributions = ref<Contribution[]>([
-  {
-    id: 1,
-    objective_id: 1,
-    objective_name: 'Coche nuevo',
-    amount: 500,
-    date: new Date(2026, 0, 10, 10, 30)
-  },
-  {
-    id: 2,
-    objective_id: 2,
-    objective_name: 'Casa nuevo',
-    amount: 500,
-    date: new Date(2026, 0, 10, 15, 45)
-  },
-  {
-    id: 3,
-    objective_id: 1,
-    objective_name: 'Coche nuevo',
-    amount: 500,
-    date: new Date(2026, 0, 9, 9, 20)
-  },
-  {
-    id: 4,
-    objective_id: 1,
-    objective_name: 'Coche nuevo',
-    amount: 500,
-    date: new Date(2026, 0, 8, 14, 10)
-  },
-  {
-    id: 5,
-    objective_id: 3,
-    objective_name: 'Vacaciones',
-    amount: 200,
-    date: new Date(2026, 0, 8, 11, 30)
-  },
-  {
-    id: 6,
-    objective_id: 2,
-    objective_name: 'Casa nuevo',
-    amount: 1000,
-    date: new Date(2026, 0, 5, 16, 20)
-  },
-  {
-    id: 7,
-    objective_id: 1,
-    objective_name: 'Coche nuevo',
-    amount: 300,
-    date: new Date(2026, 0, 3, 12, 0)
-  },
-  {
-    id: 8,
-    objective_id: 3,
-    objective_name: 'Vacaciones',
-    amount: 150,
-    date: new Date(2026, 0, 2, 10, 15)
-  },
-  {
-    id: 9,
-    objective_id: 2,
-    objective_name: 'Casa nuevo',
-    amount: 750,
-    date: new Date(2025, 11, 28, 9, 45)
-  },
-  {
-    id: 10,
-    objective_id: 1,
-    objective_name: 'Coche nuevo',
-    amount: 600,
-    date: new Date(2025, 11, 25, 14, 30)
-  }
-]);
-
-// Funciones de navegación
-const handleBack = () => {
-  router.back();
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
 };
 
-const handleNavigate = (itemId: string) => {
-  activeMenuItem.value = itemId;
-  console.log('Navegando a:', itemId);
-  // Aquí añadirás la navegación con vue-router
-  if (itemId === 'inicio') {
-    router.push('/');
-  }
+const handleAddObjective = () => {
+  emit('addObjective');
 };
 
-const handleContributionClick = (contributionId: number) => {
-  console.log('Aportación clickeada:', contributionId);
-};
 
-// Funciones de cuenta
-const handleAvatarClick = () => {
-  isAccountModalOpen.value = true;
-};
-
-const handleCloseModal = () => {
-  isAccountModalOpen.value = false;
-};
-
-const handleSelectAccount = (accountId: string) => {
-  accounts.value = accounts.value.map(acc => ({
-    ...acc,
-    isActive: acc.id === accountId
-  }));
-  console.log('Cuenta seleccionada:', accountId);
-};
-
-const handleAddAccount = () => {
-  console.log('Añadir nueva cuenta');
-};
 </script>
 
 <style scoped lang="scss">
 @import '@/styles/base/variables.scss';
 
-.objective-contributions-page {
-  min-height: 100vh;
-  background-color: $background-principal;
-}
+.objectives {
+  padding: 0 $section-margin-horizontal 1.5rem;
 
-.contributions-content {
-  padding-top: 80px; // Altura del HeaderNav + margen
-  padding-bottom: 80px; // Altura del BottomNav en móvil
-  min-height: 100vh;
-
-  @media (min-width: 768px) {
-    margin-left: 240px; // Ancho del AsideNav
-    padding-bottom: 40px;
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: $section-gap;
   }
 }
 
-.mobile-only {
-  @media (min-width: 768px) {
-    display: none;
+.objective-card {
+  background-color: $section-bg-primary;
+  border-radius: $card-border-radius;
+  padding: 1.25rem;
+  transition: transform $transition-speed $transition-ease,
+              box-shadow $transition-speed $transition-ease;
+
+  &:hover {
+    transform: translateX(2px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  }
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  &__icon-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__icon {
+    width: $icon-size-lg;
+    height: $icon-size-lg;
+    background-color: $color-text-gray;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $color-white;
+    flex-shrink: 0;
+  }
+
+  &__name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: $color-text;
+    margin: 0;
+  }
+
+  
+
+  &__progress {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  &__progress-bar {
+    flex: 1;
+    height: 8px;
+    background-color: #d0d0d0;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  &__progress-fill {
+    height: 100%;
+    background-color: $color-text--dk;
+    border-radius: 4px;
+    transition: width $transition-speed $transition-ease;
+  }
+
+  &__percentage {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: $color-text;
+    min-width: 45px;
+    text-align: right;
+  }
+
+  &__amounts {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    color: $color-text-gray;
+  }
+
+  &__current {
+    font-weight: 600;
+    color: $color-text;
+  }
+
+  &__target {
+    font-weight: 500;
   }
 }
+
 </style>
