@@ -19,6 +19,8 @@ const getCurrentDayOfWeek = (): number => {
 
 const currentDay = getCurrentDayOfWeek();
 
+
+
 const objectives = ref([
   {
     id: '1',
@@ -69,10 +71,6 @@ const handleAddAccount = () => {
 
 const handleAddObjective = () => {
   console.log('Añadir objetivo');
-};
-
-const handleShowInfo = (id: string) => {
-  console.log('Mostrar info del objetivo:', id);
 };
 
 const handleTransactionClick = (transactionId: number) => {
@@ -241,7 +239,6 @@ const handleNavigate = (itemId: string) => {
         <ObjectivesComponent
           :objectives="objectives"
           @add-objective="handleAddObjective"
-          @show-info="handleShowInfo"
         />
       </div>
 

@@ -35,10 +35,11 @@ const router = createRouter({
       component: () => import('../views/HomeView.vue'),
     }, 
     {
-      path: '/home/contributions',
+      path: '/home/:objectiveId/contributions',
       name: 'ObjectiveContributions',
-      component: () => import('../views/ObjectiveContributionsView.vue')
-    }             
+      component: () => import('../views/ObjectiveContributionsView.vue'),
+      props: true 
+    }         
   ],
 })
 

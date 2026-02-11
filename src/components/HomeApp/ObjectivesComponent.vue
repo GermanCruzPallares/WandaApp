@@ -9,21 +9,21 @@
     
     <section class="objectives">
       <div class="objectives__list">
-        <div
+        <RouterLink 
           v-for="objective in objectives"
           :key="objective.id"
+          :to="`/home/${objective.id}/contributions`"
           class="objective-card"
         >
           <div class="objective-card__header">
             <div class="objective-card__icon-title">
               <div class="objective-card__icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                 </svg>
               </div>
               <h3 class="objective-card__name">{{ objective.name }}</h3>
             </div>
-
           </div>
 
           <div class="objective-card__progress">
@@ -40,13 +40,14 @@
             <span class="objective-card__current">{{ formatCurrency(objective.currentAmount) }}</span>
             <span class="objective-card__target">{{ formatCurrency(objective.targetAmount) }}</span>
           </div>
-        </div>
+        </RouterLink>
       </div>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
+import { RouterLink } from 'vue-router';
 import SectionTitle from '@/components/SectionTitle.vue';
 
 interface Objective {
@@ -65,7 +66,6 @@ const props = defineProps<Props>();
 
 const emit = defineEmits<{
   addObjective: [];
-  showInfo: [id: string];
 }>();
 
 const formatCurrency = (amount: number): string => {
@@ -80,8 +80,6 @@ const formatCurrency = (amount: number): string => {
 const handleAddObjective = () => {
   emit('addObjective');
 };
-
-
 </script>
 
 <style scoped lang="scss">
@@ -89,6 +87,10 @@ const handleAddObjective = () => {
 
 .objectives {
   padding: 0 $section-margin-horizontal 1.5rem;
+
+  @media (min-width: 768px) {
+    padding: 0 0 1.5rem 0;
+  }
 
   &__list {
     display: flex;
@@ -103,11 +105,15 @@ const handleAddObjective = () => {
   padding: 1.25rem;
   transition: transform $transition-speed $transition-ease,
               box-shadow $transition-speed $transition-ease;
+  text-decoration: none;
+  display: block;
+  cursor: pointer;
 
   &:hover {
     transform: translateX(2px);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
   }
+
   &__header {
     display: flex;
     justify-content: space-between;
@@ -139,8 +145,6 @@ const handleAddObjective = () => {
     color: $color-text;
     margin: 0;
   }
-
-  
 
   &__progress {
     display: flex;
@@ -189,5 +193,4 @@ const handleAddObjective = () => {
     font-weight: 500;
   }
 }
-
 </style>

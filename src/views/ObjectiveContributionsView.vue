@@ -1,6 +1,5 @@
-
 <template>
-<div class="objective-contributions-page">
+  <div class="objective-contributions-page">
     <!-- AsideNav para desktop -->
     <AsideNav 
       :active-item="activeMenuItem"
@@ -26,6 +25,7 @@
       <ContributionHistory
         :objectives="objectives"
         :contributions="contributions"
+        :initial-selected-objective="initialObjectiveId"
         @contribution-click="handleContributionClick"
       />
     </main>
@@ -45,20 +45,31 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import HeaderNav from '@/components/HeaderNav.vue';
-import ContributionHistory from '@/components/ContributionHistory.vue';
+import ContributionHistory from '@/components/HomeApp/ContributionHistory.vue';
 import BottomNav from '@/components/BottomNav.vue';
 import AsideNav from '@/components/AsideNav.vue';
 import AccountSwitcherModal from '@/components/AccountSwitcherModal.vue';
-import type { Objective, Contribution } from '@/components/ContributionHistory.vue';
+import type { Objective, Contribution } from '@/components//HomeApp/ContributionHistory.vue';
 import type { Account } from '@/components/AsideNav.vue';
 
 const router = useRouter();
+const route = useRoute();
+
+// Obtener el ID del objetivo desde la ruta
+const objectiveIdParam = computed(() => route.params.objectiveId as string);
+
+// Convertir a número si es necesario (o null para "todos")
+const initialObjectiveId = computed(() => {
+  const id = objectiveIdParam.value;
+  console.log('Objective ID from route:', id);
+  return id && id !== 'all' ? parseInt(id) : null;
+});
 
 // Estado del menú
-const activeMenuItem = ref('libro'); // O el que corresponda
+const activeMenuItem = ref('libro');
 
 // Estado de cuentas
 const accounts = ref<Account[]>([
@@ -72,7 +83,7 @@ const accounts = ref<Account[]>([
 
 const isAccountModalOpen = ref(false);
 
-// Datos de ejemplo de objetivos (vendrán del backend)
+// Datos de ejemplo de objetivos
 const objectives = ref<Objective[]>([
   {
     objective_id: 1,
@@ -86,24 +97,15 @@ const objectives = ref<Objective[]>([
   {
     objective_id: 2,
     account_id: 1,
-    name: 'Casa nuevo',
+    name: 'Entrada Casa',
     target_amount: 50000,
     current_save: 15000,
     deadline: new Date(2028, 5, 30),
     objective_picture_url: ''
-  },
-  {
-    objective_id: 3,
-    account_id: 1,
-    name: 'Vacaciones',
-    target_amount: 3000,
-    current_save: 1200,
-    deadline: new Date(2026, 6, 15),
-    objective_picture_url: ''
   }
 ]);
 
-// Datos de ejemplo de aportaciones (vendrán del backend)
+// Datos de ejemplo de aportaciones
 const contributions = ref<Contribution[]>([
   {
     id: 1,
@@ -115,7 +117,7 @@ const contributions = ref<Contribution[]>([
   {
     id: 2,
     objective_id: 2,
-    objective_name: 'Casa nuevo',
+    objective_name: 'Entrada Casa',
     amount: 500,
     date: new Date(2026, 0, 10, 15, 45)
   },
@@ -135,41 +137,27 @@ const contributions = ref<Contribution[]>([
   },
   {
     id: 5,
-    objective_id: 3,
-    objective_name: 'Vacaciones',
-    amount: 200,
-    date: new Date(2026, 0, 8, 11, 30)
-  },
-  {
-    id: 6,
     objective_id: 2,
-    objective_name: 'Casa nuevo',
+    objective_name: 'Entrada Casa',
     amount: 1000,
     date: new Date(2026, 0, 5, 16, 20)
   },
   {
-    id: 7,
+    id: 6,
     objective_id: 1,
     objective_name: 'Coche nuevo',
     amount: 300,
     date: new Date(2026, 0, 3, 12, 0)
   },
   {
-    id: 8,
-    objective_id: 3,
-    objective_name: 'Vacaciones',
-    amount: 150,
-    date: new Date(2026, 0, 2, 10, 15)
-  },
-  {
-    id: 9,
+    id: 7,
     objective_id: 2,
-    objective_name: 'Casa nuevo',
+    objective_name: 'Entrada Casa',
     amount: 750,
     date: new Date(2025, 11, 28, 9, 45)
   },
   {
-    id: 10,
+    id: 8,
     objective_id: 1,
     objective_name: 'Coche nuevo',
     amount: 600,
@@ -179,15 +167,14 @@ const contributions = ref<Contribution[]>([
 
 // Funciones de navegación
 const handleBack = () => {
-  router.back();
+  router.push('/home');
 };
 
 const handleNavigate = (itemId: string) => {
   activeMenuItem.value = itemId;
   console.log('Navegando a:', itemId);
-  // Aquí añadirás la navegación con vue-router
   if (itemId === 'inicio') {
-    router.push('/');
+    router.push('/home');
   }
 };
 
@@ -215,6 +202,12 @@ const handleSelectAccount = (accountId: string) => {
 const handleAddAccount = () => {
   console.log('Añadir nueva cuenta');
 };
+
+// Debug al montar
+onMounted(() => {
+  console.log('Route params:', route.params);
+  console.log('Initial objective ID:', initialObjectiveId.value);
+});
 </script>
 
 <style scoped lang="scss">
@@ -243,13 +236,13 @@ const handleAddAccount = () => {
 }
 
 .contributions-content {
-  padding-top: 7em; 
-  padding-bottom: 80px; 
+  padding-top: 80px;
+  padding-bottom: 80px;
   min-height: 100vh;
 
   @media (min-width: 768px) {
     margin-left: 240px;
-    padding-top: 20px; 
+    padding-top: 20px;
     padding-bottom: 40px;
   }
 }

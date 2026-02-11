@@ -1,6 +1,6 @@
 <template>
   <div class="contribution-history">
-    <!-- Filtro único por objetivo -->
+  <div class="contribution-history">
     <div class="filter-section">
       <select v-model="selectedObjectiveId" class="objective-filter">
         <option :value="null">Todos los objetivos</option>
@@ -12,6 +12,7 @@
           {{ objective.name }}
         </option>
       </select>
+    </div>
     </div>
 
     <!-- Lista de aportaciones -->
@@ -57,7 +58,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+
+import { ref, computed, watch } from 'vue';
 
 // Tipos
 export interface Objective {
@@ -81,21 +83,32 @@ export interface Contribution {
 interface Props {
   objectives: Objective[];
   contributions: Contribution[];
+  initialSelectedObjective?: number | null;
 }
-
-const props = defineProps<Props>();
-
-const emit = defineEmits<{
-  contributionClick: [contributionId: number];
-}>();
-
-// Filtro seleccionado
-const selectedObjectiveId = ref<number | null>(null);
+const props = withDefaults(defineProps<Props>(), {
+  initialSelectedObjective: null
+});
 
 // Parsear fecha
 const parseDate = (date: Date | string): Date => {
   return typeof date === 'string' ? new Date(date) : date;
 };
+
+
+const emit = defineEmits<{
+  contributionClick: [contributionId: number];
+}>();
+
+
+
+// Filtro seleccionado (inicializar con el valor de la prop)
+const selectedObjectiveId = ref<number | null>(props.initialSelectedObjective);
+
+// Cuando cambie la prop, actualizar el filtro
+watch(() => props.initialSelectedObjective, (newValue) => {
+  selectedObjectiveId.value = newValue;
+});
+
 
 // Aportaciones filtradas
 const filteredContributions = computed(() => {
@@ -109,6 +122,9 @@ const filteredContributions = computed(() => {
   // Ordenar por fecha (más reciente primero)
   return result.sort((a, b) => parseDate(b.date).getTime() - parseDate(a.date).getTime());
 });
+
+
+
 
 // Formatear fecha
 const formatDate = (date: Date | string): string => {
@@ -150,6 +166,7 @@ const handleContributionClick = (contributionId: number) => {
 }
 
 .filter-section {
+  margin-top: 20px;
   margin-bottom: 20px;
 }
 
