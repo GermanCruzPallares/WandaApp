@@ -1,5 +1,6 @@
+
 <template>
-  <div class="objective-contributions-page">
+<div class="objective-contributions-page">
     <!-- AsideNav para desktop -->
     <AsideNav 
       :active-item="activeMenuItem"
@@ -8,11 +9,17 @@
       @avatar-click="handleAvatarClick"
     />
 
-    <!-- Header con navegación -->
+    <!-- Header con navegación (solo móvil) -->
     <HeaderNav 
       title="Historial de Aportaciones" 
       @back="handleBack"
+      class="mobile-only"
     />
+
+    <!-- Título para desktop -->
+    <div class="desktop-header">
+      <h1 class="page-title">Historial de Aportaciones</h1>
+    </div>
 
     <!-- Contenido principal -->
     <main class="contributions-content">
@@ -218,13 +225,31 @@ const handleAddAccount = () => {
   background-color: $background-principal;
 }
 
+.desktop-header {
+  display: none;
+
+  @media (min-width: 768px) {
+    display: block;
+    margin-left: 240px;
+    padding: 32px 32px 0;
+  }
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: $color-text;
+  margin: 0 0 24px 0;
+}
+
 .contributions-content {
-  padding-top: 80px; // Altura del HeaderNav + margen
-  padding-bottom: 80px; // Altura del BottomNav en móvil
+  padding-top: 7em; 
+  padding-bottom: 80px; 
   min-height: 100vh;
 
   @media (min-width: 768px) {
-    margin-left: 240px; // Ancho del AsideNav
+    margin-left: 240px;
+    padding-top: 20px; 
     padding-bottom: 40px;
   }
 }
