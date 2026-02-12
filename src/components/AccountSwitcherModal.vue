@@ -8,14 +8,14 @@
             <div class="accounts-list">
               <div
                 v-for="account in accounts"
-                :key="account.id"
+                :key="account.account_id"
                 class="account-item"
                 :class="{ 'account-item--active': account.isActive }"
-                @click="handleSelectAccount(account.id)"
+                @click="handleSelectAccount(account.account_id)"
               >
                 <div class="account-item__wrapper">
                   <div class="account-item__avatar">
-                    <img :src="account.avatar" :alt="account.name" />
+                    <img :src="account.account_picture_url" :alt="account.name" />
                   </div>
                   <div class="account-item__info">
                     <span class="account-item__name">{{ account.name }}</span>
@@ -53,24 +53,18 @@
 
 <script setup lang="ts">
 import { watch } from 'vue';
-
-export interface Account {
-  id: string;
-  name: string;
-  avatar: string;
-  isActive: boolean;
-}
+import type { AccountUI } from '@/types/models';
 
 interface Props {
   isOpen: boolean;
-  accounts: Account[];
+  accounts: AccountUI[];
 }
 
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
   close: [];
-  selectAccount: [accountId: string];
+  selectAccount: [accountId: number];
   addAccount: [];
 }>();
 
@@ -78,7 +72,7 @@ const handleClose = () => {
   emit('close');
 };
 
-const handleSelectAccount = (accountId: string) => {
+const handleSelectAccount = (accountId: number) => {
   emit('selectAccount', accountId);
   handleClose();
 };

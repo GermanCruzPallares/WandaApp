@@ -229,7 +229,7 @@ const handleTransactionClick = (transactionId: number) => {
 }
 
 .transaction-group {
-  margin-bottom: 1rem;
+  
 
   &__date {
     font-size: 12px;
@@ -255,6 +255,7 @@ const handleTransactionClick = (transactionId: number) => {
   background-color: $section-bg-primary;
   border-radius: $card-border-radius;
   padding: 25px 16px;
+  
   cursor: pointer;
   transition: transform $transition-speed $transition-ease,
               box-shadow $transition-speed $transition-ease;

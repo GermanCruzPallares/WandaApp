@@ -38,17 +38,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import type { AccountUI } from '@/types/models';
 import HomeIcon from './icons/HomeIcon.vue';
 import PlusIcon from './icons/PlusIcon.vue';
 import CalculatorIcon from './icons/CalculatorIcon.vue';
 import UserIcon from './icons/UserIcon.vue';
-
-export interface Account {
-  id: string;
-  name: string;
-  avatar: string;
-  isActive: boolean;
-}
 
 interface MenuItem {
   id: string;
@@ -58,7 +52,7 @@ interface MenuItem {
 
 interface Props {
   activeItem?: string;
-  accounts?: Account[];
+  accounts?: AccountUI[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -80,7 +74,7 @@ const menuItems: MenuItem[] = [
 
 const currentAvatar = computed(() => {
   const activeAccount = props.accounts.find(acc => acc.isActive);
-  return activeAccount?.avatar || 'https://i.pravatar.cc/150?img=5';
+  return activeAccount?.account_picture_url || 'https://i.pravatar.cc/150?img=5';
 });
 
 const currentUserName = computed(() => {

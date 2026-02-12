@@ -17,16 +17,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-
-export interface Account {
-  id: string;
-  name: string;
-  avatar: string;
-  isActive: boolean;
-}
+import type { AccountUI } from '@/types/models';
 
 interface Props {
-  accounts?: Account[];
+  accounts?: AccountUI[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -39,7 +33,7 @@ const emit = defineEmits<{
 
 const currentAvatar = computed(() => {
   const activeAccount = props.accounts.find(acc => acc.isActive);
-  return activeAccount?.avatar || 'https://i.pravatar.cc/150?img=5';
+  return activeAccount?.account_picture_url || 'https://i.pravatar.cc/150?img=5';
 });
 
 const handleAvatarClick = () => {
