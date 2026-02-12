@@ -24,21 +24,28 @@
     </nav>
 
     <div class="aside-nav__footer">
-      <button class="user-button" @click="handleAvatarClick">
+      <!-- Estado de carga -->
+      <div v-if="isLoading" class="user-button user-button--loading">
+        <div class="skeleton-avatar"></div>
+        <div class="skeleton-text"></div>
+      </div>
+
+      <!-- Usuario cargado -->
+      <button v-else class="user-button" @click="handleAvatarClick">
         <img 
-          :src="currentAvatar" 
+          :src="account?.account_picture_url || 'https://i.pravatar.cc/150?img=5'" 
           alt="User avatar"
           class="user-button__avatar"
         />
-        <span class="user-button__name">{{ currentUserName }}</span>
+        <span class="user-button__name">{{ account?.name || 'Cuenta' }}</span>
       </button>
     </div>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import type { AccountUI } from '@/types/models';
+import { ref, watch, onMounted } from 'vue';
+import type { Account } from '@/types/models';
 import HomeIcon from '../icons/HomeIcon.vue';
 import PlusIcon from '../icons/PlusIcon.vue';
 import CalculatorIcon from '../icons/CalculatorIcon.vue';
@@ -52,18 +59,22 @@ interface MenuItem {
 
 interface Props {
   activeItem?: string;
-  accounts?: AccountUI[];
+  accountId?: number; // ✅ Solo necesita el ID
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  activeItem: 'inicio',
-  accounts: () => []
+  activeItem: 'inicio'
 });
 
 const emit = defineEmits<{
   navigate: [itemId: string];
   avatarClick: [];
+  accountLoaded: [account: Account];
 }>();
+
+// ✅ Estado local
+const account = ref<Account | null>(null);
+const isLoading = ref(false);
 
 const menuItems: MenuItem[] = [
   { id: 'inicio', label: 'Inicio', icon: HomeIcon },
@@ -72,14 +83,75 @@ const menuItems: MenuItem[] = [
   { id: 'perfil', label: 'Perfil', icon: UserIcon },
 ];
 
-const currentAvatar = computed(() => {
-  const activeAccount = props.accounts.find(acc => acc.isActive);
-  return activeAccount?.account_picture_url || 'https://i.pravatar.cc/150?img=5';
+// ✅ Simular llamada GET /api/accounts/{id}
+const fetchAccount = async (accountId: number) => {
+  console.log(`📡 AsideNav: Simulando llamada GET /api/accounts/${accountId}`);
+  
+  isLoading.value = true;
+  
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  const mockAccounts: Record<number, Account> = {
+    1: {
+      account_id: 1,
+      name: 'Clara',
+      account_type: 'personal',
+      amount: 13789.37,
+      weekly_budget: 200,
+      monthly_budget: 2000,
+      account_picture_url: 'https://i.pravatar.cc/150?img=5',
+      creation_date: new Date()
+    },
+    2: {
+      account_id: 2,
+      name: 'Cuenta Conjunta',
+      account_type: 'joint',
+      amount: 25600.50,
+      weekly_budget: 300,
+      monthly_budget: 3500,
+      account_picture_url: 'https://i.pravatar.cc/150?img=2',
+      creation_date: new Date()
+    },
+    3: {
+      account_id: 3,
+      name: 'Ahorros',
+      account_type: 'personal',
+      amount: 8430.20,
+      weekly_budget: 150,
+      monthly_budget: 1500,
+      account_picture_url: 'https://i.pravatar.cc/150?img=3',
+      creation_date: new Date()
+    }
+  };
+  
+  const accountData = mockAccounts[accountId];
+  
+  if (accountData) {
+    account.value = accountData;
+    isLoading.value = false;
+    
+    emit('accountLoaded', accountData);
+    
+    console.log('✅ AsideNav: Cuenta cargada:', accountData);
+  } else {
+    console.error('❌ AsideNav: Cuenta no encontrada');
+    isLoading.value = false;
+  }
+};
+
+// ✅ Cargar cuando se monta
+onMounted(() => {
+  if (props.accountId) {
+    fetchAccount(props.accountId);
+  }
 });
 
-const currentUserName = computed(() => {
-  const activeAccount = props.accounts.find(acc => acc.isActive);
-  return activeAccount?.name || 'Cuenta';
+// ✅ Recargar cuando cambia la cuenta
+watch(() => props.accountId, (newAccountId) => {
+  if (newAccountId) {
+    console.log('🔄 AsideNav: Cuenta cambiada, recargando...');
+    fetchAccount(newAccountId);
+  }
 });
 
 const handleMenuClick = (itemId: string) => {
@@ -108,7 +180,6 @@ const handleAvatarClick = () => {
   padding: 24px 16px;
   z-index: 200;
 
-  // Ocultar en móvil
   @media (max-width: 767px) {
     display: none;
   }
@@ -124,13 +195,6 @@ const handleAvatarClick = () => {
       height: 2.5em;
       border-radius: 8px;
     }
-
-    .logo-text {
-      font-size: 18px;
-      font-weight: 700;
-      color: $color-text;
-      letter-spacing: 0.5px;
-    }
   }
 
   &__menu {
@@ -142,7 +206,6 @@ const handleAvatarClick = () => {
 
   &__footer {
     padding-top: 16px;
-    
   }
 }
 
@@ -156,9 +219,7 @@ const handleAvatarClick = () => {
   border-radius: $card-border-radius;
   cursor: pointer;
   text-align: left;
-
-  transition: transform $transition-speed $transition-ease,
-              box-shadow $transition-speed $transition-ease;
+  transition: transform $transition-speed $transition-ease;
 
   &:hover {
     transform: translateX(2px);
@@ -203,12 +264,20 @@ const handleAvatarClick = () => {
   background-color: transparent;
   border-radius: $card-border-radius;
   cursor: pointer;
-  transition: transform $transition-speed $transition-ease,
-              box-shadow $transition-speed $transition-ease;
+  transition: transform $transition-speed $transition-ease;
 
   &:hover {
     transform: translateX(2px);
   }
+
+  &--loading {
+    cursor: default;
+    
+    &:hover {
+      transform: none;
+    }
+  }
+
   &__avatar {
     width: 40px;
     height: 40px;
@@ -222,6 +291,34 @@ const handleAvatarClick = () => {
     font-weight: 500;
     color: $color-text;
     text-align: left;
+  }
+}
+
+// ✅ Estados de carga (skeleton)
+.skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+.skeleton-text {
+  flex: 1;
+  height: 16px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
   }
 }
 </style>

@@ -90,15 +90,15 @@ const handleNavigate = (itemId: string) => {
 </script>
 
 <template>
-  <AsideNav 
+<AsideNav 
     :active-item="activeMenuItem"
-    :accounts="accounts"
+    :account-id="activeAccount?.account_id"
     @navigate="handleNavigate"
     @avatar-click="handleAvatarClick"
   />
   
-  <TopNav 
-    :accounts="accounts" 
+<TopNav 
+    :account-id="activeAccount?.account_id"
     @avatar-click="handleAvatarClick"
     class="mobile-only"
   />
