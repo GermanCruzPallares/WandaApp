@@ -8,7 +8,7 @@ import TransactionsHistoryComponent from '@/components/HomeApp/TransactionsHisto
 import TopNav from '@/components/TopNav.vue';
 import AsideNav from '@/components/AsideNav.vue';
 import AccountSwitcherModal from '@/components/AccountSwitcherModal.vue';
-import type { Account } from '@/components/TopNav.vue';
+import type { AccountUI } from '@/types/models';
 import type { Transaction } from '@/components/HomeApp/TransactionsHistoryComponent.vue';
 
 const getCurrentDayOfWeek = (): number => {
@@ -18,8 +18,6 @@ const getCurrentDayOfWeek = (): number => {
 };
 
 const currentDay = getCurrentDayOfWeek();
-
-
 
 const objectives = ref([
   {
@@ -40,13 +38,19 @@ const objectives = ref([
 
 const isAccountModalOpen = ref(false);
 
-const accounts = ref<Account[]>([
+// Cambiar de Account[] a AccountUI[]
+const accounts = ref<AccountUI[]>([
   {
-    id: '1',
+    account_id: 1,
     name: 'Clara',
-    avatar: 'https://i.pravatar.cc/150?img=5',
+    account_type: 'personal',
+    amount: 13789.37,
+    weekly_budget: 200,
+    monthly_budget: 2000,
+    account_picture_url: 'https://i.pravatar.cc/150?img=5',
+    creation_date: new Date(),
     isActive: true
-  },
+  }
 ]);
 
 const handleAvatarClick = () => {
@@ -57,10 +61,11 @@ const handleCloseModal = () => {
   isAccountModalOpen.value = false;
 };
 
-const handleSelectAccount = (accountId: string) => {
+// Cambiar de string a number
+const handleSelectAccount = (accountId: number) => {
   accounts.value = accounts.value.map(acc => ({
     ...acc,
-    isActive: acc.id === accountId
+    isActive: acc.account_id === accountId
   }));
   console.log('Cuenta seleccionada:', accountId);
 };
@@ -276,7 +281,7 @@ const handleNavigate = (itemId: string) => {
 
   // Tablet y Desktop
   @media (min-width: 768px) {
-    margin-left: 240px; // Ancho del AsideNav
+    margin-left: 240px; 
     padding: 40px 20px;
     max-width: calc(100vw - 240px);
   }
