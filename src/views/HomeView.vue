@@ -10,6 +10,7 @@ import AsideNav from '@/components/Navs/AsideNav.vue';
 import AccountSwitcherModal from '@/components/Modals/AccountSwitcherModal.vue';
 import type { AccountUI, User, Transaction, Account, Objective } from '@/types/models';
 
+
 const currentUser = ref<User>({
   user_id: 1,
   name: 'Clara',
@@ -26,14 +27,14 @@ const accounts = ref<AccountUI[]>([
     monthly_budget: 2000,
     account_picture_url: 'https://i.pravatar.cc/150?img=5',
     creation_date: new Date(),
-    isActive: true // ✅ IMPORTANTE: Debe estar en true
+    isActive: true 
   }
 ]);
 
 // ✅ Cuenta activa (computed)
 const activeAccount = computed(() => {
   const active = accounts.value.find(acc => acc.isActive);
-  console.log('🔍 HomeView: activeAccount =', active); // DEBUG
+  console.log('🔍 HomeView: activeAccount =', active); 
   return active;
 });
 
@@ -108,13 +109,7 @@ const handleNavigate = (itemId: string) => {
 
 
 
-const handleAccountsLoaded = (loadedAccounts: Account[]) => {
-  console.log('🏦 HomeView: Cuentas recibidas desde AccountSwitcherModal:', loadedAccounts.length);
-  accounts.value = loadedAccounts.map(acc => ({
-    ...acc,
-    isActive: acc.account_id === activeAccount.value?.account_id
-  } as AccountUI));
-};
+
 </script>
 
 <template>
@@ -175,7 +170,7 @@ const handleAccountsLoaded = (loadedAccounts: Account[]) => {
     :current-user="currentUser"
     @close="handleCloseModal"
     @select-account="handleSelectAccount"
-    @accounts-loaded="handleAccountsLoaded"
+
     @create-joint-account="handleCreateJointAccount"
   />
 </template>

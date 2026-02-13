@@ -1,15 +1,15 @@
 <template>
   <aside class="aside-nav">
-    <!-- Logo -->
+  
     <div class="aside-nav__logo">
       <img src="../../images/OscuroPrincipal.png" alt="Wanda Logo" class="logo-image" />
     </div>
 
-    <!-- Menú principal de navegación -->
     <nav class="aside-nav__menu">
-      <button
+      <router-link
         v-for="item in menuItems"
         :key="item.id"
+        :to="item.path"
         class="menu-item"
         :class="{ 'menu-item--active': item.id === activeItem }"
         @click="handleMenuClick(item.id)"
@@ -20,17 +20,15 @@
           class="menu-item__icon" 
         />
         <span class="menu-item__label">{{ item.label }}</span>
-      </button>
+      </router-link>
     </nav>
 
     <div class="aside-nav__footer">
-      <!-- Estado de carga -->
       <div v-if="isLoading" class="user-button user-button--loading">
         <div class="skeleton-avatar"></div>
         <div class="skeleton-text"></div>
       </div>
 
-      <!-- Usuario cargado -->
       <button v-else class="user-button" @click="handleAvatarClick">
         <img 
           :src="account?.account_picture_url || 'https://i.pravatar.cc/150?img=5'" 
@@ -56,6 +54,7 @@ interface MenuItem {
   id: string;
   label: string;
   icon: any;
+  path: string;
 }
 
 interface Props {
@@ -81,11 +80,12 @@ const account = ref<Account | null>(null);
 const isLoading = ref(false);
 
 const menuItems: MenuItem[] = [
-  { id: 'inicio', label: 'Inicio', icon: HomeIcon },
-  { id: 'add', label: 'Añadir movimiento', icon: PlusIcon },
-  { id: 'libro', label: 'Libro Cuentas', icon: CalculatorIcon },
-  { id: 'perfil', label: 'Perfil', icon: UserIcon },
+  { id: 'inicio', label: 'Inicio', icon: HomeIcon, path: '/home' }, 
+  { id: 'add', label: 'Añadir movimiento', icon: PlusIcon, path: '/transaction' },
+  { id: 'libro', label: 'Libro Cuentas', icon: CalculatorIcon, path: '/book' },
+  { id: 'perfil', label: 'Perfil', icon: UserIcon, path: '/profile' }, 
 ];
+
 
 // ✅ Cargar cuenta desde el store
 const loadAccount = async (accountId: number) => {
@@ -179,6 +179,7 @@ const handleAvatarClick = () => {
   border-radius: $card-border-radius;
   cursor: pointer;
   text-align: left;
+  text-decoration: none;
   transition: transform $transition-speed $transition-ease;
 
   &:hover {

@@ -279,6 +279,7 @@ const isToday = (day: string): boolean => {
 </script>
 
 <style scoped lang="scss">
+
 @import '@/styles/base/variables.scss';
 
 .loading-state {
