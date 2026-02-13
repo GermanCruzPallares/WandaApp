@@ -131,5 +131,41 @@ namespace wandaAPI.Repositories
         }
 
 
+        //
+        public async Task<List<User>> GetByAccountIdAsync(int accountId)
+        {
+            var users = new List<User>();
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                
+                string query = @"
+            SELECT u.user_id, u.name, u.email, u.password 
+            FROM USERS u 
+            JOIN ACCOUNT_USERS au ON u.user_id = au.user_id 
+            WHERE au.account_id = @account_id";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@account_id", accountId);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            users.Add(new User
+                            {
+                                User_id = reader.GetInt32(0),
+                                Name = reader.GetString(1),
+                                Email = reader.GetString(2),
+                                Password = reader.GetString(3)
+                            });
+                        }
+                    }
+                }
+            }
+            return users;
+        }
+
+
     }
 }

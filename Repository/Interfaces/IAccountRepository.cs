@@ -12,5 +12,6 @@ namespace wandaAPI.Repositories
 
         Task<Account?> GetPersonalAccountByUserIdAsync(int userId);
         
+        Task<List<Account>> GetAllByUserIdAsync(int userId);
     }
 }

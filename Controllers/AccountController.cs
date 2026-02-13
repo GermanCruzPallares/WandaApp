@@ -13,7 +13,7 @@ namespace wandaAPI.Controllers
     {
         private readonly IAccountService _accountService;
 
-        public AccountController(IAccountService accountRepository) //error de nombre, public AccountController(IAccountService accountService) 
+        public AccountController(IAccountService accountRepository) 
         {
             _accountService = accountRepository;
         }
@@ -33,8 +33,25 @@ namespace wandaAPI.Controllers
             return Ok(account);
         }
 
-        [HttpPost]
         
+        [HttpGet("{accountId}/users")]
+        public async Task<ActionResult<List<User>>> GetAccountMembers(int accountId)
+        {
+            if (accountId <= 0) return BadRequest("ID de cuenta inválido.");
+
+            try
+            {
+                var members = await _accountService.GetMembersAsync(accountId);
+                return Ok(members);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
+
+        [HttpPost]
+
         public async Task<ActionResult> CreateAccount([FromBody] JointAccountCreateDto account)
         {
 
@@ -43,7 +60,7 @@ namespace wandaAPI.Controllers
         }
 
         [HttpPut("{accountId}")]
-        public async Task<IActionResult> UpdateAccount(int accountId, [FromBody]  AccountUpdateDto accountDto)
+        public async Task<IActionResult> UpdateAccount(int accountId, [FromBody] AccountUpdateDto accountDto)
         {
             try
             {
@@ -65,7 +82,7 @@ namespace wandaAPI.Controllers
             {
                 return NotFound(ex.Message);
             }
-             catch (InvalidOperationException ex)
+            catch (InvalidOperationException ex)
             {
                 return BadRequest(ex.Message);
             }

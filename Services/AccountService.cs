@@ -1,6 +1,5 @@
 using Models;
 using wandaAPI.Repositories;
-using DTOs; // Asegúrate de incluir el namespace de tus DTOs
 
 namespace wandaAPI.Services
 {
@@ -45,7 +44,7 @@ namespace wandaAPI.Services
             var jointAccount = new Account
             {
                 Name = dto.Name,
-                Account_type = "joint", 
+                Account_type = "joint",
                 Amount = 0,
                 Creation_date = DateTime.Now
             };
@@ -72,7 +71,7 @@ namespace wandaAPI.Services
             var personalAccount = new Account
             {
                 Name = userName,
-                Account_type = "personal", 
+                Account_type = "personal",
                 Amount = 0
             };
 
@@ -105,7 +104,7 @@ namespace wandaAPI.Services
         public async Task<Account?> GetByIdAsync(int id)
         {
             var account = await _accountRepository.GetByIdAsync(id);
-            if (account == null) // Simplificado: si es null, no existe
+            if (account == null)
             {
                 throw new KeyNotFoundException("La cuenta no existe.");
             }
@@ -132,6 +131,21 @@ namespace wandaAPI.Services
             }
 
             await _accountRepository.UpdateAsync(existingAccount);
+        }
+
+        public async Task<List<User>> GetMembersAsync(int accountId)
+        {
+
+            var account = await _accountRepository.GetByIdAsync(accountId);
+            if (account == null) throw new KeyNotFoundException("La cuenta no existe.");
+
+            return await _userRepository.GetByAccountIdAsync(accountId);
+        }
+
+        public async Task<List<Account>> GetAccountsByUserIdAsync(int userId)
+        {
+            if (userId <= 0) throw new ArgumentException("ID de usuario inválido");
+            return await _accountRepository.GetAllByUserIdAsync(userId);
         }
     }
 }

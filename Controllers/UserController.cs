@@ -48,6 +48,24 @@ namespace wandaAPI.Controllers
             }
         }
 
+        
+        [Authorize] 
+        [HttpGet("{userId}/accounts")]
+        public async Task<ActionResult<List<Account>>> GetUserAccounts(int userId)
+        {
+            if (userId <= 0) return BadRequest("ID de usuario inválido.");
+
+            try
+            {
+                var accounts = await _userService.GetUserAccountsAsync(userId);
+                return Ok(accounts);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
+
 
         [HttpPost]
         public async Task<ActionResult<User>> CreateUser([FromBody] UserCreateDTO user1)
@@ -98,7 +116,7 @@ namespace wandaAPI.Controllers
 
             try
             {
-                if(userId <= 0)
+                if (userId <= 0)
                 {
                     return BadRequest("El ID no es válido");
                 }

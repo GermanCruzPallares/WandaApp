@@ -134,6 +134,8 @@ namespace wandaAPI.Services
 
         }
 
+
+
         public async Task DeleteAsync(int id)
         {
 
@@ -143,7 +145,7 @@ namespace wandaAPI.Services
                 throw new KeyNotFoundException("El User no existe");
             }
 
-  
+
             var accounts = await _accountService.GetAllAsync();
 
             var personalAccount = accounts.FirstOrDefault(a =>
@@ -152,11 +154,21 @@ namespace wandaAPI.Services
 
             if (personalAccount != null)
             {
-                
+
                 await _accountService.DeleteAsync(personalAccount.Account_id);
             }
 
             await _userRepository.DeleteAsync(id);
+        }
+
+        
+        public async Task<List<Account>> GetUserAccountsAsync(int userId)
+        {
+         
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) throw new KeyNotFoundException("El usuario no existe.");
+
+            return await _accountService.GetAccountsByUserIdAsync(userId);
         }
 
     }

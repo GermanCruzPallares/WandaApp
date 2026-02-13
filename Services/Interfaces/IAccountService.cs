@@ -11,5 +11,9 @@ namespace wandaAPI.Services
         Task UpdateAsync(int id, AccountUpdateDto accountDto);
         Task DeleteAsync(int id);
 
+        Task<List<User>> GetMembersAsync(int accountId);
+
+        Task<List<Account>> GetAccountsByUserIdAsync(int userId);
+
     }
 }

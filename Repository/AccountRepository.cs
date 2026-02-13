@@ -147,6 +147,7 @@ namespace wandaAPI.Repositories
             }
         }
 
+
         public async Task<Account?> GetPersonalAccountByUserIdAsync(int userId)
         {
             using (var connection = new SqlConnection(_connectionString))
@@ -176,14 +177,55 @@ namespace wandaAPI.Repositories
                                 Weekly_budget = reader.IsDBNull(4) ? 0 : Convert.ToDouble(reader.GetDecimal(4)),
                                 Monthly_budget = reader.IsDBNull(5) ? 0 : Convert.ToDouble(reader.GetDecimal(5)),
                                 Account_picture_url = reader.IsDBNull(6) ? null : reader.GetString(6),
-                                Creation_date = reader.GetDateTime(7)                                
-                                
+                                Creation_date = reader.GetDateTime(7)
+
                             };
                         }
                     }
                 }
             }
             return null;
+        }
+
+
+        //
+        public async Task<List<Account>> GetAllByUserIdAsync(int userId)
+        {
+            var accounts = new List<Account>();
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                // JOIN entre ACCOUNTS y ACCOUNT_USERS
+                string query = @"
+            SELECT a.account_id, a.name, a.account_type, a.amount, 
+                   a.weekly_budget, a.monthly_budget, a.account_picture_url, a.creation_date
+            FROM ACCOUNTS a
+            JOIN ACCOUNT_USERS au ON a.account_id = au.account_id
+            WHERE au.user_id = @user_id";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@user_id", userId);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            accounts.Add(new Account
+                            {
+                                Account_id = reader.GetInt32(0),
+                                Name = reader.GetString(1),
+                                Account_type = reader.GetString(2),
+                                Amount = reader.IsDBNull(3) ? 0 : Convert.ToDouble(reader.GetDecimal(3)),
+                                Weekly_budget = reader.IsDBNull(4) ? 0 : Convert.ToDouble(reader.GetDecimal(4)),
+                                Monthly_budget = reader.IsDBNull(5) ? 0 : Convert.ToDouble(reader.GetDecimal(5)),
+                                Account_picture_url = reader.IsDBNull(6) ? null : reader.GetString(6),
+                                Creation_date = reader.GetDateTime(7)
+                            });
+                        }
+                    }
+                }
+            }
+            return accounts;
         }
 
 
