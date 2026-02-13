@@ -12,7 +12,7 @@ export const useUserStore = defineStore('user', () => {
 
   const login = async (email: string, password: string) => {
     try {
-      const url = 'http://localhost:7085/api/Auth/login';
+      const url = 'https://localhost:7085/api/Auth/login';
       console.log(`🔵 [LOGIN] Enviando petición a: ${url}`);
 
       const response = await fetch(url, { 
