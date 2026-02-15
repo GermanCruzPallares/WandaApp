@@ -1,14 +1,13 @@
 // src/services/apiService.ts
 
 import { authService } from './authService';
-import type { Account, User } from '@/types/models';
+import type { Account, User, Transaction, Objective } from '@/types/models';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:7777/api';
 
 class ApiService {
-  /**
-   * Hacer petición GET autenticada
-   */
+  // ==================== MÉTODOS PRIVADOS (HTTP) ====================
+  
   private async fetchWithAuth<T>(url: string): Promise<T> {
     const response = await fetch(url, {
       method: 'GET',
@@ -16,7 +15,6 @@ class ApiService {
     });
 
     if (response.status === 401) {
-      // Token inválido o expirado
       authService.logout();
       throw new Error('Sesión expirada. Por favor, inicia sesión de nuevo.');
     }
@@ -29,9 +27,6 @@ class ApiService {
     return response.json();
   }
 
-  /**
-   * Hacer petición POST autenticada
-   */
   private async postWithAuth<T>(url: string, body: any): Promise<T> {
     const response = await fetch(url, {
       method: 'POST',
@@ -48,13 +43,20 @@ class ApiService {
       const error = await response.json().catch(() => ({ message: 'Error desconocido' }));
       throw new Error(error.message || `Error ${response.status}`);
     }
+    if (response.status === 204) {
+    console.log('✅ 204 No Content - Operación exitosa');
+    return {} as T;
+  }
+   const contentType = response.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    const textResponse = await response.text();
+    console.log('✅ Respuesta de texto:', textResponse);
+    return {} as T; // Devolver objeto vacío si es texto plano
+  }
 
     return response.json();
   }
 
-  /**
-   * Hacer petición PUT autenticada
-   */
   private async putWithAuth<T>(url: string, body: any): Promise<T> {
     const response = await fetch(url, {
       method: 'PUT',
@@ -72,7 +74,6 @@ class ApiService {
       throw new Error(error.message || `Error ${response.status}`);
     }
 
-    // PUT puede devolver 204 No Content
     if (response.status === 204) {
       return {} as T;
     }
@@ -80,24 +81,37 @@ class ApiService {
     return response.json();
   }
 
+  private async deleteWithAuth<T>(url: string): Promise<T> {
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: authService.getAuthHeaders(),
+    });
+
+    if (response.status === 401) {
+      authService.logout();
+      throw new Error('Sesión expirada. Por favor, inicia sesión de nuevo.');
+    }
+
+    if (response.status === 204) {
+      return {} as T;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Error desconocido' }));
+      throw new Error(error.message || `Error ${response.status}`);
+    }
+
+    return response.json();
+  }
+
   // ==================== USERS ====================
 
-  /**
-   * GET /api/User/{userId}
-   */
   async getUser(userId: number): Promise<User> {
-    console.log(`📡 GET /api/User/${userId}`);
     return this.fetchWithAuth<User>(`${API_BASE_URL}/User/${userId}`);
   }
 
-  /**
-   * GET /api/User?email={email}
-   * Buscar usuario por email usando query parameter
-   */
   async getUserByEmail(email: string): Promise<User | null> {
     try {
-      console.log(`📡 GET /api/User?email=${email}`);
-      
       const response = await fetch(`${API_BASE_URL}/User?email=${encodeURIComponent(email)}`, {
         method: 'GET',
         headers: authService.getAuthHeaders(),
@@ -109,21 +123,11 @@ class ApiService {
       }
 
       if (!response.ok) {
-        // Si es 404 o cualquier otro error, el usuario no existe
-        console.log('❌ Usuario no encontrado o error en la petición');
         return null;
       }
 
       const users = await response.json();
-      
-      // El backend devuelve una lista, tomar el primer usuario
-      if (Array.isArray(users) && users.length > 0) {
-        console.log('✅ Usuario encontrado:', users[0].name);
-        return users[0];
-      }
-      
-      console.log('❌ Usuario no encontrado');
-      return null;
+      return Array.isArray(users) && users.length > 0 ? users[0] : null;
       
     } catch (error) {
       console.error('❌ Error buscando usuario por email:', error);
@@ -131,56 +135,52 @@ class ApiService {
     }
   }
 
-  /**
-   * GET /api/User/{userId}/accounts
-   */
   async getUserAccounts(userId: number): Promise<Account[]> {
-    console.log(`📡 GET /api/User/${userId}/accounts`);
-    const accounts = await this.fetchWithAuth<Account[]>(`${API_BASE_URL}/User/${userId}/accounts`);
-    
-    return accounts;
+    return this.fetchWithAuth<Account[]>(`${API_BASE_URL}/User/${userId}/accounts`);
   }
 
   // ==================== ACCOUNTS ====================
 
-  /**
-   * GET /api/Account/{accountId}
-   */
   async getAccount(accountId: number): Promise<Account> {
-    console.log(`📡 GET /api/Account/${accountId}`);
     return this.fetchWithAuth<Account>(`${API_BASE_URL}/Account/${accountId}`);
   }
 
-  /**
-   * GET /api/Account/{accountId}/users
-   */
   async getAccountMembers(accountId: number): Promise<User[]> {
-    console.log(`📡 GET /api/Account/${accountId}/users`);
     return this.fetchWithAuth<User[]>(`${API_BASE_URL}/Account/${accountId}/users`);
   }
 
-  /**
-   * POST /api/Account (crear cuenta conjunta)
-   */
+
   async createJointAccount(data: {
     name: string;
-    user_emails: string[];
+    member_Ids: number[]; 
   }): Promise<void> {
-    console.log('📡 POST /api/Account', data);
+    console.log('📡 POST /api/Account');
+    console.log('📦 Payload:', JSON.stringify(data, null, 2));
     return this.postWithAuth<void>(`${API_BASE_URL}/Account`, data);
   }
 
-  /**
-   * PUT /api/Account/{accountId}
-   */
-  async updateAccount(accountId: number, data: {
-    name?: string;
-    weekly_budget?: number;
-    monthly_budget?: number;
-    account_picture_url?: string;
-  }): Promise<void> {
-    console.log(`📡 PUT /api/Account/${accountId}`, data);
+  async updateAccount(accountId: number, data: Partial<Account>): Promise<void> {
     return this.putWithAuth<void>(`${API_BASE_URL}/Account/${accountId}`, data);
+  }
+
+  // ==================== TRANSACTIONS ====================
+  
+  async getAccountTransactions(accountId: number): Promise<Transaction[]> {
+    return this.fetchWithAuth<Transaction[]>(`${API_BASE_URL}/Account/${accountId}/transactions`);
+  }
+
+  async createTransaction(accountId: number, data: Partial<Transaction>): Promise<Transaction> {
+    return this.postWithAuth<Transaction>(`${API_BASE_URL}/Account/${accountId}/transactions`, data);
+  }
+
+  // ==================== OBJECTIVES ====================
+  
+  async getAccountObjectives(accountId: number): Promise<Objective[]> {
+    return this.fetchWithAuth<Objective[]>(`${API_BASE_URL}/Account/${accountId}/objectives`);
+  }
+
+  async createObjective(accountId: number, data: Partial<Objective>): Promise<Objective> {
+    return this.postWithAuth<Objective>(`${API_BASE_URL}/Account/${accountId}/objectives`, data);
   }
 }
 

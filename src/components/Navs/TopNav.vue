@@ -1,33 +1,3 @@
-<template>
-  <div class="header-nav">
-    <div class="header-nav__logo">
-      <img src="../../images/OscuroReducido.png" alt="Logo" class="logo-image" />
-    </div>
-    
-    <!-- Avatar -->
-    <div class="header-nav__avatar">
-      <img 
-        :src="avatarSrc" 
-        alt="User avatar"
-        class="avatar-image"
-        @click="openAccountSwitcher"
-      />
-    </div>
-
-    <!-- ✅ Solo renderizar modal si currentUser existe -->
-    <AccountSwitcherModal
-      v-if="userStore.currentUser"
-      :is-open="isAccountSwitcherOpen"
-      :user-id="userStore.userId"
-      :active-account-id="userStore.activeAccountId"
-      :current-user="userStore.currentUser"
-      @close="closeAccountSwitcher"
-      @select-account="handleSelectAccount"
-      @create-joint-account="handleCreateJointAccount"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useUserStore } from '@/stores/UserStore';
@@ -35,14 +5,11 @@ import { useAccountStore } from '@/stores/AccountStore';
 import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
 import AccountSwitcherModal from '@/components/Modals/AccountSwitcherModal.vue';
 
-// ✅ Solo stores, sin props
 const userStore = useUserStore();
 const accountStore = useAccountStore();
 
-// ✅ Estado local solo para el modal
 const isAccountSwitcherOpen = ref(false);
 
-// ✅ Avatar reactivo del store
 const avatarSrc = computed(() => {
   const account = userStore.activeAccount;
   if (!account) return getAvatarDataUrl('personal');
@@ -54,7 +21,6 @@ const avatarSrc = computed(() => {
   return getAvatarDataUrl(account.account_type || 'personal');
 });
 
-// ✅ Funciones del modal
 const openAccountSwitcher = () => {
   console.log('🖱️ Opening account switcher');
   isAccountSwitcherOpen.value = true;
@@ -71,30 +37,57 @@ const handleSelectAccount = (accountId: number) => {
   closeAccountSwitcher();
 };
 
-const handleCreateJointAccount = async (accountName: string, userEmails: string[]) => {
-  console.log('➕ Creating joint account:', accountName, userEmails);
+/**
+ * ✅ Manejar creación de cuenta conjunta
+ */
+const handleCreateJointAccount = async (accountName: string, userIds: number[]) => {
+  console.log('➕ Creando cuenta conjunta:', accountName, userIds);
   
   try {
-    const userIds: number[] = [];
-    for (const email of userEmails) {
-      const user = await userStore.checkUserExists(email);
-      if (user) {
-        userIds.push(user.user_id);
-      }
-    }
-    
     await accountStore.createJointAccount({
       name: accountName,
-      user_ids: userIds
+      userIds: userIds
     });
     
     await userStore.refreshAccounts();
     closeAccountSwitcher();
+    
   } catch (error) {
     console.error('❌ Error creando cuenta conjunta:', error);
+    alert('Error al crear la cuenta. Por favor, intenta de nuevo.');
   }
 };
 </script>
+
+<template>
+  <div class="header-nav">
+    <div class="header-nav__logo">
+      <img src="../../images/OscuroReducido.png" alt="Logo" class="logo-image" />
+    </div>
+    
+    <!-- Avatar -->
+    <div class="header-nav__avatar">
+      <img 
+        :src="avatarSrc" 
+        alt="User avatar"
+        class="avatar-image"
+        @click="openAccountSwitcher"
+      />
+    </div>
+
+    <!-- Modal -->
+    <AccountSwitcherModal
+      v-if="userStore.currentUser"
+      :is-open="isAccountSwitcherOpen"
+      :user-id="userStore.userId"
+      :active-account-id="userStore.activeAccountId"
+      :current-user="userStore.currentUser"
+      @close="closeAccountSwitcher"
+      @select-account="handleSelectAccount"
+      @create-account="handleCreateJointAccount"
+    />
+  </div>
+</template>
 
 <style scoped lang="scss">
 .header-nav {

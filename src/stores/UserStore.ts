@@ -98,21 +98,15 @@ export const useUserStore = defineStore('user', () => {
       isLoadingAccounts.value = true;
 
       // Cargar usuario
-      console.log(`📡 Cargando datos del usuario ${userId}...`);
       currentUser.value = await apiService.getUser(userId);
-      console.log('✅ Usuario cargado:', currentUser.value);
-
       // Cargar cuentas
-      console.log(`📡 Cargando cuentas del usuario ${userId}...`);
       accounts.value = await apiService.getUserAccounts(userId);
-      console.log('✅ Cuentas cargadas:', accounts.value);
 
       // ✅ Establecer primera cuenta como activa SIEMPRE
       if (accounts.value.length > 0) {
         const firstAccount = accounts.value[0];
         if (firstAccount) {
           activeAccountId.value = firstAccount.account_id;
-          console.log('✅ Cuenta activa establecida:', activeAccountId.value);
 
           // Persistir en localStorage
           localStorage.setItem('active_account_id', activeAccountId.value.toString());

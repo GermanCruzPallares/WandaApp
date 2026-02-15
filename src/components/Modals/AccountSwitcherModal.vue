@@ -20,11 +20,11 @@ interface Props {
 
 const props = defineProps<Props>();
 
+// ✅ IMPORTANTE: Declarar TODOS los eventos que se emiten
 const emit = defineEmits<{
   close: [];
   selectAccount: [accountId: number];
-  accountsLoaded: [accounts: Account[]];
-  createJointAccount: [accountName: string, userEmails: string[]];
+  createAccount: [accountName: string, userIds: number[]]; // ✅ CORRECTO: userIds (números)
 }>();
 
 // ✅ Usar los stores de Pinia
@@ -61,8 +61,6 @@ const loadUserAccounts = async (userId: number) => {
   
   // Para cada cuenta conjunta, obtener sus usuarios
   await loadUsersForAccounts(accounts.value);
-  
-  emit('accountsLoaded', accounts.value);
   
   isLoading.value = false;
 };
@@ -136,8 +134,16 @@ const handleCloseJointAccountModal = () => {
   isJointAccountModalOpen.value = false;
 };
 
-const handleCreateJointAccount = (accountName: string, userEmails: string[]) => {
-  emit('createJointAccount', accountName, userEmails);
+// ✅ CORREGIDO: Recibir userIds (números) y reemitir correctamente
+const handleCreateJointAccount = (accountName: string, userIds: number[]) => {
+  console.log('2️⃣ AccountSwitcherModal recibió:', accountName, userIds);
+  
+  // ✅ Reenviar al padre (TopNav)
+  emit('createAccount', accountName, userIds);
+  
+  console.log('3️⃣ AccountSwitcherModal reemitió:', accountName, userIds);
+  
+  // Cerrar modales
   isJointAccountModalOpen.value = false;
   handleClose();
 };

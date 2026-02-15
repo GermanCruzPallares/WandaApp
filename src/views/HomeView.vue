@@ -53,7 +53,6 @@ onMounted(async () => {
   // Si el store no tiene datos cargados, cargarlos
   if (!userStore.currentUser && userStore.userId) {
     try {
-      console.log('📡 Cargando datos del usuario desde HomeView...');
       await userStore.loadUserData(userStore.userId);
     } catch (error) {
       console.error('❌ Error cargando datos:', error);

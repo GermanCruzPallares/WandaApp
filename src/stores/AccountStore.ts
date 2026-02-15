@@ -1,111 +1,48 @@
+// src/stores/AccountStore.ts
+
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import type { Account } from '@/types/models';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:7085/api';
+import { apiService } from '@/services/apiService';
+import type { Account, User } from '@/types/models';
 
 export const useAccountStore = defineStore('account', () => {
-  // ✅ Estado: Map para cachear cuentas
-  const accounts = ref<Map<number, Account>>(new Map());
-
+  // ==================== ESTADO ====================
+  
   /**
-   * Obtener el token de autenticación
+   * Caché de cuentas para evitar llamadas repetidas al backend
    */
-  const getAuthToken = (): string | null => {
-    return localStorage.getItem('wanda_auth_token');
-  };
-
+  const accountCache = ref<Map<number, Account>>(new Map());
+  
   /**
-   * Headers con autenticación
+   * Estado de carga al crear cuenta
    */
-  const getAuthHeaders = (): HeadersInit => {
-    const token = getAuthToken();
-    return {
-      'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` })
-    };
-  };
+  const isCreatingAccount = ref(false);
 
-  /**
-   * GET /api/Account
-   * Obtener todas las cuentas (probablemente no uses esto mucho)
-   */
-  const fetchAllAccounts = async (): Promise<Account[]> => {
-    try {
-      console.log('📡 GET /api/Account');
-      
-      const response = await fetch(`${API_BASE_URL}/Account`, {
-        method: 'GET',
-        headers: getAuthHeaders()
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          console.error('❌ No autorizado - redirigiendo a login');
-          localStorage.removeItem('wanda_auth_token');
-          localStorage.removeItem('wanda_user_id');
-          window.location.href = '/login';
-          return [];
-        }
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const allAccounts = await response.json();
-      console.log('✅ Todas las cuentas cargadas:', allAccounts);
-      
-      return allAccounts;
-
-    } catch (error) {
-      console.error('❌ Error al cargar todas las cuentas:', error);
-      return [];
-    }
-  };
+  // ==================== ACTIONS ====================
 
   /**
    * GET /api/Account/{accountId}
-   * Obtener una cuenta específica por ID
+   * Obtener una cuenta específica por ID (con caché)
    */
   const fetchAccount = async (accountId: number): Promise<Account | null> => {
-    // Si ya está en caché, devolverla
-    if (accounts.value.has(accountId)) {
-      console.log('✅ Cuenta obtenida desde caché:', accountId);
-      return accounts.value.get(accountId)!;
-    }
-
     try {
-      console.log(`📡 GET /api/Account/${accountId}`);
-      
-      const response = await fetch(`${API_BASE_URL}/Account/${accountId}`, {
-        method: 'GET',
-        headers: getAuthHeaders()
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          console.error('❌ No autorizado - redirigiendo a login');
-          localStorage.removeItem('wanda_auth_token');
-          localStorage.removeItem('wanda_user_id');
-          window.location.href = '/login';
-          return null;
-        }
-        
-        if (response.status === 404) {
-          console.error('❌ Cuenta no encontrada');
-          return null;
-        }
-        
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      // Verificar caché primero
+      const cached = accountCache.value.get(accountId);
+      if (cached) {
+        console.log('✅ Cuenta desde caché:', accountId);
+        return cached;
       }
 
-      const account = await response.json();
-      
-      console.log('✅ Cuenta cargada:', account);
+      // Cargar desde API
+      console.log('📡 Cargando cuenta desde API:', accountId);
+      const account = await apiService.getAccount(accountId);
       
       // Guardar en caché
-      accounts.value.set(accountId, account);
+      accountCache.value.set(accountId, account);
+      console.log('✅ Cuenta cargada:', account.name);
       
       return account;
-
+      
     } catch (error) {
       console.error('❌ Error al cargar cuenta:', error);
       return null;
@@ -114,159 +51,83 @@ export const useAccountStore = defineStore('account', () => {
 
   /**
    * GET /api/Account/{accountId}/users
-   * Obtener los usuarios/miembros de una cuenta (para cuentas conjuntas)
+   * Obtener los miembros de una cuenta conjunta
    */
-  const fetchAccountMembers = async (accountId: number) => {
+  const fetchAccountMembers = async (accountId: number): Promise<User[]> => {
     try {
-      console.log(`📡 GET /api/Account/${accountId}/users`);
+      console.log(`📡 Cargando miembros de la cuenta ${accountId}`);
       
-      const response = await fetch(`${API_BASE_URL}/Account/${accountId}/users`, {
-        method: 'GET',
-        headers: getAuthHeaders()
-      });
-
-      if (!response.ok) {
-        if (response.status === 400) {
-          throw new Error('ID de cuenta inválido');
-        }
-        if (response.status === 404) {
-          const errorText = await response.text();
-          throw new Error(errorText || 'Cuenta no encontrada');
-        }
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const members = await response.json();
-      console.log('✅ Miembros de la cuenta cargados:', members);
+      const members = await apiService.getAccountMembers(accountId);
       
+      console.log('✅ Miembros cargados:', members.length);
       return members;
-
+      
     } catch (error) {
       console.error('❌ Error al cargar miembros de la cuenta:', error);
-      throw error;
+      return [];
     }
   };
 
   /**
    * POST /api/Account
-   * Crear una nueva cuenta CONJUNTA (joint account)
-   * 
-   * NOTA: Las cuentas personales se crean automáticamente al crear un usuario.
-   * Este endpoint SOLO se usa para crear cuentas compartidas.
+   * Crear una cuenta conjunta
    */
-  const createJointAccount = async (accountData: {
-    name: string;
-    user_ids: number[]; // IDs de los usuarios que compartirán la cuenta
-    weekly_budget?: number;
-    monthly_budget?: number;
-    account_picture_url?: string;
-  }): Promise<boolean> => {
-    try {
-      console.log('📡 POST /api/Account (Joint Account)');
+// src/stores/AccountStore.ts
 
-      const response = await fetch(`${API_BASE_URL}/Account`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(accountData)
-      });
-
-      if (!response.ok) {
-        if (response.status === 400) {
-          const errorText = await response.text();
-          throw new Error(errorText || 'Datos inválidos');
-        }
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      console.log('✅ Cuenta conjunta creada exitosamente');
-
-      // Limpiar caché para forzar recarga
-      accounts.value.clear();
-
-      return true;
-
-    } catch (error) {
-      console.error('❌ Error al crear cuenta conjunta:', error);
-      throw error;
-    }
-  };
+const createJointAccount = async (data: {
+  name: string;
+  userIds: number[]; // ✅ Mantener userIds en el store (más semántico)
+}): Promise<void> => {
+  isCreatingAccount.value = true;
+  
+  try {
+    console.log('➕ Creando cuenta conjunta:', data.name);
+    console.log('🔢 User IDs:', data.userIds);
+    
+    // ✅ Llamar al backend con member_Ids (como espera el backend)
+    await apiService.createJointAccount({
+      name: data.name,
+      member_Ids: data.userIds // ✅ Mapear userIds → member_Ids
+    });
+    
+    console.log('✅ Cuenta conjunta creada exitosamente');
+    clearCache();
+    
+  } catch (error) {
+    console.error('❌ Error creando cuenta conjunta:', error);
+    throw error;
+  } finally {
+    isCreatingAccount.value = false;
+  }
+};
 
   /**
    * PUT /api/Account/{accountId}
    * Actualizar una cuenta existente
    */
   const updateAccount = async (
-    accountId: number,
-    updates: {
+    accountId: number, 
+    data: {
       name?: string;
       weekly_budget?: number;
       monthly_budget?: number;
       account_picture_url?: string;
     }
-  ): Promise<boolean> => {
+  ): Promise<void> => {
     try {
-      console.log(`📡 PUT /api/Account/${accountId}`);
-
-      const response = await fetch(`${API_BASE_URL}/Account/${accountId}`, {
-        method: 'PUT',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(updates)
-      });
-
-      if (!response.ok) {
-        if (response.status === 400) {
-          const errorText = await response.text();
-          throw new Error(errorText || 'ID no válido o datos incorrectos');
-        }
-        if (response.status === 404) {
-          throw new Error('Cuenta no encontrada');
-        }
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      console.log('📡 Actualizando cuenta:', accountId, data);
+      
+      await apiService.updateAccount(accountId, data);
+      
+      // Actualizar caché
+      const cached = accountCache.value.get(accountId);
+      if (cached) {
+        accountCache.value.set(accountId, { ...cached, ...data });
+        console.log('✅ Caché actualizado');
       }
-
-      console.log('✅ Cuenta actualizada');
-
-      // Invalidar caché de esta cuenta
-      accounts.value.delete(accountId);
-
-      return true;
-
+      
     } catch (error) {
-      console.error('❌ Error al actualizar cuenta:', error);
-      throw error;
-    }
-  };
-
-  /**
-   * DELETE /api/Account/{accountId}
-   * Eliminar una cuenta
-   */
-  const deleteAccount = async (accountId: number): Promise<boolean> => {
-    try {
-      console.log(`📡 DELETE /api/Account/${accountId}`);
-
-      const response = await fetch(`${API_BASE_URL}/Account/${accountId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-      });
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          const errorText = await response.text();
-          throw new Error(errorText || 'Cuenta no encontrada');
-        }
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      console.log('✅ Cuenta eliminada');
-
-      // Eliminar del caché
-      accounts.value.delete(accountId);
-
-      return true;
-
-    } catch (error) {
-      console.error('❌ Error al eliminar cuenta:', error);
+      console.error('❌ Error actualizando cuenta:', error);
       throw error;
     }
   };
@@ -275,46 +136,49 @@ export const useAccountStore = defineStore('account', () => {
    * Obtener cuenta desde caché (sin llamada al backend)
    */
   const getAccountFromCache = (accountId: number): Account | null => {
-    if (accounts.value.has(accountId)) {
-      return accounts.value.get(accountId)!;
-    }
-    return null;
-  };
-
-  /**
-   * Limpiar caché de una cuenta específica o todo
-   */
-  const clearCache = (accountId?: number) => {
-    if (accountId) {
-      accounts.value.delete(accountId);
-    } else {
-      accounts.value.clear();
-    }
+    return accountCache.value.get(accountId) || null;
   };
 
   /**
    * Refrescar cuenta (forzar recarga desde backend)
    */
   const refreshAccount = async (accountId: number): Promise<Account | null> => {
-    accounts.value.delete(accountId);
+    // Invalidar caché
+    accountCache.value.delete(accountId);
+    
+    // Recargar
     return await fetchAccount(accountId);
   };
 
+  /**
+   * Limpiar caché de cuentas
+   */
+  const clearCache = (accountId?: number) => {
+    if (accountId) {
+      accountCache.value.delete(accountId);
+      console.log('🗑️ Caché limpiado para cuenta:', accountId);
+    } else {
+      accountCache.value.clear();
+      console.log('🗑️ Caché de cuentas limpiado completamente');
+    }
+  };
+
+  // ==================== RETURN ====================
+  
   return {
     // Estado
-    accounts,
+    accountCache,
+    isCreatingAccount,
     
-    // Métodos principales
-    fetchAllAccounts,
+    // Actions principales
     fetchAccount,
     fetchAccountMembers,
-    createJointAccount, // ⚠️ Solo para cuentas conjuntas
+    createJointAccount,
     updateAccount,
-    deleteAccount,
     
-    // Métodos auxiliares
+    // Utilidades
     getAccountFromCache,
-    clearCache,
-    refreshAccount
+    refreshAccount,
+    clearCache
   };
 });

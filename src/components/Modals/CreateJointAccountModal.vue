@@ -158,7 +158,7 @@ const props = defineProps<Props>();
 
 const emit = defineEmits<{
   close: [];
-  createAccount: [accountName: string, userEmails: string[]];
+  createAccount: [accountName: string, userIds: number[]];
 }>();
 
 // ✅ Usar el store
@@ -300,16 +300,19 @@ const handleCreateAccount = async () => {
   errorMessage.value = '';
 
   try {
-    // ✅ Enviar todos los emails (usuario actual + usuarios añadidos)
-    const userEmails = [
-      props.currentUser.email,
-      ...addedUsersWithAccounts.value.map(item => item.user.email)
+    // ✅ CORRECCIÓN: Recoger los user_ids (números), NO emails
+    const userIds = [
+      props.currentUser.user_id, // ✅ user_id del usuario actual (número)
+      ...addedUsersWithAccounts.value.map(item => item.user.user_id) // ✅ user_ids de los añadidos (números)
     ];
     
-    console.log('➕ Creando cuenta conjunta con emails:', userEmails);
+    console.log('1️⃣ CreateJointAccountModal emitiendo:');
+    console.log('   Nombre:', accountName.value.trim());
+    console.log('   User IDs:', userIds);
+    console.log('   Tipo de userIds:', typeof userIds, Array.isArray(userIds));
     
     // ✅ Emitir evento al padre
-    emit('createAccount', accountName.value.trim(), userEmails);
+    emit('createAccount', accountName.value.trim(), userIds);
     
     // ✅ Cerrar modal
     handleClose();
@@ -351,7 +354,6 @@ const getAccountAvatar = (account: Account | null): string => {
   return getAvatarDataUrl(account.account_type || 'personal');
 };
 </script>
-
 <style scoped lang="scss">
 @import '@/styles/base/variables.scss';
 

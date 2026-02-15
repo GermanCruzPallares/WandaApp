@@ -32,7 +32,7 @@ export const useObjectiveStore = defineStore('objective', () => {
    */
   const fetchObjectives = async (accountId: number): Promise<Objective[]> => {
     try {
-      console.log(`📡 GET /api/accounts/${accountId}/objectives`);
+
       
       const response = await fetch(`${API_BASE_URL}/accounts/${accountId}/objectives`, {
         method: 'GET',
@@ -59,8 +59,6 @@ export const useObjectiveStore = defineStore('objective', () => {
 
       const objectives = await response.json();
       
-      console.log('✅ Objetivos cargados:', objectives);
-      
       // Guardar en caché
       objectivesByAccount.value.set(accountId, objectives);
       
@@ -78,7 +76,7 @@ export const useObjectiveStore = defineStore('objective', () => {
    */
   const fetchObjectiveById = async (objectiveId: number): Promise<Objective | null> => {
     try {
-      console.log(`📡 GET /api/objectives/${objectiveId}`);
+
       
       const response = await fetch(`${API_BASE_URL}/objectives/${objectiveId}`, {
         method: 'GET',
@@ -94,7 +92,7 @@ export const useObjectiveStore = defineStore('objective', () => {
       }
 
       const objective = await response.json();
-      console.log('✅ Objetivo cargado:', objective);
+
       
       return objective;
 
@@ -134,8 +132,7 @@ export const useObjectiveStore = defineStore('objective', () => {
       }
 
       const newObjective = await response.json();
-      console.log('✅ Objetivo creado:', newObjective);
-
+  
       // Invalidar caché para recargar
       objectivesByAccount.value.delete(accountId);
       
@@ -165,7 +162,6 @@ export const useObjectiveStore = defineStore('objective', () => {
     }
   ): Promise<boolean> => {
     try {
-      console.log(`📡 PUT /api/${objectiveId}`);
 
       const response = await fetch(`${API_BASE_URL}/${objectiveId}`, {
         method: 'PUT',
