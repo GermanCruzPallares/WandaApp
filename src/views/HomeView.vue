@@ -38,7 +38,6 @@ const activeAccount = computed(() => {
 
 const objectives = ref<Objective[]>([]);
 const transactions = ref<Transaction[]>([]);
-const isAccountModalOpen = ref(false);
 const activeMenuItem = ref('inicio');
 
 // ==================== LIFECYCLE ====================

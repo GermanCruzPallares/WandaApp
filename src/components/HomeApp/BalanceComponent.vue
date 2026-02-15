@@ -1,14 +1,9 @@
 <template>
-  <div>
+  <div v-if="!isLoading && account !== null">
     <SectionTitle title="| Balance" />
     
-    <!-- Estado de carga -->
-    <div v-if="isLoading" class="loading-state">
-      <p>Cargando balance...</p>
-    </div>
-
     <!-- Contenido -->
-    <div v-else class="weekly-balance">
+    <div class="weekly-balance">
       <div class="weekly-balance__header">
         <h4 class="weekly-balance__title">Balance Semanal</h4>
         <button class="weekly-balance__info-btn" @click="openInfoModal">

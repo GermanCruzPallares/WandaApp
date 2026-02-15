@@ -1,3 +1,5 @@
+// src/services/apiService.ts
+
 import { authService } from './authService';
 import type { Account, User } from '@/types/models';
 
@@ -89,25 +91,52 @@ class ApiService {
   }
 
   /**
+   * GET /api/User?email={email}
+   * Buscar usuario por email usando query parameter
+   */
+  async getUserByEmail(email: string): Promise<User | null> {
+    try {
+      console.log(`📡 GET /api/User?email=${email}`);
+      
+      const response = await fetch(`${API_BASE_URL}/User?email=${encodeURIComponent(email)}`, {
+        method: 'GET',
+        headers: authService.getAuthHeaders(),
+      });
+
+      if (response.status === 401) {
+        authService.logout();
+        throw new Error('Sesión expirada. Por favor, inicia sesión de nuevo.');
+      }
+
+      if (!response.ok) {
+        // Si es 404 o cualquier otro error, el usuario no existe
+        console.log('❌ Usuario no encontrado o error en la petición');
+        return null;
+      }
+
+      const users = await response.json();
+      
+      // El backend devuelve una lista, tomar el primer usuario
+      if (Array.isArray(users) && users.length > 0) {
+        console.log('✅ Usuario encontrado:', users[0].name);
+        return users[0];
+      }
+      
+      console.log('❌ Usuario no encontrado');
+      return null;
+      
+    } catch (error) {
+      console.error('❌ Error buscando usuario por email:', error);
+      return null;
+    }
+  }
+
+  /**
    * GET /api/User/{userId}/accounts
    */
   async getUserAccounts(userId: number): Promise<Account[]> {
     console.log(`📡 GET /api/User/${userId}/accounts`);
     const accounts = await this.fetchWithAuth<Account[]>(`${API_BASE_URL}/User/${userId}/accounts`);
-    
-    // 🔍 DEBUG: Ver qué devuelve el backend
-    console.log('🔍 DEBUG: Respuesta cruda del backend:', accounts);
-    console.log('🔍 DEBUG: Tipo de respuesta:', Array.isArray(accounts) ? 'Array' : typeof accounts);
-    
-    if (Array.isArray(accounts) && accounts.length > 0) {
-      const firstAccount = accounts[0];
-      
-      // Verificar que existe antes de usar Object.keys
-      if (firstAccount) {
-        console.log('🔍 DEBUG: Primera cuenta:', firstAccount);
-        console.log('🔍 DEBUG: Claves de la primera cuenta:', Object.keys(firstAccount));
-      }
-    }
     
     return accounts;
   }

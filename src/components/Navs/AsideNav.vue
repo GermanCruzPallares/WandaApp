@@ -11,12 +11,11 @@
         :key="item.id"
         :to="item.path"
         class="menu-item"
-        :class="{ 'menu-item--active': item.id === activeItem }"
-        @click="handleMenuClick(item.id)"
+        :class="{ 'menu-item--active': currentRoute === item.path }"
       >
         <component 
           :is="item.icon" 
-          :is-active="item.id === activeItem"
+          :is-active="currentRoute === item.path"
           class="menu-item__icon" 
         />
         <span class="menu-item__label">{{ item.label }}</span>
@@ -24,27 +23,25 @@
     </nav>
 
     <div class="aside-nav__footer">
-      <div v-if="isLoading" class="user-button user-button--loading">
-        <div class="skeleton-avatar"></div>
-        <div class="skeleton-text"></div>
-      </div>
-
-      <button v-else class="user-button" @click="openAccountSwitcher">
+      <button class="user-button" @click="openAccountSwitcher">
         <img 
           :src="avatarSrc" 
           alt="User avatar"
           class="user-button__avatar"
         />
-        <span class="user-button__name">{{ account?.name || 'Cuenta' }}</span>
+        <span class="user-button__name">
+          {{ userStore.activeAccount?.name || 'Cuenta' }}
+        </span>
       </button>
     </div>
 
     <!-- ✅ Modal integrado en el AsideNav -->
     <AccountSwitcherModal
+      v-if="userStore.currentUser"
       :is-open="isAccountSwitcherOpen"
-      :user-id="userId"
-      :active-account-id="accountId"
-      :current-user="currentUser!"
+      :user-id="userStore.userId"
+      :active-account-id="userStore.activeAccountId"
+      :current-user="userStore.currentUser"
       @close="closeAccountSwitcher"
       @select-account="handleSelectAccount"
       @create-joint-account="handleCreateJointAccount"
@@ -53,12 +50,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
-import { useAccountStore } from '@/stores/AccountStore';
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/UserStore';
+import { useAccountStore } from '@/stores/AccountStore';
 import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
 import AccountSwitcherModal from '@/components/Modals/AccountSwitcherModal.vue';
-import type { Account } from '@/types/models';
 import HomeIcon from '../icons/HomeIcon.vue';
 import PlusIcon from '../icons/PlusIcon.vue';
 import CalculatorIcon from '../icons/CalculatorIcon.vue';
@@ -71,47 +68,27 @@ interface MenuItem {
   path: string;
 }
 
-interface Props {
-  activeItem?: string;
-  accountId?: number;
-  userId?: number;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  activeItem: 'inicio'
-});
-
-const emit = defineEmits<{
-  navigate: [itemId: string];
-  accountLoaded: [account: Account];
-  accountChanged: [accountId: number];
-}>();
-
-// ✅ Usar los stores de Pinia
-const accountStore = useAccountStore();
+// ✅ Sin props, todo del store
 const userStore = useUserStore();
+const accountStore = useAccountStore();
+const router = useRouter();
 
-// Estado local
-const account = ref<Account | null>(null);
-const isLoading = ref(false);
+// ✅ Estado local solo para el modal
 const isAccountSwitcherOpen = ref(false);
 
-// ✅ Obtener currentUser del store
-const currentUser = computed(() => userStore.currentUser);
-const userId = computed(() => props.userId || userStore.userId);
+// ✅ Obtener ruta activa desde vue-router
+const currentRoute = computed(() => router.currentRoute.value.path);
 
-// ✅ NUEVA LÓGICA: Obtener avatar con fallback automático
+// ✅ Avatar reactivo del store
 const avatarSrc = computed(() => {
-  if (!account.value) return getAvatarDataUrl('personal');
+  const account = userStore.activeAccount;
+  if (!account) return getAvatarDataUrl('personal');
   
-  // Si hay imagen personalizada, usarla
-  if (account.value.account_picture_url) {
-    return account.value.account_picture_url;
+  if (account.account_picture_url) {
+    return account.account_picture_url;
   }
   
-  // Si no, usar avatar por defecto según tipo de cuenta
-  const accountType = account.value.account_type || 'personal';
-  return getAvatarDataUrl(accountType);
+  return getAvatarDataUrl(account.account_type || 'personal');
 });
 
 const menuItems: MenuItem[] = [
@@ -120,37 +97,6 @@ const menuItems: MenuItem[] = [
   { id: 'libro', label: 'Libro Cuentas', icon: CalculatorIcon, path: '/book' },
   { id: 'perfil', label: 'Perfil', icon: UserIcon, path: '/profile' }, 
 ];
-
-// ✅ Cargar cuenta desde el store
-const loadAccount = async (accountId: number) => {
-  isLoading.value = true;
-  
-  account.value = await accountStore.fetchAccount(accountId);
-  
-  if (account.value) {
-    emit('accountLoaded', account.value);
-  }
-  
-  isLoading.value = false;
-};
-
-// Cargar cuando se monta
-onMounted(() => {
-  if (props.accountId) {
-    loadAccount(props.accountId);
-  }
-});
-
-// Recargar cuando cambia la cuenta
-watch(() => props.accountId, (newAccountId) => {
-  if (newAccountId) {
-    loadAccount(newAccountId);
-  }
-});
-
-const handleMenuClick = (itemId: string) => {
-  emit('navigate', itemId);
-};
 
 // ✅ Funciones del modal
 const openAccountSwitcher = () => {
@@ -166,14 +112,32 @@ const closeAccountSwitcher = () => {
 const handleSelectAccount = (accountId: number) => {
   console.log('🔄 Account selected:', accountId);
   userStore.setActiveAccount(accountId);
-  emit('accountChanged', accountId);
   closeAccountSwitcher();
 };
 
 const handleCreateJointAccount = async (accountName: string, userEmails: string[]) => {
   console.log('➕ Creating joint account:', accountName, userEmails);
-  // TODO: Implementar creación de cuenta conjunta
-  closeAccountSwitcher();
+  
+  try {
+    // Convertir emails a user_ids
+    const userIds: number[] = [];
+    for (const email of userEmails) {
+      const user = await userStore.checkUserExists(email);
+      if (user) {
+        userIds.push(user.user_id);
+      }
+    }
+    
+    await accountStore.createJointAccount({
+      name: accountName,
+      user_ids: userIds
+    });
+    
+    await userStore.refreshAccounts();
+    closeAccountSwitcher();
+  } catch (error) {
+    console.error('❌ Error creando cuenta conjunta:', error);
+  }
 };
 </script>
 
@@ -285,14 +249,6 @@ const handleCreateJointAccount = async (accountName: string, userEmails: string[
     transform: translateX(2px);
   }
 
-  &--loading {
-    cursor: default;
-    
-    &:hover {
-      transform: none;
-    }
-  }
-
   &__avatar {
     width: 40px;
     height: 40px;
@@ -308,24 +264,4 @@ const handleCreateJointAccount = async (accountName: string, userEmails: string[
     text-align: left;
   }
 }
-
-.skeleton-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: loading 1.5s infinite;
-}
-
-.skeleton-text {
-  flex: 1;
-  height: 16px;
-  border-radius: 4px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: loading 1.5s infinite;
-}
-
-
 </style>

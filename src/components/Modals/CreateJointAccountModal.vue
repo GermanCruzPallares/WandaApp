@@ -42,10 +42,13 @@
               </div>
             </div>
 
+            <!-- Mensaje de error -->
+            <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+
             <!-- Botón añadir usuario -->
             <button 
               class="add-user-btn" 
-              :disabled="isValidatingEmail"
+              :disabled="isValidatingEmail || !isValidEmail(newUserEmail)"
               @click="handleAddUser"
             >
               {{ isValidatingEmail ? 'Validando...' : 'Añadir usuario +' }}
@@ -60,7 +63,7 @@
               <!-- Usuario actual (el que crea la cuenta) -->
               <div class="user-item user-item--owner">
                 <img 
-                  :src="getAvatarUrl(currentUser.email)" 
+                  :src="getAccountAvatar(userStore.activeAccount)" 
                   :alt="currentUser.name"
                   class="user-avatar"
                 />
@@ -69,19 +72,19 @@
 
               <!-- Usuarios añadidos -->
               <div
-                v-for="user in addedUsers"
-                :key="user.email"
+                v-for="item in addedUsersWithAccounts"
+                :key="item.user.email"
                 class="user-item"
               >
                 <img 
-                  :src="getAvatarUrl(user.email)" 
-                  :alt="user.name"
+                  :src="getAccountAvatar(item.account)" 
+                  :alt="item.user.name"
                   class="user-avatar"
                 />
-                <span class="user-name">{{ user.name }}</span>
+                <span class="user-name">{{ item.user.name }}</span>
                 <button 
                   class="remove-user-btn"
-                  @click="handleRemoveUser(user.email)"
+                  @click="handleRemoveUser(item.user.email)"
                   title="Eliminar usuario"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -92,7 +95,7 @@
             </div>
 
             <!-- Mensaje de ayuda -->
-            <p v-if="addedUsers.length === 0" class="help-text">
+            <p v-if="addedUsersWithAccounts.length === 0" class="help-text">
               Añade al menos un usuario más para crear la cuenta conjunta
             </p>
           </section>
@@ -107,9 +110,10 @@
                 type="text"
                 placeholder="Ej: Casa Ana y Juan"
                 class="account-name-input"
+                maxlength="50"
               />
               <button 
-                v-if="accountName.length > 0"
+                v-if="accountName.trim().length > 0"
                 class="input-check"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -122,14 +126,14 @@
           <!-- Botón crear cuenta -->
           <button 
             class="create-account-btn"
-            :disabled="!canCreateAccount"
+            :disabled="!canCreateAccount || isCreating"
             @click="handleCreateAccount"
           >
-            Crear cuenta
+            {{ isCreating ? 'Creando cuenta...' : 'Crear cuenta' }}
           </button>
 
-          <!-- Mensaje de error/validación -->
-          <p v-if="!canCreateAccount && (addedUsers.length > 0 || accountName.length > 0)" class="validation-message">
+          <!-- Mensaje de validación -->
+          <p v-if="validationMessage" class="validation-message">
             {{ validationMessage }}
           </p>
         </div>
@@ -141,7 +145,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useUserStore } from '@/stores/UserStore';
-import type { User } from '@/types/models';
+import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
+import { apiService } from '@/services/apiService';
+import type { User, Account } from '@/types/models';
 
 interface Props {
   isOpen: boolean;
@@ -155,106 +161,194 @@ const emit = defineEmits<{
   createAccount: [accountName: string, userEmails: string[]];
 }>();
 
-// ✅ Usar el store de Pinia
+// ✅ Usar el store
 const userStore = useUserStore();
+
+// ==================== ESTADO LOCAL ====================
 
 const newUserEmail = ref('');
 const accountName = ref('');
-const addedUsers = ref<User[]>([]);
+const addedUsersWithAccounts = ref<Array<{ 
+  user: User; 
+  account: Account | null;
+}>>([]);
 const isValidatingEmail = ref(false);
+const isCreating = ref(false);
+const errorMessage = ref('');
 
-// Validar email
-const isValidEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
+// ==================== COMPUTED ====================
 
 // Verificar si se puede crear la cuenta
 const canCreateAccount = computed(() => {
-  return addedUsers.value.length >= 1 && accountName.value.trim().length > 0;
+  return addedUsersWithAccounts.value.length >= 1 && accountName.value.trim().length > 0;
 });
 
 // Mensaje de validación
 const validationMessage = computed(() => {
-  if (addedUsers.value.length === 0) {
-    return 'Debes añadir al menos un usuario más';
-  }
-  if (accountName.value.trim().length === 0) {
-    return 'Debes introducir un nombre para la cuenta';
+  if (!canCreateAccount.value) {
+    if (addedUsersWithAccounts.value.length === 0) {
+      return 'Añade al menos un usuario más para continuar';
+    }
+    if (accountName.value.trim().length === 0) {
+      return 'Introduce un nombre para la cuenta';
+    }
   }
   return '';
 });
 
-// ✅ Añadir usuario con validación desde el store
+// ==================== VALIDACIONES ====================
+
+// Validar formato de email
+const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email.trim());
+};
+
+// ==================== FUNCIONES ====================
+
+/**
+ * Añadir usuario con validación
+ */
 const handleAddUser = async () => {
+  errorMessage.value = '';
+
+  // Validar formato de email
   if (!isValidEmail(newUserEmail.value)) {
-    alert('Por favor, introduce un email válido');
+    errorMessage.value = 'Por favor, introduce un email válido';
     return;
   }
 
+  const emailToCheck = newUserEmail.value.trim().toLowerCase();
+
   // Verificar si es el usuario actual
-  if (newUserEmail.value.toLowerCase() === props.currentUser.email.toLowerCase()) {
-    alert('No puedes añadirte a ti mismo. Ya eres miembro de la cuenta.');
+  if (emailToCheck === props.currentUser.email.toLowerCase()) {
+    errorMessage.value = 'No puedes añadirte a ti mismo. Ya eres miembro de la cuenta.';
     newUserEmail.value = '';
     return;
   }
 
   // Verificar si el usuario ya está añadido
-  const alreadyAdded = addedUsers.value.some(
-    u => u.email.toLowerCase() === newUserEmail.value.toLowerCase()
+  const alreadyAdded = addedUsersWithAccounts.value.some(
+    item => item.user.email.toLowerCase() === emailToCheck
   );
   if (alreadyAdded) {
-    alert('Este usuario ya está añadido');
+    errorMessage.value = 'Este usuario ya está añadido';
     newUserEmail.value = '';
     return;
   }
 
-  // ✅ Validar usando el store
   isValidatingEmail.value = true;
-  const user = await userStore.checkUserExists(newUserEmail.value);
-  isValidatingEmail.value = false;
-  
-  if (!user) {
-    alert('Este usuario no está registrado en Wanda');
-    return;
+  try {
+    // ✅ PASO 1: Buscar usuario por email
+    const user = await userStore.checkUserExists(newUserEmail.value.trim());
+    
+    if (!user) {
+      errorMessage.value = 'Este usuario no está registrado en Wanda';
+      return;
+    }
+
+    console.log('✅ Usuario encontrado:', user);
+
+    // ✅ PASO 2: Buscar cuentas del usuario usando apiService
+    const accounts = await apiService.getUserAccounts(user.user_id);
+    
+    console.log('📋 Cuentas del usuario:', accounts);
+
+    // ✅ PASO 3: Filtrar cuenta personal
+    const personalAccount = accounts.find(acc => acc.account_type === 'personal') || null;
+
+    if (personalAccount) {
+      console.log('✅ Cuenta personal encontrada:', personalAccount.account_id);
+    } else {
+      console.warn('⚠️ Usuario sin cuenta personal');
+    }
+
+    // ✅ PASO 4: Añadir usuario con su cuenta personal
+    addedUsersWithAccounts.value.push({
+      user,
+      account: personalAccount
+    });
+    
+    newUserEmail.value = '';
+    errorMessage.value = '';
+    
+  } catch (error) {
+    console.error('❌ Error validando usuario:', error);
+    errorMessage.value = 'Error al validar el usuario. Intenta de nuevo.';
+  } finally {
+    isValidatingEmail.value = false;
   }
-
-  addedUsers.value.push(user);
-  newUserEmail.value = '';
 };
 
-// Eliminar usuario
+/**
+ * Eliminar usuario de la lista
+ */
 const handleRemoveUser = (email: string) => {
-  addedUsers.value = addedUsers.value.filter(u => u.email !== email);
+  addedUsersWithAccounts.value = addedUsersWithAccounts.value.filter(
+    item => item.user.email.toLowerCase() !== email.toLowerCase()
+  );
+  errorMessage.value = '';
 };
 
-// Crear cuenta
-const handleCreateAccount = () => {
+/**
+ * Crear cuenta conjunta
+ */
+const handleCreateAccount = async () => {
   if (!canCreateAccount.value) return;
 
-  // Enviar solo los emails al backend (incluye al usuario actual)
-  const userEmails = [
-    props.currentUser.email,
-    ...addedUsers.value.map(u => u.email)
-  ];
-  
-  emit('createAccount', accountName.value, userEmails);
-  handleClose();
+  isCreating.value = true;
+  errorMessage.value = '';
+
+  try {
+    // ✅ Enviar todos los emails (usuario actual + usuarios añadidos)
+    const userEmails = [
+      props.currentUser.email,
+      ...addedUsersWithAccounts.value.map(item => item.user.email)
+    ];
+    
+    console.log('➕ Creando cuenta conjunta con emails:', userEmails);
+    
+    // ✅ Emitir evento al padre
+    emit('createAccount', accountName.value.trim(), userEmails);
+    
+    // ✅ Cerrar modal
+    handleClose();
+    
+  } catch (error) {
+    console.error('❌ Error creando cuenta:', error);
+    errorMessage.value = 'Error al crear la cuenta. Por favor, intenta de nuevo.';
+  } finally {
+    isCreating.value = false;
+  }
 };
 
-// Cerrar modal
+/**
+ * Cerrar modal y limpiar formulario
+ */
 const handleClose = () => {
-  // Limpiar formulario
   newUserEmail.value = '';
   accountName.value = '';
-  addedUsers.value = [];
+  addedUsersWithAccounts.value = [];
+  errorMessage.value = '';
+  isValidatingEmail.value = false;
+  isCreating.value = false;
   
   emit('close');
 };
 
-// Generar avatar desde el email
-const getAvatarUrl = (email: string): string => {
-  return `https://i.pravatar.cc/150?u=${email}`;
+/**
+ * ✅ Obtener avatar de la cuenta
+ */
+const getAccountAvatar = (account: Account | null): string => {
+  if (!account) {
+    return getAvatarDataUrl('personal');
+  }
+  
+  if (account.account_picture_url) {
+    return account.account_picture_url;
+  }
+  
+  return getAvatarDataUrl(account.account_type || 'personal');
 };
 </script>
 
@@ -391,6 +485,16 @@ const getAvatarUrl = (email: string): string => {
   to { transform: rotate(360deg); }
 }
 
+.error-message {
+  font-size: 12px;
+  color: $color-danger;
+  margin: 8px 0;
+  padding: 8px 12px;
+  background-color: rgba(244, 67, 54, 0.1);
+  border-radius: 4px;
+  border-left: 3px solid $color-danger;
+}
+
 .add-user-btn {
   width: 100%;
   padding: 14px;
@@ -507,9 +611,10 @@ const getAvatarUrl = (email: string): string => {
 
 .validation-message {
   font-size: 12px;
-  color: $color-danger;
+  color: $color-text-gray;
   margin: 12px 0 0 0;
   text-align: center;
+  font-style: italic;
 }
 
 // Animaciones

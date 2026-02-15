@@ -1,5 +1,6 @@
 <template>
-  <div>
+  <!-- ✅ Solo renderizar cuando NO está cargando -->
+  <div v-if="!isLoading">
     <SectionTitle 
       :title="`| Objetivos (${objectives.length})`"
       :show-add-button="true"
@@ -7,12 +8,7 @@
       @add="handleAddObjective"
     />
     
-    <!-- Estado de carga -->
-    <div v-if="isLoading" class="loading-state">
-      <p>Cargando objetivos...</p>
-    </div>
-
-    <section v-else class="objectives">
+    <section class="objectives">
       <div class="objectives__list">
         <RouterLink 
           v-for="objective in objectives"
@@ -46,6 +42,11 @@
             <span class="objective-card__target">{{ formatCurrency(objective.target_amount) }}</span>
           </div>
         </RouterLink>
+      </div>
+
+      <!-- Mensaje si no hay objetivos -->
+      <div v-if="objectives.length === 0" class="empty-state">
+        <p>No hay objetivos registrados</p>
       </div>
     </section>
   </div>
@@ -122,7 +123,6 @@ const handleAddObjective = () => {
   emit('addObjective');
 };
 </script>
-
 <style scoped lang="scss">
 @import '@/styles/base/variables.scss';
 

@@ -114,42 +114,37 @@ const handleEdit = () => emit('edit');
 </script>
 
 <template>
-  <div class="dashboard-card">
+  <!-- ✅ Solo renderizar cuando NO está cargando y account existe -->
+  <div v-if="!isLoading && account !== null" class="dashboard-card">
     <div class="dashboard-card__header">
       <h2 class="dashboard-card__title">{{ greeting }}</h2>
       <button class="dashboard-card__edit-btn" @click="handleEdit">
         Editar
       </button>
     </div>
-    
-    <div v-if="isLoading" class="dashboard-card__loading">
-      <p>Cargando...</p>
-    </div>
 
-    <template v-else>
-      <div class="dashboard-card__balance">
-        {{ formattedBalance }}
-      </div>
-      
-      <div class="dashboard-card__stats">
-        <div class="stat">
-          <div class="stat__labels">
-            <div class="stat__label">Gasto mensual</div>
-            <div class="stat__label">Presupuesto mensual</div>
-          </div>
-          <div class="stat__bar stat__bar--expense">
-            <div 
-              class="stat__bar-fill stat__bar-fill--expense" 
-              :style="{ width: expensePercentage + '%' }"
-            ></div>
-          </div>
-          <div class="stat__amounts">
-            <div class="stat__amount stat__amount--expense">{{ formattedMonthlyExpense }}</div>
-            <div class="stat__amount stat__amount--budget">{{ formattedMonthlyBudget }}</div>
-          </div>
+    <div class="dashboard-card__balance">
+      {{ formattedBalance }}
+    </div>
+    
+    <div class="dashboard-card__stats">
+      <div class="stat">
+        <div class="stat__labels">
+          <div class="stat__label">Gasto mensual</div>
+          <div class="stat__label">Presupuesto mensual</div>
+        </div>
+        <div class="stat__bar stat__bar--expense">
+          <div 
+            class="stat__bar-fill stat__bar-fill--expense" 
+            :style="{ width: expensePercentage + '%' }"
+          ></div>
+        </div>
+        <div class="stat__amounts">
+          <div class="stat__amount stat__amount--expense">{{ formattedMonthlyExpense }}</div>
+          <div class="stat__amount stat__amount--budget">{{ formattedMonthlyBudget }}</div>
         </div>
       </div>
-    </template>
+    </div>
   </div>
 </template>
 

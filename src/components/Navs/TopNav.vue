@@ -4,13 +4,8 @@
       <img src="../../images/OscuroReducido.png" alt="Logo" class="logo-image" />
     </div>
     
-    <!-- Estado de carga -->
-    <div v-if="isLoading" class="header-nav__avatar header-nav__avatar--loading">
-      <div class="skeleton-avatar"></div>
-    </div>
-
-    <!-- Avatar cargado -->
-    <div v-else class="header-nav__avatar">
+    <!-- Avatar -->
+    <div class="header-nav__avatar">
       <img 
         :src="avatarSrc" 
         alt="User avatar"
@@ -19,12 +14,13 @@
       />
     </div>
 
-    <!-- ✅ Modal integrado en el TopNav -->
+    <!-- ✅ Solo renderizar modal si currentUser existe -->
     <AccountSwitcherModal
+      v-if="userStore.currentUser"
       :is-open="isAccountSwitcherOpen"
-      :user-id="userId"
-      :active-account-id="accountId"
-      :current-user="currentUser!"
+      :user-id="userStore.userId"
+      :active-account-id="userStore.activeAccountId"
+      :current-user="userStore.currentUser"
       @close="closeAccountSwitcher"
       @select-account="handleSelectAccount"
       @create-joint-account="handleCreateJointAccount"
@@ -33,77 +29,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
-import { useAccountStore } from '@/stores/AccountStore';
+import { ref, computed } from 'vue';
 import { useUserStore } from '@/stores/UserStore';
+import { useAccountStore } from '@/stores/AccountStore';
 import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
 import AccountSwitcherModal from '@/components/Modals/AccountSwitcherModal.vue';
-import type { Account } from '@/types/models';
 
-interface Props {
-  accountId?: number;
-  userId?: number;
-}
-
-const props = defineProps<Props>();
-
-const emit = defineEmits<{
-  accountLoaded: [account: Account];
-  accountChanged: [accountId: number];
-}>();
-
-// ✅ Usar los stores de Pinia
-const accountStore = useAccountStore();
+// ✅ Solo stores, sin props
 const userStore = useUserStore();
+const accountStore = useAccountStore();
 
-// Estado local
-const account = ref<Account | null>(null);
-const isLoading = ref(false);
+// ✅ Estado local solo para el modal
 const isAccountSwitcherOpen = ref(false);
 
-// ✅ Obtener currentUser del store
-const currentUser = computed(() => userStore.currentUser);
-const userId = computed(() => props.userId || userStore.userId);
-
-// ✅ NUEVA LÓGICA: Obtener avatar con fallback automático
+// ✅ Avatar reactivo del store
 const avatarSrc = computed(() => {
-  if (!account.value) return getAvatarDataUrl('personal');
+  const account = userStore.activeAccount;
+  if (!account) return getAvatarDataUrl('personal');
   
-  // Si hay imagen personalizada, usarla
-  if (account.value.account_picture_url) {
-    return account.value.account_picture_url;
+  if (account.account_picture_url) {
+    return account.account_picture_url;
   }
   
-  // Si no, usar avatar por defecto según tipo de cuenta
-  const accountType = account.value.account_type || 'personal';
-  return getAvatarDataUrl(accountType);
-});
-
-// ✅ Cargar cuenta desde el store
-const loadAccount = async (accountId: number) => {
-  isLoading.value = true;
-  
-  account.value = await accountStore.fetchAccount(accountId);
-  
-  if (account.value) {
-    emit('accountLoaded', account.value);
-  }
-  
-  isLoading.value = false;
-};
-
-// Cargar cuando se monta
-onMounted(() => {
-  if (props.accountId) {
-    loadAccount(props.accountId);
-  }
-});
-
-// Recargar cuando cambia la cuenta
-watch(() => props.accountId, (newAccountId) => {
-  if (newAccountId) {
-    loadAccount(newAccountId);
-  }
+  return getAvatarDataUrl(account.account_type || 'personal');
 });
 
 // ✅ Funciones del modal
@@ -120,14 +68,31 @@ const closeAccountSwitcher = () => {
 const handleSelectAccount = (accountId: number) => {
   console.log('🔄 Account selected:', accountId);
   userStore.setActiveAccount(accountId);
-  emit('accountChanged', accountId);
   closeAccountSwitcher();
 };
 
 const handleCreateJointAccount = async (accountName: string, userEmails: string[]) => {
   console.log('➕ Creating joint account:', accountName, userEmails);
-  // TODO: Implementar creación de cuenta conjunta
-  closeAccountSwitcher();
+  
+  try {
+    const userIds: number[] = [];
+    for (const email of userEmails) {
+      const user = await userStore.checkUserExists(email);
+      if (user) {
+        userIds.push(user.user_id);
+      }
+    }
+    
+    await accountStore.createJointAccount({
+      name: accountName,
+      user_ids: userIds
+    });
+    
+    await userStore.refreshAccounts();
+    closeAccountSwitcher();
+  } catch (error) {
+    console.error('❌ Error creando cuenta conjunta:', error);
+  }
 };
 </script>
 
@@ -166,14 +131,6 @@ const handleCreateJointAccount = async (accountName: string, userEmails: string[
     &:active {
       transform: scale(0.95);
     }
-
-    &--loading {
-      cursor: default;
-
-      &:hover {
-        transform: none;
-      }
-    }
     
     .avatar-image {
       width: 40px;
@@ -183,24 +140,6 @@ const handleCreateJointAccount = async (accountName: string, userEmails: string[
       display: block;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
-  }
-}
-
-.skeleton-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: loading 1.5s infinite;
-}
-
-@keyframes loading {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
   }
 }
 </style>

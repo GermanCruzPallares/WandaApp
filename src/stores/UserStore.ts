@@ -6,49 +6,49 @@ import { apiService } from '@/services/apiService';
 
 export const useUserStore = defineStore('user', () => {
   // ==================== ESTADO ====================
-  
+
   // Usuario actual
   const currentUser = ref<User | null>(null);
-  
+
   // Cuentas del usuario actual
   const accounts = ref<Account[]>([]);
-  
-  // ID de la cuenta activa
-  const activeAccountId = ref<number | null>(null);
-  
+
+  // ID de la cuenta activa (0 = no inicializado)
+  const activeAccountId = ref<number>(0);
+
   // Estados de carga
   const isLoadingUser = ref(false);
   const isLoadingAccounts = ref(false);
 
   // ==================== COMPUTED ====================
-  
+
   // Usuario autenticado?
   const isAuthenticated = computed(() => authService.isAuthenticated());
-  
+
   // Token actual
   const token = computed(() => authService.getToken());
-  
+
   // User ID actual
   const userId = computed(() => authService.getUserId());
-  
+
   // Cuenta activa (objeto completo)
   const activeAccount = computed(() => {
-    if (!activeAccountId.value) return null;
+    if (activeAccountId.value === 0) return null;
     return accounts.value.find(acc => acc.account_id === activeAccountId.value) || null;
   });
 
   // ==================== ACTIONS ====================
-  
+
   /**
    * Login del usuario
    */
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       const userId = await authService.login({ email, password });
-      
+
       // Cargar datos del usuario después del login
       await loadUserData(userId);
-      
+
       return true;
     } catch (error) {
       console.error('❌ Error en login:', error);
@@ -59,17 +59,17 @@ export const useUserStore = defineStore('user', () => {
   /**
    * Registro de nuevo usuario
    */
-  const register = async (userData: { 
-    name: string; 
-    email: string; 
-    password: string; 
+  const register = async (userData: {
+    name: string;
+    email: string;
+    password: string;
   }): Promise<boolean> => {
     try {
       const userId = await authService.register(userData);
-      
+
       // Cargar datos del usuario después del registro
       await loadUserData(userId);
-      
+
       return true;
     } catch (error) {
       console.error('❌ Error en registro:', error);
@@ -82,11 +82,11 @@ export const useUserStore = defineStore('user', () => {
    */
   const logout = () => {
     authService.logout();
-    
+
     // Limpiar estado
     currentUser.value = null;
     accounts.value = [];
-    activeAccountId.value = null;
+    activeAccountId.value = 0; // ✅ Resetear a 0
   };
 
   /**
@@ -107,13 +107,20 @@ export const useUserStore = defineStore('user', () => {
       accounts.value = await apiService.getUserAccounts(userId);
       console.log('✅ Cuentas cargadas:', accounts.value);
 
-      // Establecer primera cuenta como activa por defecto
-      if (accounts.value.length > 0 && !activeAccountId.value) {
+      // ✅ Establecer primera cuenta como activa SIEMPRE
+      if (accounts.value.length > 0) {
         const firstAccount = accounts.value[0];
         if (firstAccount) {
           activeAccountId.value = firstAccount.account_id;
           console.log('✅ Cuenta activa establecida:', activeAccountId.value);
+
+          // Persistir en localStorage
+          localStorage.setItem('active_account_id', activeAccountId.value.toString());
         }
+      } else {
+        // ❌ ERROR: Usuario autenticado sin cuentas
+        console.error('❌ Usuario sin cuentas - esto no debería ocurrir');
+        throw new Error('Usuario sin cuentas asociadas');
       }
 
     } catch (error) {
@@ -130,12 +137,12 @@ export const useUserStore = defineStore('user', () => {
    */
   const setActiveAccount = (accountId: number) => {
     const account = accounts.value.find(acc => acc.account_id === accountId);
-    
+
     if (account) {
       activeAccountId.value = accountId;
       console.log('✅ Cuenta activa cambiada a:', account.name);
-      
-      // Persistir en localStorage (opcional)
+
+      // Persistir en localStorage
       localStorage.setItem('active_account_id', accountId.toString());
     } else {
       console.error('❌ Cuenta no encontrada:', accountId);
@@ -154,6 +161,26 @@ export const useUserStore = defineStore('user', () => {
     }
   };
 
+  /**
+   * Verificar si un usuario existe por email
+   */
+  const checkUserExists = async (email: string): Promise<User | null> => {
+    try {
+      console.log('🔍 Verificando si existe el usuario:', email);
+      const user = await apiService.getUserByEmail(email);
+
+      if (user) {
+        console.log('✅ Usuario encontrado:', user.name);
+      } else {
+        console.log('❌ Usuario no encontrado');
+      }
+
+      return user;
+    } catch (error) {
+      console.error('❌ Error verificando usuario:', error);
+      return null;
+    }
+  };
 
   /**
    * Actualizar cuenta
@@ -161,7 +188,7 @@ export const useUserStore = defineStore('user', () => {
   const updateAccount = async (accountId: number, data: Partial<Account>): Promise<void> => {
     try {
       await apiService.updateAccount(accountId, data);
-      
+
       // Actualizar en el estado local
       const index = accounts.value.findIndex(acc => acc.account_id === accountId);
       if (index !== -1) {
@@ -182,11 +209,22 @@ export const useUserStore = defineStore('user', () => {
    */
   const refreshAccounts = async () => {
     if (!userId.value) return;
-    
+
     try {
       isLoadingAccounts.value = true;
       accounts.value = await apiService.getUserAccounts(userId.value);
       console.log('✅ Cuentas refrescadas');
+
+      // ✅ Verificar que la cuenta activa sigue existiendo
+      if (!accounts.value.some(acc => acc.account_id === activeAccountId.value)) {
+        // Si la cuenta activa fue eliminada, seleccionar la primera
+        const firstAccount = accounts.value[0];
+        if (firstAccount) {
+          activeAccountId.value = firstAccount.account_id;
+          localStorage.setItem('active_account_id', activeAccountId.value.toString());
+          console.log('⚠️ Cuenta activa corregida a:', activeAccountId.value);
+        }
+      }
     } catch (error) {
       console.error('❌ Error refrescando cuentas:', error);
     } finally {
@@ -199,21 +237,33 @@ export const useUserStore = defineStore('user', () => {
    */
   const initialize = async () => {
     const userId = authService.getUserId();
-    
+
     if (userId && authService.isAuthenticated()) {
       console.log('🔄 Restaurando sesión del usuario:', userId);
-      
+
       try {
         await loadUserData(userId);
-        
-        // Restaurar cuenta activa desde localStorage
+
+        // ✅ Restaurar cuenta activa desde localStorage
         const savedAccountId = localStorage.getItem('active_account_id');
         if (savedAccountId) {
           const accountId = parseInt(savedAccountId, 10);
           if (accounts.value.some(acc => acc.account_id === accountId)) {
             activeAccountId.value = accountId;
+            console.log('✅ Cuenta activa restaurada:', activeAccountId.value);
           }
         }
+
+        // ✅ Verificación: Si no hay cuenta activa válida, usar la primera
+        if (!accounts.value.some(acc => acc.account_id === activeAccountId.value)) {
+          const firstAccount = accounts.value[0];
+          if (firstAccount) {
+            activeAccountId.value = firstAccount.account_id;
+            localStorage.setItem('active_account_id', activeAccountId.value.toString());
+            console.log('⚠️ Cuenta activa corregida a la primera:', activeAccountId.value);
+          }
+        }
+
       } catch (error) {
         console.error('❌ Error restaurando sesión:', error);
         logout();
@@ -222,7 +272,7 @@ export const useUserStore = defineStore('user', () => {
   };
 
   // ==================== RETURN ====================
-  
+
   return {
     // Estado
     currentUser,
@@ -230,13 +280,13 @@ export const useUserStore = defineStore('user', () => {
     activeAccountId,
     isLoadingUser,
     isLoadingAccounts,
-    
+
     // Computed
     isAuthenticated,
     token,
     userId,
     activeAccount,
-    
+
     // Actions
     login,
     register,
@@ -244,6 +294,7 @@ export const useUserStore = defineStore('user', () => {
     loadUserData,
     setActiveAccount,
     getAccountUsers,
+    checkUserExists,
     updateAccount,
     refreshAccounts,
     initialize

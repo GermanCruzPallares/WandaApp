@@ -1,16 +1,11 @@
 <template>
-  <div>
+  <!-- ✅ Solo renderizar cuando NO está cargando -->
+  <div v-if="!isLoading">
     <SectionTitle title="| Historial" />
     
     <section class="transactions-history">
-      <!-- Estado de carga -->
-      <div v-if="isLoading" class="loading-state">
-        <p>Cargando transacciones...</p>
-      </div>
-
       <!-- Transacciones agrupadas por fecha -->
       <div 
-        v-else
         v-for="group in displayedTransactions" 
         :key="group.date"
         class="transaction-group"
@@ -53,6 +48,11 @@
         </div>
       </div>
 
+      <!-- Mensaje si no hay transacciones -->
+      <div v-if="transactions.length === 0" class="empty-state">
+        <p>No hay transacciones registradas</p>
+      </div>
+
       <!-- Botón Ver más -->
       <button 
         v-if="canLoadMore"
@@ -67,6 +67,8 @@
     </section>
   </div>
 </template>
+
+
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
