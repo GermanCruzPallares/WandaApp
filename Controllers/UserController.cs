@@ -23,13 +23,11 @@ namespace wandaAPI.Controllers
 
         [Authorize]
         [HttpGet]
-        public async Task<ActionResult<List<User>>> GetUsers()
-
+        public async Task<ActionResult<List<User>>> GetUsers([FromQuery] string? email)
         {
 
-            var Users = await _userService.GetAllAsync();
+            var Users = await _userService.GetAllAsync(email);
             return Ok(Users);
-
         }
 
         [Authorize]
@@ -48,8 +46,8 @@ namespace wandaAPI.Controllers
             }
         }
 
-        
-        [Authorize] 
+
+        [Authorize]
         [HttpGet("{userId}/accounts")]
         public async Task<ActionResult<List<Account>>> GetUserAccounts(int userId)
         {

@@ -20,14 +20,21 @@ namespace wandaAPI.Services
             _accountUsersRepository = accountUsersRepository;
         }
 
-        public async Task<List<User>> GetAllAsync()
+        public async Task<List<User>> GetAllAsync(string? email = null)
         {
 
-            var Users = await _userRepository.GetAllAsync();
-            return Users;
+            var users = await _userRepository.GetAllAsync();
 
+       
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                return users
+                    .Where(u => u.Email.Contains(email, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            return users;
         }
-
         public async Task<User?> GetByIdAsync(int id)
         {
             var User = await _userRepository.GetByIdAsync(id);
@@ -161,10 +168,10 @@ namespace wandaAPI.Services
             await _userRepository.DeleteAsync(id);
         }
 
-        
+
         public async Task<List<Account>> GetUserAccountsAsync(int userId)
         {
-         
+
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null) throw new KeyNotFoundException("El usuario no existe.");
 
