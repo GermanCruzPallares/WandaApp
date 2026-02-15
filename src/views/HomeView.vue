@@ -9,7 +9,6 @@ import ObjectivesComponent from '@/components/HomeApp/ObjectivesComponent.vue';
 import TransactionsHistoryComponent from '@/components/HomeApp/TransactionsHistoryComponent.vue';
 import TopNav from '@/components/Navs/TopNav.vue';
 import AsideNav from '@/components/Navs/AsideNav.vue';
-import AccountSwitcherModal from '@/components/Modals/AccountSwitcherModal.vue';
 import type { AccountUI, Transaction, Objective } from '@/types/models';
 
 const router = useRouter();
@@ -76,19 +75,6 @@ const handleTransactionsLoaded = (loadedTransactions: Transaction[]) => {
   transactions.value = loadedTransactions;
 };
 
-const handleAvatarClick = () => {
-  isAccountModalOpen.value = true;
-};
-
-const handleCloseModal = () => {
-  isAccountModalOpen.value = false;
-};
-
-const handleSelectAccount = (accountId: number) => {
-  console.log('🔄 Cuenta seleccionada:', accountId);
-  userStore.setActiveAccount(accountId);
-};
-
 
 
 const handleEditCard = () => {
@@ -103,23 +89,17 @@ const handleTransactionClick = (transactionId: number) => {
   console.log('Transacción clickeada:', transactionId);
 };
 
-const handleNavigate = (itemId: string) => {
-  activeMenuItem.value = itemId;
-  console.log('Navegando a:', itemId);
-};
+
 </script>
 
 <template>
   <AsideNav 
     :active-item="activeMenuItem"
     :account-id="activeAccount?.account_id"
-    @navigate="handleNavigate"
-    @avatar-click="handleAvatarClick"
   />
   
   <TopNav 
     :account-id="activeAccount?.account_id"
-    @avatar-click="handleAvatarClick"
     class="mobile-only"
   />
   
