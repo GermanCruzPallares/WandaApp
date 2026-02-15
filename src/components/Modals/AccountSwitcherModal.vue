@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, watch } from 'vue';
 import { useUserStore } from '@/stores/UserStore';
+import { useAccountStore } from '@/stores/AccountStore';
+import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
 import type { Account, User } from '@/types/models';
 import CreateJointAccountModal from './CreateJointAccountModal.vue';
 
@@ -11,7 +13,7 @@ interface AccountWithUsers extends Account {
 
 interface Props {
   isOpen: boolean;
-  userId?: number;
+  userId?: number | null;
   activeAccountId?: number;
   currentUser: User;
 }
@@ -25,8 +27,9 @@ const emit = defineEmits<{
   createJointAccount: [accountName: string, userEmails: string[]];
 }>();
 
-// ✅ Usar el store de Pinia
+// ✅ Usar los stores de Pinia
 const userStore = useUserStore();
+const accountStore = useAccountStore();
 
 // Estado local
 const accounts = ref<Account[]>([]);
@@ -34,12 +37,27 @@ const accountsWithUsers = ref<AccountWithUsers[]>([]);
 const isLoading = ref(false);
 const isJointAccountModalOpen = ref(false);
 
-// ✅ Cargar cuentas desde el store
+// ✅ Función para obtener el avatar correcto
+const getAccountAvatar = (account: Account): string => {
+  // Si tiene imagen personalizada, usarla
+  if (account.account_picture_url) {
+    return account.account_picture_url;
+  }
+  
+  // Si no, usar avatar por defecto según el tipo
+  const accountType = account.account_type || 'personal';
+  return getAvatarDataUrl(accountType);
+};
+
+// ✅ Cargar cuentas desde el userStore (que tiene las cuentas del usuario actual)
 const loadUserAccounts = async (userId: number) => {
   isLoading.value = true;
   
-  // Obtener cuentas del usuario
-  accounts.value = await userStore.fetchUserAccounts(userId);
+  // Las cuentas ya están en userStore.accounts (cargadas en login)
+  // Pero podemos refrescarlas si queremos
+  await userStore.loadUserData(userId);
+  
+  accounts.value = userStore.accounts;
   
   // Para cada cuenta conjunta, obtener sus usuarios
   await loadUsersForAccounts(accounts.value);
@@ -55,12 +73,17 @@ const loadUsersForAccounts = async (accountsList: Account[]) => {
 
   for (const account of accountsList) {
     if (account.account_type === 'joint') {
-      const users = await userStore.fetchAccountUsers(account.account_id);
-      accountsWithUsersData.push({
-        ...account,
-        users,
-        
-      });
+      // Usar accountStore para obtener los miembros de la cuenta
+      try {
+        const users = await accountStore.fetchAccountMembers(account.account_id);
+        accountsWithUsersData.push({
+          ...account,
+          users,
+        });
+      } catch (error) {
+        console.error(`Error cargando usuarios de cuenta ${account.account_id}:`, error);
+        accountsWithUsersData.push(account);
+      }
     } else {
       accountsWithUsersData.push(account);
     }
@@ -69,12 +92,17 @@ const loadUsersForAccounts = async (accountsList: Account[]) => {
   accountsWithUsers.value = accountsWithUsersData;
 };
 
-
-
 // Cargar cuando se abre el modal
 watch(() => props.isOpen, (isOpen) => {
-  if (isOpen && props.userId && accounts.value.length === 0) {
-    loadUserAccounts(props.userId);
+  if (isOpen && props.userId) {
+    // Si ya tenemos cuentas en el userStore, usarlas directamente
+    if (userStore.accounts.length > 0) {
+      accounts.value = userStore.accounts;
+      loadUsersForAccounts(accounts.value);
+    } else {
+      // Si no, cargarlas
+      loadUserAccounts(props.userId);
+    }
   }
   
   if (isOpen) {
@@ -113,10 +141,19 @@ const handleCreateJointAccount = (accountName: string, userEmails: string[]) => 
   isJointAccountModalOpen.value = false;
   handleClose();
 };
+
+// ✅ Formatear usuarios de cuenta conjunta
+const formatAccountUsers = (account: AccountWithUsers): string => {
+  if (!account.users || account.users.length === 0) {
+    return '';
+  }
+  
+  const userNames = account.users.map(u => u.name).join(', ');
+  return userNames;
+};
 </script>
 
 <template>
-
   <Teleport to="body">
     <Transition name="modal">
       <div v-if="isOpen" class="modal-overlay" @click="handleClose">
@@ -135,12 +172,25 @@ const handleCreateJointAccount = (accountName: string, userEmails: string[]) => 
                 @click="handleSelectAccount(account.account_id)"
               >
                 <div class="account-item__wrapper">
+                  <!-- ✅ Avatar con sistema de fallback -->
                   <div class="account-item__avatar">
-                    <img :src="account.account_picture_url" :alt="account.name" />
+                    <img 
+                      :src="getAccountAvatar(account)" 
+                      :alt="account.name"
+                    />
                   </div>
+                  
                   <div class="account-item__info">
                     <span class="account-item__name">{{ account.name }}</span>
+                    <!-- ✅ Mostrar usuarios si es cuenta conjunta -->
+                    <span 
+                      v-if="account.account_type === 'joint' && account.users" 
+                      class="account-item__users"
+                    >
+                      {{ formatAccountUsers(account) }}
+                    </span>
                   </div>
+                  
                   <div v-if="account.account_id === activeAccountId" class="account-item__check">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                       <circle cx="12" cy="12" r="10" fill="#4285F4"/>
@@ -176,9 +226,9 @@ const handleCreateJointAccount = (accountName: string, userEmails: string[]) => 
     @create-account="handleCreateJointAccount"
   />
 </template>
+
 <style scoped lang="scss">
 @import '@/styles/base/variables.scss';
-
 
 .account-item {
   &__info {
@@ -193,9 +243,11 @@ const handleCreateJointAccount = (accountName: string, userEmails: string[]) => 
     font-size: 12px;
     color: $color-text-gray;
     display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
-
 
 .modal-overlay {
   position: fixed;

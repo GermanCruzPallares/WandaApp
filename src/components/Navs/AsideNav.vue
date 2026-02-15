@@ -29,7 +29,7 @@
         <div class="skeleton-text"></div>
       </div>
 
-      <button v-else class="user-button" @click="handleAvatarClick">
+      <button v-else class="user-button" @click="openAccountSwitcher">
         <img 
           :src="avatarSrc" 
           alt="User avatar"
@@ -38,13 +38,26 @@
         <span class="user-button__name">{{ account?.name || 'Cuenta' }}</span>
       </button>
     </div>
+
+    <!-- ✅ Modal integrado en el AsideNav -->
+    <AccountSwitcherModal
+      :is-open="isAccountSwitcherOpen"
+      :user-id="userId"
+      :active-account-id="accountId"
+      :current-user="currentUser!"
+      @close="closeAccountSwitcher"
+      @select-account="handleSelectAccount"
+      @create-joint-account="handleCreateJointAccount"
+    />
   </aside>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { useAccountStore } from '@/stores/AccountStore';
+import { useUserStore } from '@/stores/UserStore';
 import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
+import AccountSwitcherModal from '@/components/Modals/AccountSwitcherModal.vue';
 import type { Account } from '@/types/models';
 import HomeIcon from '../icons/HomeIcon.vue';
 import PlusIcon from '../icons/PlusIcon.vue';
@@ -61,6 +74,7 @@ interface MenuItem {
 interface Props {
   activeItem?: string;
   accountId?: number;
+  userId?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -69,16 +83,22 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   navigate: [itemId: string];
-  avatarClick: [];
   accountLoaded: [account: Account];
+  accountChanged: [accountId: number];
 }>();
 
-// ✅ Usar el store de Pinia
+// ✅ Usar los stores de Pinia
 const accountStore = useAccountStore();
+const userStore = useUserStore();
 
 // Estado local
 const account = ref<Account | null>(null);
 const isLoading = ref(false);
+const isAccountSwitcherOpen = ref(false);
+
+// ✅ Obtener currentUser del store
+const currentUser = computed(() => userStore.currentUser);
+const userId = computed(() => props.userId || userStore.userId);
 
 // ✅ NUEVA LÓGICA: Obtener avatar con fallback automático
 const avatarSrc = computed(() => {
@@ -100,7 +120,6 @@ const menuItems: MenuItem[] = [
   { id: 'libro', label: 'Libro Cuentas', icon: CalculatorIcon, path: '/book' },
   { id: 'perfil', label: 'Perfil', icon: UserIcon, path: '/profile' }, 
 ];
-
 
 // ✅ Cargar cuenta desde el store
 const loadAccount = async (accountId: number) => {
@@ -133,8 +152,28 @@ const handleMenuClick = (itemId: string) => {
   emit('navigate', itemId);
 };
 
-const handleAvatarClick = () => {
-  emit('avatarClick');
+// ✅ Funciones del modal
+const openAccountSwitcher = () => {
+  console.log('🖱️ Opening account switcher from AsideNav');
+  isAccountSwitcherOpen.value = true;
+};
+
+const closeAccountSwitcher = () => {
+  console.log('❌ Closing account switcher');
+  isAccountSwitcherOpen.value = false;
+};
+
+const handleSelectAccount = (accountId: number) => {
+  console.log('🔄 Account selected:', accountId);
+  userStore.setActiveAccount(accountId);
+  emit('accountChanged', accountId);
+  closeAccountSwitcher();
+};
+
+const handleCreateJointAccount = async (accountName: string, userEmails: string[]) => {
+  console.log('➕ Creating joint account:', accountName, userEmails);
+  // TODO: Implementar creación de cuenta conjunta
+  closeAccountSwitcher();
 };
 </script>
 
@@ -288,12 +327,5 @@ const handleAvatarClick = () => {
   animation: loading 1.5s infinite;
 }
 
-@keyframes loading {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
+
 </style>
