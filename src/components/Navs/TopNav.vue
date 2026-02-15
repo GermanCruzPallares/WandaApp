@@ -12,7 +12,7 @@
     <!-- Avatar cargado -->
     <div v-else class="header-nav__avatar">
       <img 
-        :src="account?.account_picture_url || 'https://i.pravatar.cc/150?img=5'" 
+        :src="avatarSrc" 
         alt="User avatar"
         class="avatar-image"
         @click="handleAvatarClick"
@@ -22,8 +22,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useAccountStore } from '@/stores/AccountStore';
+import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
 import type { Account } from '@/types/models';
 
 interface Props {
@@ -43,6 +44,20 @@ const accountStore = useAccountStore();
 // Estado local
 const account = ref<Account | null>(null);
 const isLoading = ref(false);
+
+// ✅ NUEVA LÓGICA: Obtener avatar con fallback automático
+const avatarSrc = computed(() => {
+  if (!account.value) return getAvatarDataUrl('personal');
+  
+  // Si hay imagen personalizada, usarla
+  if (account.value.account_picture_url) {
+    return account.value.account_picture_url;
+  }
+  
+  // Si no, usar avatar por defecto según tipo de cuenta
+  const accountType = account.value.account_type || 'personal';
+  return getAvatarDataUrl(accountType);
+});
 
 // ✅ Cargar cuenta desde el store
 const loadAccount = async (accountId: number) => {
