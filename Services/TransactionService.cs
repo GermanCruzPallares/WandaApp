@@ -13,10 +13,10 @@ namespace wandaAPI.Services
         private readonly IAccountUsersRepository _accountUsersRepository;
 
         public TransactionService(
-            ITransactionRepository transactionRepository, 
-            IAccountRepository accountRepository, 
-            IObjectiveRepository objectiveRepository, 
-            ITransactionSplitRepository splitRepository, 
+            ITransactionRepository transactionRepository,
+            IAccountRepository accountRepository,
+            IObjectiveRepository objectiveRepository,
+            ITransactionSplitRepository splitRepository,
             IAccountUsersRepository accountUsersRepository)
         {
             _transactionRepository = transactionRepository;
@@ -90,7 +90,7 @@ namespace wandaAPI.Services
                 if (targetAccount.Account_id != fundingAccount.Account_id)
                 {
                     string espejoConcepto = dto.Split_type.ToLower() == "divided"
-                        ? $"(Gasto Compartido) {dto.Concept}" 
+                        ? $"(Gasto Compartido) {dto.Concept}"
                         : $"(Aportación Conjunta) {dto.Concept}";
 
                     var mirrorTransaction = new Models.Transaction
@@ -296,9 +296,9 @@ namespace wandaAPI.Services
         // Genera los registros de deuda (Splits) para los miembros del grupo.
         // Soporta modo Manual (CustomSplits) o Automático (Equitativo).
         private async Task ProcessJointSplitsAsync(
-            Models.Transaction tx, 
-            Account targetAccount, 
-            int transId, 
+            Models.Transaction tx,
+            Account targetAccount,
+            int transId,
             List<TransactionSplitDetailDTO>? customSplits,
             int payingUserId)
         {
@@ -526,10 +526,53 @@ namespace wandaAPI.Services
             }
         }
 
-        public async Task<List<Models.Transaction>> GetByAccountAsync(int accountId)
+        public async Task<List<Models.Transaction>> GetByAccountAsync(
+            int accountId,
+            int? objectiveId = null,
+            string? type = null,
+            bool? isRecurring = null,
+            DateTime? startDate = null,
+            DateTime? endDate = null)
         {
+            // 1. Obtenemos TODAS las transacciones de la cuenta (consulta a BBDD)
             var transactions = await _transactionRepository.GetTransactionsByAccountAsync(accountId);
-            return transactions;
+
+            // Convertimos a IEnumerable para filtrar en memoria
+            IEnumerable<Models.Transaction> query = transactions;
+
+            // 2. Filtro por Objetivo
+            if (objectiveId.HasValue)
+            {
+                query = query.Where(t => t.Objective_id == objectiveId.Value);
+            }
+
+            // 3. Filtro por Tipo (income, expense, saving) - Ignoramos mayúsculas/minúsculas
+            if (!string.IsNullOrEmpty(type))
+            {
+                query = query.Where(t => t.Transaction_type.Equals(type, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // 4. Filtro por Recurrencia
+            if (isRecurring.HasValue)
+            {
+                query = query.Where(t => t.IsRecurring == isRecurring.Value);
+            }
+
+            // 5. Filtro por Fecha de Inicio (Desde)
+            if (startDate.HasValue)
+            {
+                query = query.Where(t => t.Transaction_date >= startDate.Value);
+            }
+
+            // 6. Filtro por Fecha de Fin (Hasta)
+            if (endDate.HasValue)
+            {
+                // Incluimos el final del día si la fecha viene sin hora, o hacemos comparación directa
+                query = query.Where(t => t.Transaction_date <= endDate.Value);
+            }
+
+            // 7. Ordenamos por fecha descendente (más reciente primero) y devolvemos la lista
+            return query.OrderByDescending(t => t.Transaction_date).ToList();
         }
 
         public async Task<Models.Transaction?> GetByIdAsync(int transactions_id)

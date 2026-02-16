@@ -18,13 +18,27 @@ namespace wandaAPI.Controllers
         {
             _transactionService = transactionService;
         }
-        
+
         [HttpGet("accounts/{accountId}/transactions")]
-        public async Task<ActionResult<List<Transaction>>> GetByAccountAsync(int accountId)
+        public async Task<ActionResult<List<Transaction>>> GetByAccountAsync(
+            int accountId,
+            [FromQuery] int? objective_id,
+            [FromQuery] string? type,
+            [FromQuery] bool? isRecurring,
+            [FromQuery] DateTime? startDate,
+            [FromQuery] DateTime? endDate)
         {
             try
             {
-                var transactions = await _transactionService.GetByAccountAsync(accountId);
+                var transactions = await _transactionService.GetByAccountAsync(
+                    accountId,
+                    objective_id,
+                    type,
+                    isRecurring,
+                    startDate,
+                    endDate
+                );
+
                 return Ok(transactions);
             }
             catch (ArgumentException ex)

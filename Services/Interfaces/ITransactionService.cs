@@ -4,7 +4,14 @@ namespace wandaAPI.Services
 {
     public interface ITransactionService
     {
-        Task<List<Transaction>> GetByAccountAsync(int accountId);
+        Task<List<Transaction>> GetByAccountAsync(
+            int accountId, 
+            int? objectiveId = null, 
+            string? type = null, 
+            bool? isRecurring = null, 
+            DateTime? startDate = null, 
+            DateTime? endDate = null
+        );
         Task<Transaction?> GetByIdAsync(int id);
         
         /// <summary>
