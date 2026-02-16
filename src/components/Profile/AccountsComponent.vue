@@ -18,7 +18,7 @@ const getAccountAvatar = (account: any) => {
 
 <template>
   <div class="accounts-section">
-    <SectionTitle :title="`| Cuentas`" />
+    <SectionTitle :title="`| Cuentas (${myAccounts.length})`" />
 
     <div class="account-list">
       <div 

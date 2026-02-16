@@ -8,6 +8,8 @@ import type { Account, AccountUI, User } from '@/types/models';
 import BottomNav from '@/components/Navs/BottomNav.vue';
 import { useRouter } from 'vue-router';
 import AccountsComponent from '@/components/Profile/AccountsComponent.vue';
+import BudgetComponent from '@/components/Profile/BudgetComponent.vue';
+
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -68,6 +70,10 @@ const activeMenuItem = ref('inicio');
 
   <main class="profile-content">
         <AccountsComponent></AccountsComponent>
+      <BudgetComponent
+       v-if="activeAccount" 
+       :account-id="activeAccount.account_id"
+    ></BudgetComponent>
   </main>
 
    <BottomNav class="mobile-only" />
