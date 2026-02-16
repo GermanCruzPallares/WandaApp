@@ -5,11 +5,20 @@ import { useAccountStore } from '@/stores/AccountStore';
 import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
 import AccountSwitcherModal from '@/components/Modals/AccountSwitcherModal.vue';
 
+// ✅ IMPORTANTE: Mantener las props aunque no las usemos directamente
+// HomeView las pasa para mantener la reactividad
+interface Props {
+  accountId?: number;
+}
+
+defineProps<Props>();
+
 const userStore = useUserStore();
 const accountStore = useAccountStore();
 
 const isAccountSwitcherOpen = ref(false);
 
+// ✅ Avatar reactivo desde el store
 const avatarSrc = computed(() => {
   const account = userStore.activeAccount;
   if (!account) return getAvatarDataUrl('personal');
@@ -38,7 +47,7 @@ const handleSelectAccount = (accountId: number) => {
 };
 
 /**
- * ✅ Manejar creación de cuenta conjunta
+ * ✅ Manejar creación de cuenta conjunta y activarla automáticamente
  */
 const handleCreateJointAccount = async (accountName: string, userIds: number[]) => {
   console.log('➕ Creando cuenta conjunta:', accountName, userIds);
@@ -49,8 +58,12 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
       userIds: userIds
     });
     
-    await userStore.refreshAccounts();
+    // ✅ Refrescar cuentas y establecer la nueva como activa
+    await userStore.refreshAccounts(true);
+    
     closeAccountSwitcher();
+    
+    console.log('✅ Cuenta conjunta creada y activada');
     
   } catch (error) {
     console.error('❌ Error creando cuenta conjunta:', error);

@@ -38,7 +38,7 @@ export interface Transaction {
   transaction_id: number;
   account_id: number;
   user_id: number;
-  objective_id: number; // 0 si no está asociado a objetivo
+  objective_id: number; 
   category: string;
   amount: number;
   transaction_type: TransactionType;
@@ -59,5 +59,4 @@ export interface Objective {
   target_amount: number;
   current_save: number;
   deadline: Date | string;
-  objective_picture_url: string;
 }
