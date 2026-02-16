@@ -45,6 +45,11 @@ const router = createRouter({
       component: () => import('../views/ProfileView.vue'),
     },
     {
+      path: '/home/editAccount',
+      name: 'profile',
+      component: () => import('../views/EditAccountView.vue'),
+    },    
+    {
       path: '/home/contributions/:objectiveId?',
       name: 'ObjectiveContributions',
       component: () => import('../views/ObjectiveContributionsView.vue'),

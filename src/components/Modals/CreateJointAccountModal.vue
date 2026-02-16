@@ -500,10 +500,10 @@ const getAccountAvatar = (account: Account | null): string => {
 .add-user-btn {
   width: 100%;
   padding: 14px;
-  background-color: $color-text;
+  background-color: #353535;
   color: $color-white;
   border: none;
-  border-radius: $card-border-radius;
+  border-radius: 50px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -588,10 +588,10 @@ const getAccountAvatar = (account: Account | null): string => {
 .create-account-btn {
   width: 100%;
   padding: 14px;
-  background-color: $color-text;
+  background-color: #353535;
   color: $color-white;
   border: none;
-  border-radius: $card-border-radius;
+  border-radius: 50px;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;

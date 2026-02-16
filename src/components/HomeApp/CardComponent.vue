@@ -110,7 +110,7 @@ const expensePercentage = computed(() => {
   return Math.min((monthlyExpense.value / monthlyBudget.value) * 100, 100);
 });
 
-const handleEdit = () => emit('edit');
+
 </script>
 
 <template>
@@ -118,9 +118,9 @@ const handleEdit = () => emit('edit');
   <div v-if="!isLoading && account !== null" class="dashboard-card">
     <div class="dashboard-card__header">
       <h2 class="dashboard-card__title">{{ greeting }}</h2>
-      <button class="dashboard-card__edit-btn" @click="handleEdit">
+      <RouterLink to="/home/EditAccount" class="dashboard-card__edit-btn">
         Editar
-      </button>
+      </RouterLink>
     </div>
 
     <div class="dashboard-card__balance">
@@ -183,6 +183,7 @@ const handleEdit = () => emit('edit');
     cursor: pointer;
     font-weight: 500;
     transition: background-color 0.2s ease;
+    text-decoration: none;
     
     &:hover {
       background-color: rgba(255, 255, 255, 0.35);
