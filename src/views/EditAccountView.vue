@@ -4,7 +4,8 @@ import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/UserStore';
 import HeaderNav from '@/components/Navs/HeaderNav.vue';
 import AsideNav from '@/components/Navs/AsideNav.vue';
-import type { AccountUI} from '@/types/models';
+import EditAccountForm from '@/components/EditAccount/EditAccountForm.vue';
+import type { AccountUI, Account } from '@/types/models';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -25,12 +26,11 @@ const accounts = computed<AccountUI[]>(() => {
 // Cuenta activa
 const activeAccount = computed(() => {
   const active = accounts.value.find(acc => acc.isActive);
-  console.log('🔍 HomeView: activeAccount =', active); 
+  console.log('🔍 EditAccountView: activeAccount =', active); 
   return active;
 });
 
 onMounted(async () => {
-
   if (!userStore.isAuthenticated) {
     console.warn('⚠️ Usuario no autenticado, redirigiendo a login...');
     router.push('/login');
@@ -47,54 +47,82 @@ onMounted(async () => {
   }
 });
 
+// ==================== HANDLERS ====================
 
 const handleBack = () => router.push('/home');
-const activeMenuItem = ref('inicio');
 
+const handleSaved = (account: Account) => {
+  console.log('✅ Cuenta guardada:', account);
+  // Redirigir a home después de guardar
+  router.push('/home');
+};
+
+const handleCancelled = () => {
+  console.log('❌ Edición cancelada');
+  router.push('/home');
+};
+
+const activeMenuItem = ref('inicio');
 </script>
 
 <template>
-<div class="editAccount-page">
-  <AsideNav 
-    :active-item="activeMenuItem"
-    :account-id="activeAccount?.account_id"
-  />
-  
+  <div class="editAccount-page">
+    <AsideNav 
+      :active-item="activeMenuItem"
+      :account-id="activeAccount?.account_id"
+    />
+    
     <HeaderNav 
       title="Editar Cuenta" 
       @back="handleBack"
       class="mobile-only"
     />
 
-    <div class="desktop-header">
-      <h1 class="page-title">Editar Cuenta</h1>
-    </div>
-</div>
-
+    <!-- Formulario de edición -->
+    <main class="edit-account-content">
+      <EditAccountForm
+        v-if="activeAccount?.account_id"
+        :account-id="activeAccount.account_id"
+        @saved="handleSaved"
+        @cancelled="handleCancelled"
+      />
+      
+      <div v-else class="loading-container">
+        <p>Cargando datos de la cuenta...</p>
+      </div>
+    </main>
+  </div>
 </template>
 
 <style scoped lang="scss">
 @import '@/styles/base/variables.scss';
+
 .editAccount-page {
   min-height: 100vh;
   background-color: $background-principal;
+  display: flex;
+  flex-direction: column;
 }
 
-.desktop-header {
-  display: none;
+.edit-account-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 80px;
+  padding-bottom: 20px;
 
   @media (min-width: 768px) {
-    display: block;
     margin-left: 240px;
-    padding: 32px 32px 0;
+    padding-top: 0;
+    min-height: 100vh;
   }
 }
 
-.page-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: $color-text;
-  margin: 0 0 24px 0;
+.loading-container {
+  padding: 40px;
+  text-align: center;
+  color: $color-text-gray;
 }
 
 .mobile-only {

@@ -58,6 +58,10 @@ class ApiService {
   }
 
   private async putWithAuth<T>(url: string, body: any): Promise<T> {
+    // ✅ LOG: Ver qué estamos enviando
+    console.log('🔵 PUT Request:', url);
+    console.log('📦 Payload:', JSON.stringify(body, null, 2));
+    
     const response = await fetch(url, {
       method: 'PUT',
       headers: authService.getAuthHeaders(),
@@ -70,8 +74,24 @@ class ApiService {
     }
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Error desconocido' }));
-      throw new Error(error.message || `Error ${response.status}`);
+      // ✅ Capturar el error completo del backend
+      let errorDetails = 'Error desconocido';
+      try {
+        const errorBody = await response.text();
+        console.error('❌ Response body:', errorBody);
+        
+        // Intentar parsear como JSON
+        try {
+          const errorJson = JSON.parse(errorBody);
+          errorDetails = errorJson.message || errorJson.title || JSON.stringify(errorJson);
+        } catch {
+          errorDetails = errorBody;
+        }
+      } catch (e) {
+        console.error('❌ No se pudo leer el cuerpo de la respuesta:', e);
+      }
+      
+      throw new Error(`Error ${response.status}: ${errorDetails}`);
     }
 
     if (response.status === 204) {
@@ -160,7 +180,18 @@ class ApiService {
   }
 
   async updateAccount(accountId: number, data: Partial<Account>): Promise<void> {
-    return this.putWithAuth<void>(`${API_BASE_URL}/Account/${accountId}`, data);
+    // ✅ IMPORTANTE: El backend requiere estos campos siempre
+    const updatePayload = {
+      name: data.name || '',
+      amount: data.amount ?? 0, // ✅ Incluir saldo
+      weekly_budget: data.weekly_budget ?? 0,
+      monthly_budget: data.monthly_budget ?? 0,
+      account_picture_url: data.account_picture_url ?? '' // ✅ Campo obligatorio en el backend
+    };
+    
+    console.log('🔵 updateAccount llamado con:', updatePayload);
+    
+    return this.putWithAuth<void>(`${API_BASE_URL}/Account/${accountId}`, updatePayload);
   }
 
   // ==================== TRANSACTIONS ====================
