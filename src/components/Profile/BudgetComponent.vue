@@ -51,7 +51,9 @@ const handleEdit = (budgetType: 'weekly' | 'monthly') => {
           <span class="budget__label">Semanal</span>
           <span class="budget__amount">{{ formatCurrency(weeklyBudget) }}</span>
         </div>
-
+        <button class="budget__edit-btn" @click="handleEdit('weekly')">
+          Editar
+        </button>
       </div>
 
       <!-- Presupuesto Mensual -->
@@ -60,6 +62,9 @@ const handleEdit = (budgetType: 'weekly' | 'monthly') => {
           <span class="budget__label">Mensual</span>
           <span class="budget__amount">{{ formatCurrency(monthlyBudget) }}</span>
         </div>
+        <button class="budget__edit-btn" @click="handleEdit('monthly')">
+          Editar
+        </button>
       </div>
     </div>
   </div>
@@ -94,14 +99,7 @@ const handleEdit = (budgetType: 'weekly' | 'monthly') => {
     padding: 1.5rem;
     background-color: $section-bg-primary;
     border-radius: $card-border-radius;
-      transition: transform $transition-speed $transition-ease,
-              box-shadow $transition-speed $transition-ease;
-    cursor: pointer;
-    
-    &:hover {
-    transform: translateX(2px);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-    }
+
 
   }
 
@@ -123,5 +121,21 @@ const handleEdit = (budgetType: 'weekly' | 'monthly') => {
     color: $color-text;
   }
 
+  &__edit-btn {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.8rem;
+    background: none;
+    border: none;
+    color: $color-text-gray;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    transition: color $transition-speed $transition-ease;
+
+    &:hover {
+      color: $color-text;
+    }
+  }
 }
 </style>

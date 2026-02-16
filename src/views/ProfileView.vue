@@ -9,6 +9,8 @@ import BottomNav from '@/components/Navs/BottomNav.vue';
 import { useRouter } from 'vue-router';
 import AccountsComponent from '@/components/Profile/AccountsComponent.vue';
 import BudgetComponent from '@/components/Profile/BudgetComponent.vue';
+import { ObjectFlags } from 'typescript';
+import ObjContribution from '@/components/Profile/ObjContribution.vue';
 
 
 const router = useRouter();
@@ -74,6 +76,10 @@ const activeMenuItem = ref('inicio');
        v-if="activeAccount" 
        :account-id="activeAccount.account_id"
     ></BudgetComponent>
+      <ObjContribution
+      v-if="activeAccount"
+      :account-id = "activeAccount.account_id"
+      ></ObjContribution>
   </main>
 
    <BottomNav class="mobile-only" />
