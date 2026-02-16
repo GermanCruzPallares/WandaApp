@@ -118,7 +118,7 @@ import { computed, ref, watch, onMounted } from 'vue';
 import { useAccountStore } from '@/stores/AccountStore';
 import { useTransactionStore } from '@/stores/TransactionStore';
 import SectionTitle from '@/components/SectionTitle.vue';
-import InfoModal from './InfoModal.vue';
+import InfoModal from '../Modals/InfoModal.vue';
 import type { Account } from '@/types/models';
 
 interface Props {

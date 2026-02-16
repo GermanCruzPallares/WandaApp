@@ -31,7 +31,7 @@
       </div>
     </main>
 
-    <BottomNav class="mobile-only" />
+  
   </div>
 </template>
 

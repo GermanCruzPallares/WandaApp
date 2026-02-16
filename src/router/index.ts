@@ -46,7 +46,7 @@ const router = createRouter({
     },
     {
       path: '/home/editAccount',
-      name: 'profile',
+      name: 'edit',
       component: () => import('../views/EditAccountView.vue'),
     },    
     {

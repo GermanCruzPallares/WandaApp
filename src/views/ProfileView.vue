@@ -1,72 +1,73 @@
 <script setup lang="ts">
+
+import { useUserStore } from '@/stores/UserStore';
+import { ref, computed, onMounted } from 'vue';
 import TopNav from '@/components/Navs/TopNav.vue';
 import AsideNav from '@/components/Navs/AsideNav.vue';
-import { computed, ref } from 'vue';
 import type { Account, AccountUI, User } from '@/types/models';
 import BottomNav from '@/components/Navs/BottomNav.vue';
+import { useRouter } from 'vue-router';
+import AccountsComponent from '@/components/Profile/AccountsComponent.vue';
 
-const currentUser = ref<User>({
-  user_id: 1,
-  name: 'Clara',
-  email: 'clara@wandaapp.com'
+const router = useRouter();
+const userStore = useUserStore();
+
+// ==================== COMPUTED ====================
+
+// Usuario actual desde el store
+const currentUser = computed(() => userStore.currentUser);
+
+// Cuentas con formato AccountUI (agregando isActive)
+const accounts = computed<AccountUI[]>(() => {
+  return userStore.accounts.map(account => ({
+    ...account,
+    isActive: account.account_id === userStore.activeAccountId
+  }));
 });
 
-const accounts = ref<AccountUI[]>([
-  {
-    account_id: 1,
-    name: 'Clara',
-    account_type: 'personal',
-    amount: 13789.37,
-    weekly_budget: 200,
-    monthly_budget: 2000,
-    account_picture_url: 'https://i.pravatar.cc/150?img=5',
-    creation_date: new Date(),
-    isActive: true 
-  }
-]);
-
-
+// Cuenta activa
 const activeAccount = computed(() => {
   const active = accounts.value.find(acc => acc.isActive);
-  console.log('🔍 HomeView: activeAccount =', active); 
+  console.log('🔍 EditAccountView: activeAccount =', active); 
   return active;
 });
 
+onMounted(async () => {
+  if (!userStore.isAuthenticated) {
+    console.warn('⚠️ Usuario no autenticado, redirigiendo a login...');
+    router.push('/login');
+    return;
+  }
+
+  if (!userStore.currentUser && userStore.userId) {
+    try {
+      await userStore.loadUserData(userStore.userId);
+    } catch (error) {
+      console.error('❌ Error cargando datos:', error);
+      router.push('/login');
+    }
+  }
+});
 
 const activeMenuItem = ref('inicio');
-
-
-const handleNavigate = (itemId: string) => {
-  activeMenuItem.value = itemId;
-  console.log('Navegando a:', itemId);
-};
-
-const isAccountModalOpen = ref(false);
-const handleAvatarClick = () => {
-  isAccountModalOpen.value = true;
-};
-
 
 </script>
 
 
 <template>
 
-<AsideNav 
+  <AsideNav 
     :active-item="activeMenuItem"
     :account-id="activeAccount?.account_id"
-    @navigate="handleNavigate"
-    @avatar-click="handleAvatarClick"
   />
   
-<TopNav 
+  <TopNav 
     :account-id="activeAccount?.account_id"
-    @avatar-click="handleAvatarClick"
     class="mobile-only"
   />
 
   <main class="profile-content">
-
+        <AccountsComponent></AccountsComponent>
   </main>
 
    <BottomNav class="mobile-only" />
@@ -75,6 +76,20 @@ const handleAvatarClick = () => {
 
 
 <style scoped lang="scss">
+
+.profile-content {
+  min-height: 100vh;
+  padding-top: 100px; 
+  padding-bottom: 80px;
+
+  @media (min-width: 768px) {
+    margin-left: 240px; 
+    padding-top: 40px;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
 .mobile-only {
   @media (min-width: 768px) {
     display: none;
