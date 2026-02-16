@@ -3,6 +3,7 @@ using wandaAPI.Services;
 using Models;
 using DTOs;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace wandaAPI.Controllers
 {
@@ -41,7 +42,13 @@ namespace wandaAPI.Controllers
         {
             try
             {
-                var createdTransaction = await _transactionService.CreateAsync(accountId, dto);
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+                {
+                    return Unauthorized("Token inválido o usuario no autenticado.");
+                }
+
+                var createdTransaction = await _transactionService.CreateAsync(accountId, userId, dto);
                 return Ok("Transaction creada");
             }
             catch (ArgumentException ex)
@@ -59,7 +66,7 @@ namespace wandaAPI.Controllers
         }
 
         [HttpGet("transactions/{id}")]
-        public async Task<ActionResult<Transaction>>GetByIdAsync(int id)
+        public async Task<ActionResult<Transaction>> GetByIdAsync(int id)
         {
             try
             {
@@ -88,10 +95,14 @@ namespace wandaAPI.Controllers
             {
                 return NotFound(ex.Message);
             }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpDelete("transactions/{id}")]
-        public async Task<IActionResult>DeleteAsync(int id)
+        public async Task<IActionResult> DeleteAsync(int id)
         {
             try
             {
@@ -101,6 +112,10 @@ namespace wandaAPI.Controllers
             catch (KeyNotFoundException ex)
             {
                 return NotFound(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
             }
         }
     }

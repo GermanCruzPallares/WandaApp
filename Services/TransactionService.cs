@@ -9,19 +9,21 @@ namespace wandaAPI.Services
         private readonly ITransactionRepository _transactionRepository;
         private readonly IAccountRepository _accountRepository;
         private readonly IObjectiveRepository _objectiveRepository;
-
         private readonly ITransactionSplitRepository _splitRepository;
-
         private readonly IAccountUsersRepository _accountUsersRepository;
 
-        public TransactionService(ITransactionRepository transactionRepository, IAccountRepository accountRepository, IObjectiveRepository objectiveRepository, ITransactionSplitRepository splitRepository, IAccountUsersRepository accountUsersRepository)
+        public TransactionService(
+            ITransactionRepository transactionRepository, 
+            IAccountRepository accountRepository, 
+            IObjectiveRepository objectiveRepository, 
+            ITransactionSplitRepository splitRepository, 
+            IAccountUsersRepository accountUsersRepository)
         {
             _transactionRepository = transactionRepository;
             _accountRepository = accountRepository;
             _objectiveRepository = objectiveRepository;
             _splitRepository = splitRepository;
             _accountUsersRepository = accountUsersRepository;
-
         }
 
         // Tipos de transacciones:
@@ -29,9 +31,7 @@ namespace wandaAPI.Services
         // Personal - gasto
         // Conjunta - gasto contribucion
         // Conjunta - gasto dividido
-        // Aportaciion Objetivo - gasto saving
-
-
+        // Aportación Objetivo - gasto saving
 
         // =========================================================================================================
         // 1. CREACIÓN DE TRANSACCIONES 
@@ -42,23 +42,18 @@ namespace wandaAPI.Services
         //    d) Crea "Transacción Espejo" en la cuenta personal para tracking individual.
         //    e) Genera deudas (Splits) si es un gasto compartido.
         // =========================================================================================================
-        public async Task<Models.Transaction> CreateAsync(int accountId, TransactionCreateDTO dto)
+        public async Task<Models.Transaction> CreateAsync(int accountId, int userId, TransactionCreateDTO dto)
         {
-
             if (dto == null) throw new ArgumentNullException(nameof(dto));
-
 
             var targetAccount = await _accountRepository.GetByIdAsync(accountId);
             if (targetAccount == null) throw new KeyNotFoundException("La cuenta destino no existe.");
 
-
             ValidateTransactionData(dto, targetAccount);
 
-            var fundingAccount = await ResolveFundingAccountAsync(targetAccount, dto.User_id);
-
+            var fundingAccount = await ResolveFundingAccountAsync(targetAccount, userId);
 
             ValidateSufficientFunds(fundingAccount, dto.Amount, dto.Transaction_type.ToLower());
-
 
             using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
@@ -74,7 +69,7 @@ namespace wandaAPI.Services
                 var transaction = new Models.Transaction
                 {
                     Account_id = accountId,
-                    User_id = dto.User_id,
+                    User_id = userId,
                     Objective_id = dto.Objective_id,
                     Category = dto.Category,
                     Amount = dto.Amount,
@@ -92,16 +87,16 @@ namespace wandaAPI.Services
 
                 // 3. Generación de "Transacción Espejo" (Visibilidad Personal)
                 // Si pagaste algo para el grupo, se crea una copia en tu cuenta personal para que veas el gasto.
-
                 if (targetAccount.Account_id != fundingAccount.Account_id)
                 {
                     string espejoConcepto = dto.Split_type.ToLower() == "divided"
-                        ? $"(Gasto Compartido) {dto.Concept}" : $"(Aportación Conjunta) {dto.Concept}";
+                        ? $"(Gasto Compartido) {dto.Concept}" 
+                        : $"(Aportación Conjunta) {dto.Concept}";
 
                     var mirrorTransaction = new Models.Transaction
                     {
                         Account_id = fundingAccount.Account_id,
-                        User_id = dto.User_id,
+                        User_id = userId,
                         Category = dto.Category,
                         Amount = dto.Amount,
                         Transaction_type = "expense",
@@ -117,10 +112,8 @@ namespace wandaAPI.Services
                 }
 
                 // 4. Procesamiento de Deudas y Ahorros
-                await ProcessJointSplitsAsync(transaction, targetAccount, transId, dto.CustomSplits);
-
+                await ProcessJointSplitsAsync(transaction, targetAccount, transId, dto.CustomSplits, userId);
                 await ProcessObjectiveContributionAsync(transaction);
-
 
                 scope.Complete();
 
@@ -135,7 +128,6 @@ namespace wandaAPI.Services
         //    b) Calcula diferencias de saldo y ajusta la cuenta financiadora.
         //    c) Sincroniza la "Transacción Espejo" (busca la antigua y la actualiza).
         // =========================================================================================================
-
         public async Task UpdateAsync(int id, TransactionUpdateDTO dto)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
@@ -173,15 +165,14 @@ namespace wandaAPI.Services
                     await AdjustObjectiveForUpdateAsync(originalTx, amountDifference);
                 }
 
-                //Actualiza transaccion espejo en cuenta personal
+                // 2. Actualiza transaccion espejo en cuenta personal
                 if (targetAccount.Account_id != fundingAccount.Account_id)
                 {
-
                     string oldEspejoConcepto = originalTx.Split_type.ToLower() == "divided"
                         ? $"(Gasto Compartido) {originalTx.Concept}"
                         : $"(Aportación Conjunta) {originalTx.Concept}";
 
-                    // Buscamos transaccioin que coincida con los datos antiguos
+                    // Buscamos transacción que coincida con los datos antiguos
                     var personalTxs = await _transactionRepository.GetTransactionsByAccountAsync(fundingAccount.Account_id);
 
                     var mirrorTx = personalTxs.FirstOrDefault(t =>
@@ -189,7 +180,6 @@ namespace wandaAPI.Services
                         t.Transaction_date == originalTx.Transaction_date &&
                         t.Concept == oldEspejoConcepto
                     );
-
 
                     if (mirrorTx != null)
                     {
@@ -209,7 +199,7 @@ namespace wandaAPI.Services
                     }
                 }
 
-
+                // 3. Actualizar transacción original
                 originalTx.Amount = dto.Amount;
                 originalTx.Category = dto.Category;
                 originalTx.Concept = dto.Concept;
@@ -233,17 +223,14 @@ namespace wandaAPI.Services
         //    c) Limpieza: Elimina la transacción principal y su espejo personal.
         //    d) Cascada: Las deudas pendientes se borran solas por BBDD (ON DELETE CASCADE).
         // =========================================================================================================
-
         public async Task DeleteAsync(int id)
         {
-
             var tx = await _transactionRepository.GetTransactionAsync(id);
             if (tx == null) throw new KeyNotFoundException("La transacción no existe.");
 
             // Verifica las deudas pagadas
             if (tx.Split_type.ToLower() == "divided")
             {
-
                 var splits = await _splitRepository.GetByTransactionIdAsync(id);
 
                 // Si alguno está pagado, prohibimos borrar
@@ -251,7 +238,6 @@ namespace wandaAPI.Services
                 {
                     throw new InvalidOperationException("No se puede eliminar este gasto porque uno o más usuarios ya han pagado su parte. Deben revertirse los pagos primero.");
                 }
-
             }
 
             var targetAccount = await _accountRepository.GetByIdAsync(tx.Account_id);
@@ -259,22 +245,16 @@ namespace wandaAPI.Services
 
             using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
-
                 await RevertBalanceEffectAsync(fundingAccount, tx);
-
-
                 await RevertObjectiveEffectAsync(tx);
-
-
                 await _transactionRepository.DeleteTransactionAsync(id);
 
-                //Borra la transaccion Espejo
+                // Borra la transaccion Espejo
                 if (targetAccount.Account_id != fundingAccount.Account_id)
                 {
                     string espejoConcepto = tx.Split_type.ToLower() == "divided"
                         ? $"(Gasto Compartido) {tx.Concept}"
                         : $"(Aportación Conjunta) {tx.Concept}";
-
 
                     var personalTxs = await _transactionRepository.GetTransactionsByAccountAsync(fundingAccount.Account_id);
 
@@ -301,7 +281,6 @@ namespace wandaAPI.Services
         // Redirecciona el cobro: Si la cuenta destino es conjunta, busca y devuelve la cuenta personal del usuario.
         private async Task<Account> ResolveFundingAccountAsync(Account targetAccount, int userId)
         {
-
             if (targetAccount.Account_type?.Trim().ToLower() == "joint")
             {
                 var personalAccount = await _accountRepository.GetPersonalAccountByUserIdAsync(userId);
@@ -311,15 +290,18 @@ namespace wandaAPI.Services
                 return personalAccount;
             }
 
-
             return targetAccount;
         }
 
         // Genera los registros de deuda (Splits) para los miembros del grupo.
         // Soporta modo Manual (CustomSplits) o Automático (Equitativo).
-        private async Task ProcessJointSplitsAsync(Models.Transaction tx, Account targetAccount, int transId, List<TransactionSplitDetailDTO>? customSplits)
+        private async Task ProcessJointSplitsAsync(
+            Models.Transaction tx, 
+            Account targetAccount, 
+            int transId, 
+            List<TransactionSplitDetailDTO>? customSplits,
+            int payingUserId)
         {
-
             if (targetAccount.Account_type?.Trim().ToLower() == "joint" &&
                 tx.Transaction_type == "expense" &&
                 tx.Split_type == "divided")
@@ -329,9 +311,9 @@ namespace wandaAPI.Services
                 {
                     foreach (var splitDto in customSplits)
                     {
-                        // No creamos deuda para el que pagó la cuenta completa (tx.User_id)
+                        // No creamos deuda para el que pagó la cuenta completa
                         // Solo registramos lo que le deben los DEMÁS
-                        if (splitDto.User_id != tx.User_id)
+                        if (splitDto.User_id != payingUserId)
                         {
                             var split = new TransactionSplit
                             {
@@ -344,7 +326,7 @@ namespace wandaAPI.Services
                         }
                     }
                 }
-                // CASO B: DIVISIÓN AUTOMÁTICA 
+                // DIVISIÓN AUTOMÁTICA 
                 else
                 {
                     var members = await _accountUsersRepository.GetUsersByAccountIdAsync(targetAccount.Account_id);
@@ -355,7 +337,7 @@ namespace wandaAPI.Services
 
                         foreach (var member in members)
                         {
-                            if (member.User_id != tx.User_id)
+                            if (member.User_id != payingUserId)
                             {
                                 var split = new TransactionSplit
                                 {
@@ -372,11 +354,9 @@ namespace wandaAPI.Services
             }
         }
 
-        //Gestion de Objetivos
-
+        // Gestión de Objetivos
         private async Task ProcessObjectiveContributionAsync(Models.Transaction tx)
         {
-
             if (tx.Transaction_type == "saving" && tx.Objective_id > 0)
             {
                 var objective = await _objectiveRepository.GetByIdAsync(tx.Objective_id);
@@ -388,16 +368,13 @@ namespace wandaAPI.Services
             }
         }
 
-
         // =========================================================================================================
         // 5. VALIDACIONES Y ESTADOS
         // =========================================================================================================
 
-
-        //Valida que haya dinero suficiente en la cuenta en caso de ser un gasto o ahorro
+        // Valida que haya dinero suficiente en la cuenta en caso de ser un gasto o ahorro
         private void ValidateSufficientFunds(Account account, double amount, string type)
         {
-
             if (type == "expense" || type == "saving")
             {
                 if (account.Amount < amount)
@@ -409,13 +386,10 @@ namespace wandaAPI.Services
 
         private void ValidateTransactionData(TransactionCreateDTO dto, Account targetAccount)
         {
-
             // Validaciones ENUMS
-
             var validTypes = new[] { "income", "expense", "saving" };
             if (!validTypes.Contains(dto.Transaction_type.ToLower()))
                 throw new ArgumentException("El tipo de transacción debe ser: income, expense o saving.");
-
 
             var validSplits = new[] { "individual", "contribution", "divided" };
             if (!validSplits.Contains(dto.Split_type.ToLower()))
@@ -428,9 +402,7 @@ namespace wandaAPI.Services
                     throw new ArgumentException("La frecuencia debe ser: monthly, weekly o annual.");
             }
 
-
-            //Validaciones básicas
-
+            // Validaciones básicas
             if (dto.Amount <= 0)
                 throw new ArgumentException("El monto de la transacción debe ser mayor a 0.");
 
@@ -443,9 +415,7 @@ namespace wandaAPI.Services
             if (dto.Transaction_date == default)
                 throw new ArgumentException("La fecha de la transacción no es válida.");
 
-
-            // Validaciones logica de negocio
-
+            // Validaciones lógica de negocio
             if (dto.Transaction_type.ToLower() == "saving" && dto.Objective_id <= 0)
             {
                 throw new ArgumentException("Las transacciones de tipo 'saving' deben tener un Objective_id válido asociado.");
@@ -461,12 +431,10 @@ namespace wandaAPI.Services
             {
                 throw new ArgumentException("En una cuenta personal, el tipo de división (split) solo puede ser 'individual'.");
             }
-
         }
 
         private void ValidateUpdateData(TransactionUpdateDTO dto, Models.Transaction originalTx)
         {
-
             if (dto.Amount <= 0)
                 throw new ArgumentException("El monto debe ser mayor a 0.");
 
@@ -478,7 +446,6 @@ namespace wandaAPI.Services
 
             if (dto.Transaction_date == default)
                 throw new ArgumentException("La fecha de la transacción no es válida.");
-
 
             if (dto.IsRecurring)
             {
@@ -499,16 +466,13 @@ namespace wandaAPI.Services
             }
         }
 
-
-        //Deshace el movimiento de dinero 
+        // Deshace el movimiento de dinero 
         private async Task RevertBalanceEffectAsync(Account account, Models.Transaction tx)
         {
-
             if (tx.Transaction_type.ToLower() == "income")
             {
                 account.Amount -= tx.Amount;
             }
-
             else
             {
                 account.Amount += tx.Amount;
@@ -516,7 +480,7 @@ namespace wandaAPI.Services
             await _accountRepository.UpdateAsync(account);
         }
 
-        //Deshace el movimiento de ahorro
+        // Deshace el movimiento de ahorro
         private async Task RevertObjectiveEffectAsync(Models.Transaction tx)
         {
             if (tx.Transaction_type.ToLower() == "saving" && tx.Objective_id > 0)
@@ -533,12 +497,9 @@ namespace wandaAPI.Services
             }
         }
 
-
-
-        //Ajusta el saldo. Comprueba si se trata de una diferencia positiva o negativa
+        // Ajusta el saldo. Comprueba si se trata de una diferencia positiva o negativa
         private async Task AdjustBalanceForUpdateAsync(Account account, string type, double difference)
         {
-
             if (type == "expense" || type == "saving")
             {
                 account.Amount -= difference;
@@ -565,26 +526,22 @@ namespace wandaAPI.Services
             }
         }
 
-
         public async Task<List<Models.Transaction>> GetByAccountAsync(int accountId)
         {
-
             var transactions = await _transactionRepository.GetTransactionsByAccountAsync(accountId);
             return transactions;
         }
 
         public async Task<Models.Transaction?> GetByIdAsync(int transactions_id)
         {
-
             var transaccion = await _transactionRepository.GetTransactionAsync(transactions_id);
             if (transaccion == null) throw new KeyNotFoundException("La transacción no existe.");
             return transaccion;
         }
 
-
-        //PROCESAR PAGOS RECURRENTES
-
-        //
+        // =========================================================================================================
+        // 6. PROCESAMIENTO DE TRANSACCIONES RECURRENTES (CRON/WORKER)
+        // =========================================================================================================
         public async Task ProcessRecurringTransactionsAsync()
         {
             var recurringTransactions = await _transactionRepository.GetRecurringTransactionsAsync();
@@ -627,23 +584,22 @@ namespace wandaAPI.Services
                         // IMPORTANTE: La nueva instancia NO es recurrente, es una instancia única.
                         var newTransactionDto = new TransactionCreateDTO
                         {
-                            User_id = tx.User_id,
-                            Account_id = tx.Account_id, // Usamos el ID original (CreateAsync resolverá si es conjunta)
                             Objective_id = tx.Objective_id,
                             Category = tx.Category,
                             Amount = tx.Amount,
                             Transaction_type = tx.Transaction_type,
-                            Concept = $"{tx.Concept} (Recurrente)", // Opcional: marcarla visualmente
+                            Concept = $"{tx.Concept} (Recurrente)",
                             Transaction_date = DateTime.Now,
-                            IsRecurring = false, // La hija no se recurre a sí misma
+                            IsRecurring = false,
                             Frequency = null,
                             End_date = null,
                             Split_type = tx.Split_type,
-                            CustomSplits = null // Aquí podrías lógica para replicar splits manuales si fuera necesario
+                            CustomSplits = null
                         };
 
                         // 5. Ejecutar la creación reutilizando tu lógica central
-                        await CreateAsync(tx.Account_id, newTransactionDto);
+                        // NOTA: Pasamos el userId original de la transacción padre
+                        await CreateAsync(tx.Account_id, tx.User_id, newTransactionDto);
 
                         // 6. Actualizar la fecha de última ejecución en la transacción "Padre"
                         // Esto evita que se ejecute múltiples veces el mismo día
@@ -657,9 +613,5 @@ namespace wandaAPI.Services
                 }
             }
         }
-
-
-
-
     }
 }

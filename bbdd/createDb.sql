@@ -1,6 +1,3 @@
--- =============================================
--- 1. LIMPIEZA Y CREACIÓN DE LA BASE DE DATOS
--- =============================================
 USE master;
 GO
 
@@ -59,7 +56,6 @@ CREATE TABLE OBJECTIVES (
     target_amount DECIMAL(18, 2) NOT NULL,
     current_save DECIMAL(18, 2) DEFAULT 0.00,
     deadline DATE NULL,
-    objective_picture_url NVARCHAR(MAX) NULL,
     CONSTRAINT FK_Objectives_Account FOREIGN KEY (account_id) REFERENCES ACCOUNTS(account_id) ON DELETE CASCADE
 );
 
@@ -72,7 +68,7 @@ CREATE TABLE TRANSACTIONS (
     objective_id INT NULL, 
     amount DECIMAL(18, 2) NOT NULL,
     transaction_type NVARCHAR(20) NOT NULL CHECK (transaction_type IN ('income', 'expense', 'saving')),
-    concept NVARCHAR(255) NOT NULL,
+    concept NVARCHAR(255),
     transaction_date DATETIME DEFAULT GETDATE(),
     isRecurring BIT DEFAULT 0,
     frequency NVARCHAR(20) NULL CHECK (frequency IN ('monthly', 'weekly', 'annual')),

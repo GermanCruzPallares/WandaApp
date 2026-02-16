@@ -158,7 +158,7 @@ namespace wandaAPI.Repositories
                    a.weekly_budget, a.monthly_budget, a.account_picture_url, a.creation_date
             FROM ACCOUNTS a
             JOIN ACCOUNT_USERS au ON a.account_id = au.account_id
-            WHERE au.user_id = @userId AND a.account_type = 'personal'";
+            WHERE au.user_id = @userId AND a.account_type = 'personal' ";
 
                 using (var command = new SqlCommand(query, connection))
                 {

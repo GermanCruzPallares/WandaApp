@@ -61,7 +61,6 @@ namespace wandaAPI.Services
                 Target_amount = dto.Target_amount,
                 Current_save = 0,
                 Deadline = dto.Deadline,
-                Objective_picture_url = dto.Objective_picture_url
             };
 
             int id = await _objectiveRepository.AddAsync(objective);
@@ -102,7 +101,6 @@ namespace wandaAPI.Services
             account.Target_amount = dto.Target_amount;
             account.Current_save = dto.Current_save;
             account.Deadline = dto.Deadline;
-            account.Objective_picture_url = dto.Objective_picture_url;
 
             await _objectiveRepository.UpdateAsync(account);
         }

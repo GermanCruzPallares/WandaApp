@@ -6,6 +6,7 @@ namespace wandaAPI.Services
     {
         Task<List<Transaction>> GetByAccountAsync(int accountId);
         Task<Transaction?> GetByIdAsync(int id);
+        
         /// <summary>
         /// =========================================================================================================
         /// 1. CREACIÓN DE TRANSACCIONES 
@@ -17,19 +18,26 @@ namespace wandaAPI.Services
         ///    e) Genera deudas (Splits) si es un gasto compartido.
         /// =========================================================================================================
         /// </summary>
-        /// <param name="accountId"></param>
-        /// <param name="dto"></param>
-        /// <returns></returns>
-        Task<Transaction> CreateAsync(int accountId, TransactionCreateDTO dto);
+        /// <param name="accountId">ID de la cuenta destino (del path)</param>
+        /// <param name="userId">ID del usuario que realiza la transacción (del token JWT)</param>
+        /// <param name="dto">Datos de la transacción</param>
+        /// <returns>La transacción creada</returns>
+        Task<Transaction> CreateAsync(int accountId, int userId, TransactionCreateDTO dto);
+        
         /// <summary>
-        /// ejempl
+        /// Actualiza una transacción existente.
+        /// NOTA: No permite editar transacciones con split_type = "divided" para mantener integridad de deudas.
         /// </summary>
-        /// <param name="id">Este es el id</param>
-        /// <param name="dto"></param>
-        /// <returns></returns>
+        /// <param name="id">ID de la transacción a actualizar</param>
+        /// <param name="dto">Nuevos datos de la transacción</param>
         Task UpdateAsync(int id, TransactionUpdateDTO dto);
+        
         Task DeleteAsync(int id);
 
+        /// <summary>
+        /// Procesa todas las transacciones recurrentes pendientes de ejecución.
+        /// Ejecutado automáticamente por el Worker o manualmente vía endpoint de CRON.
+        /// </summary>
         Task ProcessRecurringTransactionsAsync();
     }
 }

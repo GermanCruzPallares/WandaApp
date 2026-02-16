@@ -19,7 +19,7 @@ namespace wandaAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = "SELECT objective_id, account_id, name, target_amount, current_save, deadline, objective_picture_url FROM OBJECTIVES WHERE account_id = @account_id";
+                string query = "SELECT objective_id, account_id, name, target_amount, current_save, deadline FROM OBJECTIVES WHERE account_id = @account_id";
 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -36,8 +36,7 @@ namespace wandaAPI.Repositories
                                 Name = reader.GetString(2),
                                 Target_amount = reader.IsDBNull(3) ? 0 : Convert.ToDouble(reader.GetDecimal(3)),
                                 Current_save = reader.IsDBNull(3) ? 0 : Convert.ToDouble(reader.GetDecimal(4)),
-                                Deadline = reader.GetDateTime(5),
-                                Objective_picture_url = reader.IsDBNull(6) ? null : reader.GetString(6)
+                                Deadline = reader.GetDateTime(5)
                             });
                         }
                     }
@@ -51,7 +50,7 @@ namespace wandaAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = "SELECT objective_id, account_id, name, target_amount, current_save, deadline, objective_picture_url FROM OBJECTIVES WHERE objective_id = @objective_id";
+                string query = "SELECT objective_id, account_id, name, target_amount, current_save, deadline FROM OBJECTIVES WHERE objective_id = @objective_id";
 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -68,8 +67,8 @@ namespace wandaAPI.Repositories
                                 Name = reader.GetString(2),
                                 Target_amount = reader.IsDBNull(3) ? 0 : Convert.ToDouble(reader.GetDecimal(3)),
                                 Current_save = reader.IsDBNull(3) ? 0 : Convert.ToDouble(reader.GetDecimal(4)),
-                                Deadline = reader.GetDateTime(5),
-                                Objective_picture_url = reader.IsDBNull(6) ? null : reader.GetString(6)
+                                Deadline = reader.GetDateTime(5)
+
                             };
                         }
                     }
@@ -83,8 +82,8 @@ namespace wandaAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                string query = @"INSERT INTO OBJECTIVES (account_id, name, target_amount, current_save, deadline, objective_picture_url) 
-                                 VALUES (@account_id, @name, @target_amount, @current_save, @deadline, @objective_picture_url);
+                string query = @"INSERT INTO OBJECTIVES (account_id, name, target_amount, current_save, deadline) 
+                                 VALUES (@account_id, @name, @target_amount, @current_save, @deadline);
                                  SELECT SCOPE_IDENTITY();";
 
                 using (var command = new SqlCommand(query, connection))
@@ -94,7 +93,6 @@ namespace wandaAPI.Repositories
                     command.Parameters.AddWithValue("@target_amount", objective.Target_amount);
                     command.Parameters.AddWithValue("@current_save", objective.Current_save);
                     command.Parameters.AddWithValue("@deadline", objective.Deadline);
-                    command.Parameters.AddWithValue("@objective_picture_url", (object)objective.Objective_picture_url ?? DBNull.Value);
 
                     var result = await command.ExecuteScalarAsync();
                     return Convert.ToInt32(result);
@@ -108,7 +106,7 @@ namespace wandaAPI.Repositories
             {
                 await connection.OpenAsync();
                 string query = @"UPDATE OBJECTIVES SET name = @name, target_amount = @target_amount, current_save = @current_save, 
-                                 deadline = @deadline, objective_picture_url = @objective_picture_url WHERE objective_id = @objective_id";
+                                 deadline = @deadline WHERE objective_id = @objective_id";
 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -117,7 +115,7 @@ namespace wandaAPI.Repositories
                     command.Parameters.AddWithValue("@target_amount", objective.Target_amount);
                     command.Parameters.AddWithValue("@current_save", objective.Current_save);
                     command.Parameters.AddWithValue("@deadline", objective.Deadline);
-                    command.Parameters.AddWithValue("@objective_picture_url", (object)objective.Objective_picture_url ?? DBNull.Value);
+
 
                     await command.ExecuteNonQueryAsync();
                 }
