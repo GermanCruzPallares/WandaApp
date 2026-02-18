@@ -5,12 +5,7 @@
 
     <section class="transactions-history">
       <!-- Transacciones agrupadas por fecha -->
-      <div
-        v-else
-        v-for="group in displayedTransactions"
-        :key="group.date"
-        class="transaction-group"
-      >
+      <div v-for="group in displayedTransactions" :key="group.date" class="transaction-group">
         <div class="transaction-group__date">{{ group.formattedDate }}</div>
 
         <div class="transaction-list">

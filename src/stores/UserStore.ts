@@ -274,7 +274,6 @@ export const useUserStore = defineStore('user', () => {
     setActiveAccount,
     getAccountUsers,
     checkUserExists,
-    updateAccount,
     refreshAccounts,
     initialize,
   }
