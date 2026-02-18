@@ -1,5 +1,8 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useTransactionStore } from '@/stores/TransactionStore'
+import { useUserStore } from '@/stores/UserStore'
 import IconFood from './icons/IconFood.vue'
 import IconTransport from './icons/IconTransport.vue'
 import IconShopping from './icons/IconShopping.vue'
@@ -7,29 +10,37 @@ import IconInvoice from './icons/IconInvoice.vue'
 import IconSubscription from './icons/IconSubscription.vue'
 import IconArrow from './icons/IconArrow.vue'
 
-const type = ref('expense')
+const router = useRouter()
+const transactionStore = useTransactionStore()
+const userStore = useUserStore()
+
+const type = ref<'expense' | 'income'>('expense')
 const amount = ref('0')
-const selectedCategory = ref(null)
+const selectedCategory = ref<number | null>(null)
 const conceptExpanded = ref(false)
 const conceptText = ref('')
 const isRecurring = ref(false)
-const frequency = ref('monthly')
-const duration = ref('defined')
-const endDate = ref()
+const frequency = ref<'weekly' | 'monthly' | 'yearly'>('monthly')
+const duration = ref<'defined' | 'indefinite'>('defined')
+const endDate = ref('')
 const showKeypad = ref(true)
 
-const keypadRef = ref(null)
-const amountTriggerRef = ref(null)
+const keypadRef = ref<HTMLElement | null>(null)
+const amountTriggerRef = ref<HTMLElement | null>(null)
 
 const touchStartY = ref(0)
 const touchEndY = ref(0)
 
-const onTouchStart = (e) => {
-  touchStartY.value = e.changedTouches[0].screenY
+const onTouchStart = (e: TouchEvent) => {
+  if (e.changedTouches.length > 0) {
+    touchStartY.value = e.changedTouches[0].screenY
+  }
 }
 
-const onTouchMove = (e) => {
-  touchEndY.value = e.changedTouches[0].screenY
+const onTouchMove = (e: TouchEvent) => {
+  if (e.changedTouches.length > 0) {
+    touchEndY.value = e.changedTouches[0].screenY
+  }
 }
 
 const onTouchEnd = () => {
@@ -48,9 +59,9 @@ const closeKeypad = () => {
   showKeypad.value = false
 }
 
-const sliderRef = ref(null)
+const sliderRef = ref<HTMLElement | null>(null)
 
-const scrollSlider = (direction) => {
+const scrollSlider = (direction: 'left' | 'right') => {
   if (sliderRef.value) {
     const scrollAmount = 200
     sliderRef.value.scrollBy({
@@ -71,7 +82,7 @@ const formattedAmount = computed(() => {
   return amount.value
 })
 
-const setType = (newType) => {
+const setType = (newType: 'expense' | 'income') => {
   type.value = newType
 }
 
@@ -79,7 +90,7 @@ const toggleConcept = () => {
   conceptExpanded.value = !conceptExpanded.value
 }
 
-const handleKeypad = (key) => {
+const handleKeypad = (key: number | string) => {
   if (key === 'backspace') {
     if (amount.value.length > 1) {
       amount.value = amount.value.slice(0, -1)
@@ -97,10 +108,14 @@ const handleKeypad = (key) => {
   }
 }
 
-const handleKeydown = (e) => {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+const handleKeydown = (e: KeyboardEvent) => {
+  if (
+    (e.target as HTMLElement).tagName === 'INPUT' ||
+    (e.target as HTMLElement).tagName === 'TEXTAREA'
+  )
+    return
 
-  if (!isNaN(e.key) && e.key !== ' ') {
+  if (!isNaN(Number(e.key)) && e.key !== ' ') {
     handleKeypad(parseInt(e.key))
   } else if (e.key === 'Backspace') {
     handleKeypad('backspace')
@@ -119,15 +134,63 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
 })
 
-const save = () => {
-  console.log({
-    type: type.value,
-    amount: amount.value,
-    category: selectedCategory.value,
-    concept: conceptText.value,
-    recurring: isRecurring.value ? { frequency: frequency.value, duration: duration.value } : null,
-  })
-  closeKeypad()
+const save = async () => {
+  if (!selectedCategory.value) {
+    alert('Por favor selecciona una categoría')
+    return
+  }
+
+  if (!userStore.activeAccountId || userStore.activeAccountId <= 0) {
+    alert('No hay una cuenta activa seleccionada')
+    return
+  }
+
+  if (parseFloat(amount.value.replace(',', '.')) <= 0) {
+    alert('El monto debe ser mayor a 0')
+    return
+  }
+
+  const categoryName = categories.find((c) => c.id === selectedCategory.value)?.name || 'Varios'
+
+  // Preparar datos para el backend
+  const transactionData = {
+    user_id: userStore.userId || 0, // Fallback if null
+    category: categoryName,
+    amount: parseFloat(amount.value.replace(',', '.')),
+    transaction_type: type.value, // 'expense' | 'income'
+    concept: conceptText.value || null,
+    transaction_date: new Date().toISOString(),
+    isRecurring: isRecurring.value,
+    frequency: isRecurring.value ? frequency.value : null,
+    end_date:
+      isRecurring.value && duration.value === 'defined' && endDate.value ? endDate.value : null,
+    split_type: null, // Opcional, dependiendo de la lógica de negocio
+  }
+
+  try {
+    const success = await transactionStore.createTransaction(
+      userStore.activeAccountId,
+      transactionData,
+    )
+
+    if (success) {
+      console.log('Transacción guardada con éxito')
+      closeKeypad()
+      // Opcional: navegar de vuelta o resetear formulario
+      // router.push('/')
+
+      // Reset form
+      amount.value = '0'
+      selectedCategory.value = null
+      conceptText.value = ''
+      isRecurring.value = false
+    } else {
+      alert('Error al guardar la transacción')
+    }
+  } catch (error) {
+    console.error('Error saving transaction:', error)
+    alert('Ocurrió un error al guardar')
+  }
 }
 </script>
 

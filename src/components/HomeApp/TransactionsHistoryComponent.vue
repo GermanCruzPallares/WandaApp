@@ -1,7 +1,7 @@
 <template>
   <div>
     <SectionTitle title="| Historial" />
-    
+
     <section class="transactions-history">
       <!-- Estado de carga -->
       <div v-if="isLoading" class="loading-state">
@@ -9,14 +9,14 @@
       </div>
 
       <!-- Transacciones agrupadas por fecha -->
-      <div 
+      <div
         v-else
-        v-for="group in displayedTransactions" 
+        v-for="group in displayedTransactions"
         :key="group.date"
         class="transaction-group"
       >
         <div class="transaction-group__date">{{ group.formattedDate }}</div>
-        
+
         <div class="transaction-list">
           <div
             v-for="transaction in group.transactions"
@@ -28,25 +28,37 @@
             <div class="transaction-item__icon">
               <component :is="getCategoryIcon(transaction.category)" />
             </div>
-            
+
             <div class="transaction-item__info">
               <h4 class="transaction-item__title">{{ transaction.category }}</h4>
               <p class="transaction-item__description">{{ getDescription(transaction) }}</p>
             </div>
-            
+
             <div class="transaction-item__right">
-              <span 
+              <span
                 class="transaction-item__amount"
-                :class="{ 
+                :class="{
                   'transaction-item__amount--negative': transaction.transaction_type === 'expense',
-                  'transaction-item__amount--positive': transaction.transaction_type === 'income'
+                  'transaction-item__amount--positive': transaction.transaction_type === 'income',
                 }"
               >
                 {{ formatAmount(transaction.amount, transaction.transaction_type) }}
               </span>
-              
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="transaction-item__arrow">
-                <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                class="transaction-item__arrow"
+              >
+                <path
+                  d="M9 18l6-6-6-6"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             </div>
           </div>
@@ -54,13 +66,15 @@
       </div>
 
       <!-- Botón Ver más -->
-      <button 
-        v-if="canLoadMore"
-        class="load-more-btn"
-        @click="loadMore"
-      >
+      <button v-if="canLoadMore" class="load-more-btn" @click="loadMore">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path d="M19 9l-7 7-7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path
+            d="M19 9l-7 7-7-7"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         </svg>
         Ver más
       </button>
@@ -69,54 +83,54 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import SectionTitle from '@/components/SectionTitle.vue';
-import { getCategoryIcon } from '@/components/icons/CategoryIcons';
-import type { Transaction } from '@/types/models';
+import { ref, computed, onMounted } from 'vue'
+import SectionTitle from '@/components/SectionTitle.vue'
+import { getCategoryIcon } from '@/components/icons/CategoryIcons'
+import type { Transaction } from '@/types/models'
 
 interface TransactionGroup {
-  date: string;
-  formattedDate: string;
-  transactions: Transaction[];
+  date: string
+  formattedDate: string
+  transactions: Transaction[]
 }
 
 interface Props {
-  accountId?: number; // ✅ Recibe el ID de la cuenta activa
-  initialLimit?: number;
-  loadMoreIncrement?: number;
+  accountId?: number // ✅ Recibe el ID de la cuenta activa
+  initialLimit?: number
+  loadMoreIncrement?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
   accountId: 1,
   initialLimit: 5,
-  loadMoreIncrement: 10
-});
+  loadMoreIncrement: 10,
+})
 
 const emit = defineEmits<{
-  transactionClick: [transactionId: number];
-  transactionsLoaded: [transactions: Transaction[]]; // ✅ Nuevo evento
-}>();
+  transactionClick: [transactionId: number]
+  transactionsLoaded: [transactions: Transaction[]] // ✅ Nuevo evento
+}>()
 
 // ✅ Los datos ahora están en el HIJO
-const transactions = ref<Transaction[]>([]);
-const isLoading = ref(false);
-const displayLimit = ref(props.initialLimit);
+const transactions = ref<Transaction[]>([])
+const isLoading = ref(false)
+const displayLimit = ref(props.initialLimit)
 
 // ✅ Simular llamada a la API
 const fetchTransactions = async () => {
-  console.log(`📡 TransactionsHistoryComponent: Simulando llamada GET /api/transactions?account_id=${props.accountId}`);
-  
-  isLoading.value = true;
-  
+  console.log(
+    `📡 TransactionsHistoryComponent: Simulando llamada GET /api/transactions?account_id=${props.accountId}`,
+  )
+
+  isLoading.value = true
+
   // Simular delay de red
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
+  await new Promise((resolve) => setTimeout(resolve, 500))
+
   // TODO: En producción, esto sería:
   // const response = await fetch(`/api/transactions?account_id=${props.accountId}`);
   // const data = await response.json();
-  
 
-  
   // Por ahora, datos simulados
   const mockData: Transaction[] = [
     {
@@ -132,8 +146,8 @@ const fetchTransactions = async () => {
       isRecurring: true,
       frequency: 'weekly',
       end_date: null,
-      split_type: 'none',
-      last_execution_date: new Date(2026, 0, 2)
+      split_type: null,
+      last_execution_date: new Date(2026, 0, 2),
     },
     {
       transaction_id: 2,
@@ -148,8 +162,8 @@ const fetchTransactions = async () => {
       isRecurring: true,
       frequency: 'weekly',
       end_date: null,
-      split_type: 'none',
-      last_execution_date: null
+      split_type: null,
+      last_execution_date: null,
     },
     {
       transaction_id: 3,
@@ -157,15 +171,15 @@ const fetchTransactions = async () => {
       user_id: 1,
       objective_id: 0,
       category: 'Salario',
-      amount: 2500.00,
+      amount: 2500.0,
       transaction_type: 'income',
       concept: 'Nómina',
       transaction_date: new Date(2026, 0, 1),
       isRecurring: true,
       frequency: 'monthly',
       end_date: null,
-      split_type: 'none',
-      last_execution_date: new Date(2026, 0, 1)
+      split_type: null,
+      last_execution_date: new Date(2026, 0, 1),
     },
     {
       transaction_id: 4,
@@ -173,15 +187,15 @@ const fetchTransactions = async () => {
       user_id: 1,
       objective_id: 0,
       category: 'Transporte',
-      amount: 45.50,
+      amount: 45.5,
       transaction_type: 'expense',
       concept: 'Gasolina',
       transaction_date: new Date(2026, 0, 1),
       isRecurring: false,
       frequency: null,
       end_date: null,
-      split_type: 'none',
-      last_execution_date: null
+      split_type: null,
+      last_execution_date: null,
     },
     {
       transaction_id: 5,
@@ -189,15 +203,15 @@ const fetchTransactions = async () => {
       user_id: 1,
       objective_id: 0,
       category: 'Hogar',
-      amount: 850.00,
+      amount: 850.0,
       transaction_type: 'expense',
       concept: 'Alquiler Enero',
       transaction_date: new Date(2026, 0, 1),
       isRecurring: true,
       frequency: 'monthly',
       end_date: null,
-      split_type: 'none',
-      last_execution_date: new Date(2026, 0, 1)
+      split_type: null,
+      last_execution_date: new Date(2026, 0, 1),
     },
     {
       transaction_id: 6,
@@ -212,8 +226,8 @@ const fetchTransactions = async () => {
       isRecurring: true,
       frequency: 'monthly',
       end_date: null,
-      split_type: 'none',
-      last_execution_date: new Date(2026, 0, 3)
+      split_type: null,
+      last_execution_date: new Date(2026, 0, 3),
     },
     {
       transaction_id: 7,
@@ -221,15 +235,15 @@ const fetchTransactions = async () => {
       user_id: 1,
       objective_id: 0,
       category: 'Ocio',
-      amount: 32.40,
+      amount: 32.4,
       transaction_type: 'expense',
       concept: 'Cine y Palomitas',
       transaction_date: new Date(2026, 0, 4),
       isRecurring: false,
       frequency: null,
       end_date: null,
-      split_type: 'none',
-      last_execution_date: null
+      split_type: null,
+      last_execution_date: null,
     },
     // ✅ Añadidas transacciones de tipo 'saving'
     {
@@ -245,8 +259,8 @@ const fetchTransactions = async () => {
       isRecurring: true,
       frequency: 'monthly',
       end_date: null,
-      split_type: 'none',
-      last_execution_date: new Date(2026, 0, 10, 10, 30)
+      split_type: null,
+      last_execution_date: new Date(2026, 0, 10, 10, 30),
     },
     {
       transaction_id: 102,
@@ -261,131 +275,142 @@ const fetchTransactions = async () => {
       isRecurring: true,
       frequency: 'monthly',
       end_date: null,
-      split_type: 'none',
-      last_execution_date: new Date(2026, 0, 10, 15, 45)
-    }
-  ];
-  
-  transactions.value = mockData;
-  isLoading.value = false;
-  
-  // ✅ Emitir los datos al padre
-  emit('transactionsLoaded', mockData);
-  
-  console.log('✅ TransactionsHistoryComponent: Transacciones cargadas:', mockData.length);
-};
+      split_type: null,
+      last_execution_date: new Date(2026, 0, 10, 15, 45),
+    },
+  ]
 
+  transactions.value = mockData
+  isLoading.value = false
+
+  // ✅ Emitir los datos al padre
+  emit('transactionsLoaded', mockData)
+
+  console.log('✅ TransactionsHistoryComponent: Transacciones cargadas:', mockData.length)
+}
 
 onMounted(() => {
-  fetchTransactions();
-});
+  fetchTransactions()
+})
 
 // Convertir fecha string a Date si es necesario
 const parseDate = (date: Date | string): Date => {
-  return typeof date === 'string' ? new Date(date) : date;
-};
+  return typeof date === 'string' ? new Date(date) : date
+}
 
 // Obtener la descripción completa (concepto + frecuencia si aplica)
 const getDescription = (transaction: Transaction): string => {
-  let description = transaction.concept;
-  
+  let description = transaction.concept || ''
+
   if (transaction.isRecurring && transaction.frequency) {
     const frequencyLabels = {
       weekly: 'Semanal',
       monthly: 'Mensual',
-      yearly: 'Anual'
-    };
-    
-    const frequencyLabel = frequencyLabels[transaction.frequency];
-    description += ` - ${frequencyLabel}`;
+      yearly: 'Anual',
+    }
+
+    const frequencyLabel = frequencyLabels[transaction.frequency as keyof typeof frequencyLabels]
+    if (frequencyLabel) {
+      description += ` - ${frequencyLabel}`
+    }
   }
-  
-  return description;
-};
+
+  return description
+}
 
 // Agrupar transacciones por fecha
 const groupedTransactions = computed<TransactionGroup[]>(() => {
-  const groups = new Map<string, Transaction[]>();
-  
+  const groups = new Map<string, Transaction[]>()
+
   const sortedTransactions = [...transactions.value].sort(
-    (a, b) => parseDate(b.transaction_date).getTime() - parseDate(a.transaction_date).getTime()
-  );
-  
-  sortedTransactions.forEach(transaction => {
-    const transactionDate = parseDate(transaction.transaction_date);
-    const dateKey = transactionDate.toISOString().split('T')[0] || '';
-    
-    if (!dateKey) return;
-    
+    (a, b) => parseDate(b.transaction_date).getTime() - parseDate(a.transaction_date).getTime(),
+  )
+
+  sortedTransactions.forEach((transaction) => {
+    const transactionDate = parseDate(transaction.transaction_date)
+    const dateKey = transactionDate.toISOString().split('T')[0] || ''
+
+    if (!dateKey) return
+
     if (!groups.has(dateKey)) {
-      groups.set(dateKey, []);
+      groups.set(dateKey, [])
     }
-    
-    const group = groups.get(dateKey);
+
+    const group = groups.get(dateKey)
     if (group) {
-      group.push(transaction);
+      group.push(transaction)
     }
-  });
-  
+  })
+
   return Array.from(groups.entries()).map(([date, transactions]) => ({
     date,
     formattedDate: formatDate(new Date(date)),
-    transactions
-  }));
-});
+    transactions,
+  }))
+})
 
 const displayedTransactions = computed(() => {
-  let count = 0;
-  const result: TransactionGroup[] = [];
-  
+  let count = 0
+  const result: TransactionGroup[] = []
+
   for (const group of groupedTransactions.value) {
-    if (count >= displayLimit.value) break;
-    
-    const remainingSlots = displayLimit.value - count;
-    const transactionsToShow = group.transactions.slice(0, remainingSlots);
-    
+    if (count >= displayLimit.value) break
+
+    const remainingSlots = displayLimit.value - count
+    const transactionsToShow = group.transactions.slice(0, remainingSlots)
+
     if (transactionsToShow.length > 0) {
       result.push({
         ...group,
-        transactions: transactionsToShow
-      });
-      count += transactionsToShow.length;
+        transactions: transactionsToShow,
+      })
+      count += transactionsToShow.length
     }
   }
-  
-  return result;
-});
+
+  return result
+})
 
 const canLoadMore = computed(() => {
-  const totalTransactions = transactions.value.length;
-  return displayLimit.value < totalTransactions;
-});
+  const totalTransactions = transactions.value.length
+  return displayLimit.value < totalTransactions
+})
 
 const formatDate = (date: Date): string => {
-  const day = date.getDate().toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0')
   const months = [
-    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
-  ];
-  const month = months[date.getMonth()];
-  const year = date.getFullYear();
-  
-  return `${day} ${month} ${year}`;
-};
+    'enero',
+    'febrero',
+    'marzo',
+    'abril',
+    'mayo',
+    'junio',
+    'julio',
+    'agosto',
+    'septiembre',
+    'octubre',
+    'noviembre',
+    'diciembre',
+  ]
+  const month = months[date.getMonth()]
+  const year = date.getFullYear()
+
+  return `${day} ${month} ${year}`
+}
 
 const formatAmount = (amount: number, type: string): string => {
-  const formatted = amount.toFixed(2).replace('.', ',');
-  return type === 'expense' ? `-${formatted} €` : `+${formatted} €`;
-};
+  const formatted = amount.toFixed(2).replace('.', ',')
+  return type === 'expense' ? `-${formatted} €` : `+${formatted} €`
+}
 
 const loadMore = () => {
-  displayLimit.value += props.loadMoreIncrement;
-  console.log('📈 Mostrando más transacciones. Límite actual:', displayLimit.value);
-};
+  displayLimit.value += props.loadMoreIncrement
+  console.log('📈 Mostrando más transacciones. Límite actual:', displayLimit.value)
+}
 
 const handleTransactionClick = (transactionId: number) => {
-  emit('transactionClick', transactionId);
-};
+  emit('transactionClick', transactionId)
+}
 </script>
 
 <style scoped lang="scss">
@@ -399,7 +424,7 @@ const handleTransactionClick = (transactionId: number) => {
   text-align: center;
   padding: 40px 20px;
   color: $color-text-gray;
-  
+
   p {
     margin: 0;
     font-size: 14px;
@@ -433,10 +458,11 @@ const handleTransactionClick = (transactionId: number) => {
   background-color: $section-bg-primary;
   border-radius: $card-border-radius;
   padding: 25px 16px;
-  
+
   cursor: pointer;
-  transition: transform $transition-speed $transition-ease,
-              box-shadow $transition-speed $transition-ease;
+  transition:
+    transform $transition-speed $transition-ease,
+    box-shadow $transition-speed $transition-ease;
 
   &:hover {
     transform: translateX(2px);
@@ -529,7 +555,7 @@ const handleTransactionClick = (transactionId: number) => {
 
   &:hover {
     color: $color-text;
-    
+
     svg {
       transform: translateY(2px);
     }
