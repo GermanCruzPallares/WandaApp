@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTransactionStore } from '@/stores/TransactionStore'
 import { useUserStore } from '@/stores/UserStore'
+import { useToast } from '@/composables/useToast'
 import IconFood from './icons/IconFood.vue'
 import IconTransport from './icons/IconTransport.vue'
 import IconShopping from './icons/IconShopping.vue'
@@ -33,13 +34,13 @@ const touchEndY = ref(0)
 
 const onTouchStart = (e: TouchEvent) => {
   if (e.changedTouches.length > 0) {
-    touchStartY.value = e.changedTouches[0].screenY
+    touchStartY.value = e.changedTouches[0]!.screenY
   }
 }
 
 const onTouchMove = (e: TouchEvent) => {
   if (e.changedTouches.length > 0) {
-    touchEndY.value = e.changedTouches[0].screenY
+    touchEndY.value = e.changedTouches[0]!.screenY
   }
 }
 
@@ -134,19 +135,21 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
 })
 
+const { showToast } = useToast()
+
 const save = async () => {
   if (!selectedCategory.value) {
-    alert('Por favor selecciona una categoría')
+    showToast('Por favor selecciona una categoría', 'error')
     return
   }
 
   if (!userStore.activeAccountId || userStore.activeAccountId <= 0) {
-    alert('No hay una cuenta activa seleccionada')
+    showToast('No hay una cuenta activa seleccionada', 'error')
     return
   }
 
   if (parseFloat(amount.value.replace(',', '.')) <= 0) {
-    alert('El monto debe ser mayor a 0')
+    showToast('El monto debe ser mayor a 0', 'error')
     return
   }
 
@@ -174,7 +177,7 @@ const save = async () => {
     )
 
     if (success) {
-      console.log('Transacción guardada con éxito')
+      showToast('Transacción guardada con éxito', 'success')
       closeKeypad()
       // Opcional: navegar de vuelta o resetear formulario
       // router.push('/')
@@ -185,11 +188,11 @@ const save = async () => {
       conceptText.value = ''
       isRecurring.value = false
     } else {
-      alert('Error al guardar la transacción')
+      showToast('Error al guardar la transacción', 'error')
     }
   } catch (error) {
     console.error('Error saving transaction:', error)
-    alert('Ocurrió un error al guardar')
+    showToast('Ocurrió un error al guardar', 'error')
   }
 }
 </script>
@@ -306,31 +309,33 @@ const save = async () => {
       </div>
     </div>
 
-    <div class="keypad-overlay" :class="{ 'is-visible': showKeypad }" ref="keypadRef">
-      <div
-        class="handle-area"
-        @click="showKeypad = !showKeypad"
-        @touchstart="onTouchStart"
-        @touchmove="onTouchMove"
-        @touchend="onTouchEnd"
-      >
-        <div class="handle-bar"></div>
+    <Teleport to="body">
+      <div class="keypad-overlay" :class="{ 'is-visible': showKeypad }" ref="keypadRef">
+        <div
+          class="handle-area"
+          @click="showKeypad = !showKeypad"
+          @touchstart="onTouchStart"
+          @touchmove="onTouchMove"
+          @touchend="onTouchEnd"
+        >
+          <div class="handle-bar"></div>
+        </div>
+        <div class="numeric-grid">
+          <button @click="handleKeypad(1)">1</button>
+          <button @click="handleKeypad(2)">2</button>
+          <button @click="handleKeypad(3)">3</button>
+          <button @click="handleKeypad(4)">4</button>
+          <button @click="handleKeypad(5)">5</button>
+          <button @click="handleKeypad(6)">6</button>
+          <button @click="handleKeypad(7)">7</button>
+          <button @click="handleKeypad(8)">8</button>
+          <button @click="handleKeypad(9)">9</button>
+          <button @click="handleKeypad(',')">,</button>
+          <button @click="handleKeypad(0)">0</button>
+          <button @click="handleKeypad('backspace')" class="backspace">←</button>
+        </div>
+        <button class="save-btn" @click="save">Guardar</button>
       </div>
-      <div class="numeric-grid">
-        <button @click="handleKeypad(1)">1</button>
-        <button @click="handleKeypad(2)">2</button>
-        <button @click="handleKeypad(3)">3</button>
-        <button @click="handleKeypad(4)">4</button>
-        <button @click="handleKeypad(5)">5</button>
-        <button @click="handleKeypad(6)">6</button>
-        <button @click="handleKeypad(7)">7</button>
-        <button @click="handleKeypad(8)">8</button>
-        <button @click="handleKeypad(9)">9</button>
-        <button @click="handleKeypad(',')">,</button>
-        <button @click="handleKeypad(0)">0</button>
-        <button @click="handleKeypad('backspace')" class="backspace">←</button>
-      </div>
-      <button class="save-btn" @click="save">Guardar</button>
-    </div>
+    </Teleport>
   </div>
 </template>
