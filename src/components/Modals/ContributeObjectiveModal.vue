@@ -18,25 +18,25 @@
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
               </svg>
             </div>
-            <span class="modal-header__name">{{ objectiveName }}:</span>
+            <span class="modal-header__name">{{ objectiveName }}</span>
           </div>
 
           <!-- Input de cantidad -->
-          <div class="amount-display">
-            <span class="amount-display__value">{{ formattedAmount }} €</span>
-          </div>
-
-          <!-- Teclado numérico -->
-          <div class="keypad">
-            <button
-              v-for="key in keys"
-              :key="key"
-              class="keypad__btn"
-              :class="{ 'keypad__btn--wide': key === '0', 'keypad__btn--delete': key === '⌫' }"
-              @click="handleKey(key)"
-            >
-              {{ key }}
-            </button>
+          <div class="amount-field">
+            <label class="amount-field__label">Cantidad a aportar</label>
+            <div class="amount-field__wrapper">
+              <input
+                ref="inputRef"
+                v-model="amountInput"
+                type="number"
+                min="0.01"
+                step="0.01"
+                placeholder="0.00"
+                class="amount-field__input"
+                @keydown.enter="handleConfirm"
+              />
+              <span class="amount-field__currency">€</span>
+            </div>
           </div>
 
           <!-- Mensaje de error -->
@@ -47,7 +47,7 @@
             <button class="btn-cancel" @click="handleClose" :disabled="isSubmitting">
               Cancelar
             </button>
-            <button class="btn-confirm" @click="handleConfirm" :disabled="isSubmitting || amount === '0'">
+            <button class="btn-confirm" @click="handleConfirm" :disabled="isSubmitting || !amountInput">
               {{ isSubmitting ? 'Guardando...' : 'Confirmar' }}
             </button>
           </div>
@@ -59,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, watch, nextTick } from 'vue';
 import { useTransactionStore } from '@/stores/TransactionStore';
 import { useUserStore } from '@/stores/UserStore';
 
@@ -80,50 +80,15 @@ const emit = defineEmits<{
 const transactionStore = useTransactionStore();
 const userStore = useUserStore();
 
-// ==================== ESTADO ====================
-
-const amount = ref('0');
+const amountInput = ref<number | null>(null);
 const isSubmitting = ref(false);
 const errorMessage = ref('');
-
-const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', ',', '0', '⌫'];
-
-// ==================== COMPUTED ====================
-
-const formattedAmount = computed(() => {
-  return amount.value.replace('.', ',');
-});
-
-// ==================== TECLADO ====================
-
-const handleKey = (key: string) => {
-  errorMessage.value = '';
-
-  if (key === '⌫') {
-    amount.value = amount.value.length > 1 ? amount.value.slice(0, -1) : '0';
-    return;
-  }
-
-  if (key === ',') {
-    if (amount.value.includes(',')) return;
-    amount.value += ',';
-    return;
-  }
-
-  if (amount.value === '0') {
-    amount.value = key;
-  } else {
-    // Máximo 2 decimales
-    const parts = amount.value.split(',');
-    if (parts[1] !== undefined && parts[1].length >= 2) return;
-    amount.value += key;
-  }
-};
+const inputRef = ref<HTMLInputElement | null>(null);
 
 // ==================== SUBMIT ====================
 
 const handleConfirm = async () => {
-  const numericAmount = parseFloat(amount.value.replace(',', '.'));
+  const numericAmount = amountInput.value;
 
   if (!numericAmount || numericAmount <= 0) {
     errorMessage.value = 'Introduce una cantidad válida';
@@ -167,16 +132,17 @@ const handleConfirm = async () => {
 
 const handleClose = () => {
   if (isSubmitting.value) return;
-  amount.value = '0';
+  amountInput.value = null;
   errorMessage.value = '';
   emit('close');
 };
 
-// Resetear al abrir
-watch(() => props.isOpen, (val) => {
+watch(() => props.isOpen, async (val) => {
   if (val) {
-    amount.value = '0';
+    amountInput.value = null;
     errorMessage.value = '';
+    await nextTick();
+    inputRef.value?.focus();
   }
 });
 </script>
@@ -232,7 +198,7 @@ watch(() => props.isOpen, (val) => {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 
   &__icon {
     width: 44px;
@@ -253,51 +219,61 @@ watch(() => props.isOpen, (val) => {
   }
 }
 
-// ==================== CANTIDAD ====================
+// ==================== INPUT CANTIDAD ====================
 
-.amount-display {
-  background-color: $color-white;
-  border-radius: $card-border-radius;
-  padding: 20px;
-  text-align: center;
+.amount-field {
   margin-bottom: 20px;
 
-  &__value {
-    font-size: 32px;
+  &__label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: $color-text-gray;
+    margin-bottom: 8px;
+  }
+
+  &__wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  &__input {
+    width: 100%;
+    padding: 16px 48px 16px 16px;
+    font-size: 24px;
     font-weight: 600;
     color: $color-text;
-    letter-spacing: -0.5px;
-  }
-}
-
-// ==================== TECLADO ====================
-
-.keypad {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 20px;
-
-  &__btn {
     background-color: $color-white;
-    border: none;
+    border: 2px solid transparent;
     border-radius: $card-border-radius;
-    padding: 16px;
-    font-size: 18px;
-    font-weight: 500;
-    color: $color-text;
-    cursor: pointer;
-    transition: background-color $transition-speed $transition-ease,
-                transform 0.1s ease;
+    outline: none;
+    transition: border-color $transition-speed $transition-ease;
+    -moz-appearance: textfield;
 
-    &:active {
-      transform: scale(0.95);
-      background-color: darken(#ffffff, 6%);
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
     }
 
-    &--delete {
+    &::placeholder {
       color: $color-text-gray;
+      opacity: 0.5;
     }
+
+    &:focus {
+      border-color: $color-text--dk;
+    }
+  }
+
+  &__currency {
+    position: absolute;
+    right: 16px;
+    font-size: 22px;
+    font-weight: 600;
+    color: $color-text-gray;
+    pointer-events: none;
   }
 }
 

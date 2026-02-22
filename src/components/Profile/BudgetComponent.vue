@@ -36,6 +36,10 @@ onMounted(async () => {
   }
 });
 
+watch(() => props.accountId, (newId) => {
+  if (newId) loadBudget(newId);
+});
+
 const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('es-ES', {
     style: 'currency',

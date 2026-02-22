@@ -33,7 +33,7 @@
               <span 
                 class="transaction-item__amount"
                 :class="{ 
-                  'transaction-item__amount--negative': transaction.transaction_type === 'expense',
+                  'transaction-item__amount--negative': transaction.transaction_type === 'expense' || transaction.transaction_type === 'saving',
                   'transaction-item__amount--positive': transaction.transaction_type === 'income'
                 }"
               >
@@ -228,7 +228,7 @@ const formatDate = (date: Date): string => {
 
 const formatAmount = (amount: number, type: string): string => {
   const formatted = amount.toFixed(2).replace('.', ',');
-  return type === 'expense' ? `-${formatted} €` : `+${formatted} €`;
+  return type === 'income' ? `+${formatted} €` : `-${formatted} €`;
 };
 
 const loadMore = () => {

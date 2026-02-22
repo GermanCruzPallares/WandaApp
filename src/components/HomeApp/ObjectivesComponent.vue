@@ -12,6 +12,10 @@
           :key="objective.objective_id"
           :to="`/home/contributions/${objective.objective_id}`"
           class="objective-card"
+          :class="{
+            'objective-card--completed': calculateProgress(objective) >= 100,
+            'objective-card--expired': isExpired(objective)
+          }"
         >
           <div class="objective-card__header">
             <div class="objective-card__icon-title">
@@ -22,13 +26,29 @@
               </div>
               <h3 class="objective-card__name">{{ objective.name }}</h3>
             </div>
+
+            <!-- Badge cumplido -->
+            <div v-if="calculateProgress(objective) >= 100" class="objective-card__badge objective-card__badge--completed">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+              </svg>
+              Cumplido
+            </div>
+
+            <!-- Badge expirado -->
+            <div v-else-if="isExpired(objective)" class="objective-card__badge objective-card__badge--expired">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              </svg>
+              Fecha superada
+            </div>
           </div>
 
           <div class="objective-card__progress">
             <div class="objective-card__progress-bar">
               <div
                 class="objective-card__progress-fill"
-                :style="{ width: `${calculateProgress(objective)}%` }"
+                :style="{ width: `${Math.min(calculateProgress(objective), 100)}%` }"
               ></div>
             </div>
             <span class="objective-card__percentage">{{ calculateProgress(objective) }}%</span>
@@ -54,11 +74,6 @@ import { RouterLink } from 'vue-router';
 import { useObjectiveStore } from '@/stores/ObjectiveStore';
 import SectionTitle from '@/components/SectionTitle.vue';
 import type { Objective } from '@/types/models';
-import CreateObjectiveModal from '@/components/Modals/CreateObjectiveModal.vue';
-import { useRouter } from 'vue-router';
-
-
-
 
 interface Props {
   accountId: number;
@@ -71,53 +86,40 @@ const emit = defineEmits<{
   objectivesLoaded: [objectives: Objective[]];
 }>();
 
-
-
-
-// ✅ Usar el store de Pinia
 const objectiveStore = useObjectiveStore();
-
-// Estado local
 const objectives = ref<Objective[]>([]);
 const isLoading = ref(false);
 
-// ✅ Cargar objetivos desde el store
 const loadObjectives = async (accountId: number) => {
   isLoading.value = true;
-  
-  // Asegúrate de que el store devuelve un array (aunque esté vacío)
   try {
     objectives.value = await objectiveStore.fetchObjectives(accountId);
   } catch (error) {
     console.error("Error cargando objetivos", error);
     objectives.value = [];
   }
-  
   if (objectives.value) {
     emit('objectivesLoaded', objectives.value);
   }
-  
   isLoading.value = false;
 };
 
-// Cargar cuando se monta
 onMounted(() => {
-  if (props.accountId) {
-    loadObjectives(props.accountId);
-  }
+  if (props.accountId) loadObjectives(props.accountId);
 });
 
-// Recargar cuando cambia la cuenta
 watch(() => props.accountId, (newAccountId) => {
-  if (newAccountId) {
-    loadObjectives(newAccountId);
-  }
+  if (newAccountId) loadObjectives(newAccountId);
 });
 
-// ✅ Calcular progreso
 const calculateProgress = (objective: Objective): number => {
   if (objective.target_amount === 0) return 0;
   return Math.round((objective.current_save / objective.target_amount) * 100);
+};
+
+const isExpired = (objective: Objective): boolean => {
+  if (calculateProgress(objective) >= 100) return false;
+  return new Date(objective.deadline) < new Date();
 };
 
 const formatCurrency = (amount: number): string => {
@@ -128,21 +130,10 @@ const formatCurrency = (amount: number): string => {
     maximumFractionDigits: 0,
   }).format(amount);
 };
-
 </script>
+
 <style scoped lang="scss">
 @import '@/styles/base/variables.scss';
-
-.loading-state {
-  padding: 40px 20px;
-  text-align: center;
-  
-  p {
-    margin: 0;
-    font-size: 14px;
-    color: $color-text-gray;
-  }
-}
 
 .objectives {
   padding: 0 $section-margin-horizontal 1.5rem;
@@ -168,10 +159,45 @@ const formatCurrency = (amount: number): string => {
   text-decoration: none;
   display: block;
   cursor: pointer;
+  border: 2px solid transparent;
 
   &:hover {
     transform: translateX(2px);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  }
+
+  // Estado cumplido
+  &--completed {
+    border-color: $color-success;
+
+    .objective-card__icon {
+      background-color: $color-success;
+    }
+
+    .objective-card__progress-fill {
+      background-color: $color-success;
+    }
+
+    .objective-card__percentage {
+      color: $color-success;
+    }
+  }
+
+  // Estado expirado
+  &--expired {
+    border-color: $color-danger;
+
+    .objective-card__icon {
+      background-color: $color-danger;
+    }
+
+    .objective-card__progress-fill {
+      background-color: $color-danger;
+    }
+
+    .objective-card__percentage {
+      color: $color-danger;
+    }
   }
 
   &__header {
@@ -197,6 +223,7 @@ const formatCurrency = (amount: number): string => {
     justify-content: center;
     color: $color-white;
     flex-shrink: 0;
+    transition: background-color $transition-speed $transition-ease;
   }
 
   &__name {
@@ -204,6 +231,27 @@ const formatCurrency = (amount: number): string => {
     font-weight: 600;
     color: $color-text;
     margin: 0;
+  }
+
+  &__badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 50px;
+    white-space: nowrap;
+
+    &--completed {
+      color: $color-success;
+      background-color: rgba(76, 175, 80, 0.1);
+    }
+
+    &--expired {
+      color: $color-danger;
+      background-color: rgba(244, 67, 54, 0.1);
+    }
   }
 
   &__progress {
