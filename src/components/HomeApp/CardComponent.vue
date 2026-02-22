@@ -75,7 +75,7 @@ const monthlyExpense = computed(() => {
   return transactions
     .filter(t => {
       const tDate = new Date(t.transaction_date);
-      return t.transaction_type === 'expense' && 
+      return t.transaction_type === 'expense' || t.transaction_type === 'saving' && 
              tDate.getMonth() === currentMonth && 
              tDate.getFullYear() === currentYear;
     })
