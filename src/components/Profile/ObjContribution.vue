@@ -3,10 +3,49 @@ import { ref, watch, onMounted } from 'vue';
 import { useObjectiveStore } from '@/stores/ObjectiveStore';
 import SectionTitle from '@/components/SectionTitle.vue';
 import type { Objective } from '@/types/models';
+import CreateObjectiveModal from '@/components/Modals/CreateObjectiveModal.vue';
+import { useRouter } from 'vue-router';
+// ObjContribution.vue — script
+import ContributeObjectiveModal from '@/components/Modals/ContributeObjectiveModal.vue';
+
+
+const isContributeModalOpen = ref(false);
+const selectedObjective = ref<Objective | null>(null);
+
+const handleContribute = (objectiveId: number) => {
+  selectedObjective.value = objectives.value.find(o => o.objective_id === objectiveId) || null;
+  isContributeModalOpen.value = true;
+};
+
+
+const router = useRouter();
+const showSuccess = ref(false);
+const isCreateModalOpen = ref(false);
+
+const handleContributed = async () => {
+  isContributeModalOpen.value = false;  
+  if (props.accountId) await loadObjectives(props.accountId);
+  showSuccess.value = true;
+  setTimeout(() => {
+    showSuccess.value = false;
+    router.push('/profile');
+  }, 2000);
+};
 
 interface Props {
   accountId?: number;
 }
+
+const handleAddObjective = () => {
+  isCreateModalOpen.value = true;
+};
+
+const handleObjectiveCreated = async () => {
+  if (props.accountId) await loadObjectives(props.accountId);
+  router.push('/profile');
+};
+
+
 
 const props = defineProps<Props>();
 
@@ -70,21 +109,40 @@ const formatDate = (date: Date | string): string => {
   });
 };
 
-const handleAddObjective = () => {
-  emit('addObjective');
-};
-
 const handleEditObjective = (objectiveId: number) => {
   emit('editObjective', objectiveId);
 };
 
-const handleContribute = (objectiveId: number) => {
-  emit('contribute', objectiveId);
-};
 </script>
 
 <template>
   <div v-if="!isLoading" class="objectives">
+
+  <Transition name="toast">
+    <div v-if="showSuccess" class="success-toast">
+      ✓ Aportación realizada con éxito
+    </div>
+  </Transition>
+
+    <!-- ObjContribution.vue — template, justo dentro del div raíz -->
+    <ContributeObjectiveModal
+      v-if="props.accountId && selectedObjective"
+      :is-open="isContributeModalOpen"
+      :account-id="props.accountId"
+      :objective-id="selectedObjective.objective_id"
+      :objective-name="selectedObjective.name"
+      @close="isContributeModalOpen = false"
+      @contributed="handleContributed"
+    />
+
+      <CreateObjectiveModal
+        v-if="props.accountId"
+        :is-open="isCreateModalOpen"
+        :account-id="props.accountId"
+        @close="isCreateModalOpen = false"
+        @created="handleObjectiveCreated"
+      />
+
     <div class="objectives__header">
       <SectionTitle :title="`| Objetivos (${objectives.length})`" />
       <button class="objectives__add-btn" @click="handleAddObjective">
@@ -152,6 +210,32 @@ const handleContribute = (objectiveId: number) => {
 
 <style scoped lang="scss">
 @import '@/styles/base/variables.scss';
+
+.success-toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: $bg-success;
+  color: $bg-success-text;
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 3000;
+  white-space: nowrap;
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
+}
 
 .objectives {
   padding: 0 $section-margin-horizontal 1.5rem;

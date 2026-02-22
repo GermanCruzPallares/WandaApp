@@ -2,19 +2,9 @@
   <div v-if="!isLoading">
     <SectionTitle 
       :title="`| Objetivos (${objectives.length})`"
-      :show-add-button="true"
-      add-button-text="Añadir objetivo +"
-      @add="handleAddObjective"
     />
     
     <section class="objectives">
-
-      <CreateObjectiveModal
-      :is-open="isCreateModalOpen"
-      :account-id="props.accountId"
-      @close="isCreateModalOpen = false"
-      @created="handleObjectiveCreated"
-      />
 
       <div class="objectives__list">
         <RouterLink 
@@ -68,8 +58,6 @@ import CreateObjectiveModal from '@/components/Modals/CreateObjectiveModal.vue';
 import { useRouter } from 'vue-router';
 
 
-const router = useRouter();
-const isCreateModalOpen = ref(false);
 
 
 interface Props {
@@ -83,16 +71,6 @@ const emit = defineEmits<{
   objectivesLoaded: [objectives: Objective[]];
 }>();
 
-
-const handleAddObjective = () => {
-  isCreateModalOpen.value = true;
-};
-
-const handleObjectiveCreated = async () => {
-  // El store ya invalida la caché internamente al crear
-  if (props.accountId) await loadObjectives(props.accountId);
-    router.push('/home');
-};
 
 
 

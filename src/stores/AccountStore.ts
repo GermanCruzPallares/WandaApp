@@ -24,30 +24,15 @@ export const useAccountStore = defineStore('account', () => {
    * GET /api/Account/{accountId}
    * Obtener una cuenta específica por ID (con caché)
    */
-  const fetchAccount = async (accountId: number): Promise<Account | null> => {
-    try {
-      // Verificar caché primero
-      const cached = accountCache.value.get(accountId);
-      if (cached) {
-        console.log('✅ Cuenta desde caché:', accountId);
-        return cached;
-      }
-
-      // Cargar desde API
-      console.log('📡 Cargando cuenta desde API:', accountId);
-      const account = await apiService.getAccount(accountId);
-      
-      // Guardar en caché
-      accountCache.value.set(accountId, account);
-      console.log('✅ Cuenta cargada:', account.name);
-      
-      return account;
-      
-    } catch (error) {
-      console.error('❌ Error al cargar cuenta:', error);
-      return null;
-    }
-  };
+const fetchAccount = async (accountId: number): Promise<Account | null> => {
+  try {
+    const account = await apiService.getAccount(accountId);
+    return account;
+  } catch (error) {
+    console.error('❌ Error al cargar cuenta:', error);
+    return null;
+  }
+};
 
   /**
    * GET /api/Account/{accountId}/users
@@ -91,7 +76,6 @@ const createJointAccount = async (data: {
     });
     
     console.log('✅ Cuenta conjunta creada exitosamente');
-    clearCache();
     
   } catch (error) {
     console.error('❌ Error creando cuenta conjunta:', error);
@@ -132,36 +116,6 @@ const createJointAccount = async (data: {
     }
   };
 
-  /**
-   * Obtener cuenta desde caché (sin llamada al backend)
-   */
-  const getAccountFromCache = (accountId: number): Account | null => {
-    return accountCache.value.get(accountId) || null;
-  };
-
-  /**
-   * Refrescar cuenta (forzar recarga desde backend)
-   */
-  const refreshAccount = async (accountId: number): Promise<Account | null> => {
-    // Invalidar caché
-    accountCache.value.delete(accountId);
-    
-    // Recargar
-    return await fetchAccount(accountId);
-  };
-
-  /**
-   * Limpiar caché de cuentas
-   */
-  const clearCache = (accountId?: number) => {
-    if (accountId) {
-      accountCache.value.delete(accountId);
-      console.log('🗑️ Caché limpiado para cuenta:', accountId);
-    } else {
-      accountCache.value.clear();
-      console.log('🗑️ Caché de cuentas limpiado completamente');
-    }
-  };
 
   // ==================== RETURN ====================
   
@@ -176,9 +130,5 @@ const createJointAccount = async (data: {
     createJointAccount,
     updateAccount,
     
-    // Utilidades
-    getAccountFromCache,
-    refreshAccount,
-    clearCache
   };
 });
