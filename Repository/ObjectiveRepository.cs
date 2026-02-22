@@ -136,5 +136,35 @@ namespace wandaAPI.Repositories
                 }
             }
         }
+
+
+        public async Task ClearObjectiveFromTransactionsAsync(int objectiveId)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                string query = "UPDATE TRANSACTIONS SET objective_id = NULL WHERE objective_id = @objective_id";
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@objective_id", objectiveId);
+                    await command.ExecuteNonQueryAsync();
+                }
+            }
+        }
+
+        public async Task DeleteTransactionsByObjectiveAsync(int objectiveId)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                string query = "DELETE FROM TRANSACTIONS WHERE objective_id = @objective_id AND transaction_type = 'saving'";
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@objective_id", objectiveId);
+                    await command.ExecuteNonQueryAsync();
+                }
+            }
+        }
+
     }
 }

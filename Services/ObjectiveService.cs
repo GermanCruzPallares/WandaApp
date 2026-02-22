@@ -10,10 +10,17 @@ namespace wandaAPI.Services
     public class ObjectiveService : IObjectiveService
     {
         private readonly IObjectiveRepository _objectiveRepository;
+        private readonly ITransactionRepository _transactionRepository;
+        private readonly IAccountRepository _accountRepository;
 
-        public ObjectiveService(IObjectiveRepository objectiveRepository)
+        public ObjectiveService(
+            IObjectiveRepository objectiveRepository,
+            ITransactionRepository transactionRepository,
+            IAccountRepository accountRepository)
         {
             _objectiveRepository = objectiveRepository;
+            _transactionRepository = transactionRepository;
+            _accountRepository = accountRepository;
         }
 
 
@@ -94,7 +101,7 @@ namespace wandaAPI.Services
             var account = await _objectiveRepository.GetByIdAsync(id);
             if (account == null) throw new KeyNotFoundException("El objetivo no existe.");
 
-            
+
             ValidateObjectiveData(dto.Name, dto.Target_amount, dto.Current_save, dto.Deadline);
 
             account.Name = dto.Name;
@@ -110,11 +117,19 @@ namespace wandaAPI.Services
             var objective = await _objectiveRepository.GetByIdAsync(id);
             if (objective == null) throw new KeyNotFoundException("El objetivo no existe.");
 
-            if (objective.Current_save > 0)
-            {
-                throw new InvalidOperationException("No se puede eliminar un objetivo con fondos.");
-            }
 
+            var transactions = await _transactionRepository.GetTransactionsByObjectiveAsync(id);
+
+            foreach (var tx in transactions)
+            {
+                var account = await _accountRepository.GetByIdAsync(tx.Account_id);
+                if (account != null)
+                {
+                    account.Amount += tx.Amount;
+                    await _accountRepository.UpdateAsync(account);
+                }
+            }
+            await _objectiveRepository.DeleteTransactionsByObjectiveAsync(id);
             await _objectiveRepository.DeleteAsync(id);
         }
     }

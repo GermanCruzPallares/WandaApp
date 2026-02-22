@@ -9,5 +9,9 @@ namespace wandaAPI.Repositories
         Task<int> AddAsync(Objective objective);
         Task UpdateAsync(Objective objective);
         Task DeleteAsync(int id);
+
+        Task ClearObjectiveFromTransactionsAsync(int objectiveId);
+
+        Task DeleteTransactionsByObjectiveAsync(int objectiveId);
     }
 }

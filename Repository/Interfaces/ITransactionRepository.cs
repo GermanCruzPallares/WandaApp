@@ -13,6 +13,8 @@ namespace wandaAPI.Repositories
         Task UpdateLastExecutionAsync(int transactionId, DateTime date); //metodo para el cron
 
         Task<List<Transaction>> GetRecurringTransactionsAsync();
+
+        Task<List<Transaction>> GetTransactionsByObjectiveAsync(int objectiveId);
         
     }
 }
