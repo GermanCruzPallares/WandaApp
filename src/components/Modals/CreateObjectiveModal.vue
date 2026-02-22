@@ -189,15 +189,15 @@ watch(() => form.value.deadline, () => { errors.value.deadline = ''; });
   align-items: center;
   justify-content: center;
   z-index: 2000;
-  padding: 20px;
+  padding: 30px;
 }
 
 .modal-content {
   background-color: $background-principal;
   border-radius: $section-border-radius;
   width: 100%;
-  max-width: 380px;
-  padding: 28px 24px 24px;
+  max-width: 440px;
+  padding: 48px 24px 24px;
   position: relative;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
 }
@@ -238,7 +238,7 @@ watch(() => form.value.deadline, () => { errors.value.deadline = ''; });
   padding: 14px 16px;
   border: none;
   border-radius: $card-border-radius;
-  background-color: $section-bg-secondary;
+  background-color: $color-white ;
   font-size: 14px;
   color: $color-text;
   outline: none;
