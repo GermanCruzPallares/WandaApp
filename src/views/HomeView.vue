@@ -118,6 +118,7 @@ const handleTransactionClick = (transactionId: number) => {
         
        
         <ObjectivesComponent
+          v-if="activeAccount?.account_id"
           :account-id="activeAccount?.account_id"
           @add-objective="handleAddObjective"
           @objectives-loaded="handleObjectivesLoaded"

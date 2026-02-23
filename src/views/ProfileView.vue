@@ -11,6 +11,7 @@ import ObjContribution from '@/components/Profile/ObjContribution.vue';
 import RecurringTransactionComponent from '@/components/Profile/RecurringTransactionComponent.vue';
 import type { AccountUI } from '@/types/models';
 
+
 const router = useRouter();
 const userStore = useUserStore();
 

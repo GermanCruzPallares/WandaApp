@@ -35,23 +35,23 @@
         <p v-if="errors.name" class="field-error">{{ errors.name }}</p>
       </div>
 
-      <!-- Saldo (Editable) -->
-      <div class="form-field">
-        <label class="field-label">Saldo</label>
-        <div class="field-input-wrapper">
-          <input
-            v-model.number="formData.amount"
-            type="number"
-            class="field-input"
-            :class="{ 'field-input--error': errors.amount }"
-            placeholder="0,00"
-            step="0.01"
-            min="0"
-          />
-          <span class="field-currency">€</span>
-        </div>
-        <p v-if="errors.amount" class="field-error">{{ errors.amount }}</p>
+    <!-- Saldo (Editable) — solo en cuentas personales -->
+    <div v-if="formData.account_type === 'personal'" class="form-field">
+      <label class="field-label">Saldo</label>
+      <div class="field-input-wrapper">
+        <input
+          v-model.number="formData.amount"
+          type="number"
+          class="field-input"
+          :class="{ 'field-input--error': errors.amount }"
+          placeholder="0,00"
+          step="0.01"
+          min="0"
+        />
+        <span class="field-currency">€</span>
       </div>
+      <p v-if="errors.amount" class="field-error">{{ errors.amount }}</p>
+    </div>
 
       <!-- Presupuesto Mensual -->
       <div class="form-field">
@@ -325,10 +325,10 @@ const handleSubmit = async () => {
     // El backend requiere account_picture_url SIEMPRE (puede ser string vacío)
     const updateData = {
       name: formData.value.name.trim(),
-      amount: Number(formData.value.amount), // ✅ Incluir saldo
+      amount: formData.value.account_type === 'personal' ? Number(formData.value.amount) : 0,
       monthly_budget: Number(formData.value.monthly_budget),
       weekly_budget: Number(formData.value.weekly_budget),
-      account_picture_url: formData.value.account_picture_url || '' // ✅ Enviar string vacío si no hay foto
+      account_picture_url: formData.value.account_picture_url || ''
     };
     
     console.log('📤 Datos a enviar:', updateData);

@@ -2,8 +2,11 @@
 import { onMounted, ref } from 'vue';
 import { useAccountStore } from '@/stores/AccountStore';
 import SectionTitle from '@/components/SectionTitle.vue';
+import { watch } from 'vue';
 
 const accountStore = useAccountStore();
+
+
 const weeklyBudget = ref(0);
 const monthlyBudget = ref(0);
 
@@ -15,6 +18,15 @@ const emit = defineEmits<{
   edit: [budgetType: 'weekly' | 'monthly'];
 }>();
 
+
+const loadBudget = async (accountId: number) => {
+  const account = await accountStore.fetchAccount(accountId);
+  if (account) {
+    weeklyBudget.value = account.weekly_budget;
+    monthlyBudget.value = account.monthly_budget;
+  }
+};
+
 onMounted(async () => {
   const account = await accountStore.fetchAccount(props.accountId);
   
@@ -22,6 +34,10 @@ onMounted(async () => {
     weeklyBudget.value = account.weekly_budget;
     monthlyBudget.value = account.monthly_budget;
   }
+});
+
+watch(() => props.accountId, (newId) => {
+  if (newId) loadBudget(newId);
 });
 
 const formatCurrency = (amount: number): string => {

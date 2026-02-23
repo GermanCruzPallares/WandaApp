@@ -3,10 +3,66 @@ import { ref, watch, onMounted } from 'vue';
 import { useObjectiveStore } from '@/stores/ObjectiveStore';
 import SectionTitle from '@/components/SectionTitle.vue';
 import type { Objective } from '@/types/models';
+import CreateObjectiveModal from '@/components/Modals/CreateObjectiveModal.vue';
+import { useRouter } from 'vue-router';
+import ContributeObjectiveModal from '@/components/Modals/ContributeObjectiveModal.vue';
+import EditObjectiveModal from '@/components/Modals/EditObjectiveModal.vue';
+
+const isEditModalOpen = ref(false);
+
+const handleEditObjective = (objectiveId: number) => {
+  if (!props.accountId) return;
+  selectedObjective.value = objectives.value.find(o => o.objective_id === objectiveId) || null;
+  isEditModalOpen.value = true;
+};
+
+const handleObjectiveUpdated = async () => {
+  isEditModalOpen.value = false;
+  if (props.accountId) {
+    await objectiveStore.refreshObjectives(props.accountId);
+    objectives.value = objectiveStore.objectivesByAccount.get(props.accountId) ?? [];
+  }
+};
+
+const handleObjectiveDeleted = async () => {
+  isEditModalOpen.value = false;
+  if (props.accountId) await loadObjectives(props.accountId);
+};
+
+const isContributeModalOpen = ref(false);
+const selectedObjective = ref<Objective | null>(null);
+
+const handleContribute = (objectiveId: number) => {
+  selectedObjective.value = objectives.value.find(o => o.objective_id === objectiveId) || null;
+  isContributeModalOpen.value = true;
+};
+
+const router = useRouter();
+const showSuccess = ref(false);
+const isCreateModalOpen = ref(false);
+
+const handleContributed = async () => {
+  isContributeModalOpen.value = false;
+  if (props.accountId) await loadObjectives(props.accountId);
+  showSuccess.value = true;
+  setTimeout(() => {
+    showSuccess.value = false;
+    router.push('/profile');
+  }, 2000);
+};
 
 interface Props {
   accountId?: number;
 }
+
+const handleAddObjective = () => {
+  isCreateModalOpen.value = true;
+};
+
+const handleObjectiveCreated = async () => {
+  if (props.accountId) await loadObjectives(props.accountId);
+  router.push('/profile');
+};
 
 const props = defineProps<Props>();
 
@@ -23,7 +79,6 @@ const isLoading = ref(false);
 
 const loadObjectives = async (accountId: number) => {
   isLoading.value = true;
-  
   try {
     objectives.value = await objectiveStore.fetchObjectives(accountId);
     emit('objectivesLoaded', objectives.value);
@@ -31,25 +86,25 @@ const loadObjectives = async (accountId: number) => {
     console.error("Error cargando objetivos", error);
     objectives.value = [];
   }
-  
   isLoading.value = false;
 };
 
 onMounted(() => {
-  if (props.accountId) {
-    loadObjectives(props.accountId);
-  }
+  if (props.accountId) loadObjectives(props.accountId);
 });
 
 watch(() => props.accountId, (newAccountId) => {
-  if (newAccountId) {
-    loadObjectives(newAccountId);
-  }
+  if (newAccountId) loadObjectives(newAccountId);
 });
 
 const calculateProgress = (objective: Objective): number => {
   if (objective.target_amount === 0) return 0;
   return Math.round((objective.current_save / objective.target_amount) * 100);
+};
+
+const isExpired = (objective: Objective): boolean => {
+  if (calculateProgress(objective) >= 100) return false;
+  return new Date(objective.deadline) < new Date();
 };
 
 const formatCurrency = (amount: number): string => {
@@ -69,22 +124,45 @@ const formatDate = (date: Date | string): string => {
     year: 'numeric'
   });
 };
-
-const handleAddObjective = () => {
-  emit('addObjective');
-};
-
-const handleEditObjective = (objectiveId: number) => {
-  emit('editObjective', objectiveId);
-};
-
-const handleContribute = (objectiveId: number) => {
-  emit('contribute', objectiveId);
-};
 </script>
 
 <template>
   <div v-if="!isLoading" class="objectives">
+
+    <Transition name="toast">
+      <div v-if="showSuccess" class="success-toast">
+        ✓ Aportación realizada con éxito
+      </div>
+    </Transition>
+
+    <EditObjectiveModal
+      v-if="props.accountId && selectedObjective"
+      :is-open="isEditModalOpen"
+      :account-id="props.accountId"
+      :objective="selectedObjective"
+      @close="isEditModalOpen = false"
+      @updated="handleObjectiveUpdated"
+      @deleted="handleObjectiveDeleted"
+    />
+
+    <ContributeObjectiveModal
+      v-if="props.accountId && selectedObjective"
+      :is-open="isContributeModalOpen"
+      :account-id="props.accountId"
+      :objective-id="selectedObjective.objective_id"
+      :objective-name="selectedObjective.name"
+      @close="isContributeModalOpen = false"
+      @contributed="handleContributed"
+    />
+
+    <CreateObjectiveModal
+      v-if="props.accountId"
+      :is-open="isCreateModalOpen"
+      :account-id="props.accountId"
+      @close="isCreateModalOpen = false"
+      @created="handleObjectiveCreated"
+    />
+
     <div class="objectives__header">
       <SectionTitle :title="`| Objetivos (${objectives.length})`" />
       <button class="objectives__add-btn" @click="handleAddObjective">
@@ -97,6 +175,10 @@ const handleContribute = (objectiveId: number) => {
         v-for="objective in objectives"
         :key="objective.objective_id"
         class="objective"
+        :class="{
+          'objective--completed': calculateProgress(objective) >= 100,
+          'objective--expired': isExpired(objective)
+        }"
       >
         <!-- Header con icono, nombre y botón editar -->
         <div class="objective__header">
@@ -126,7 +208,7 @@ const handleContribute = (objectiveId: number) => {
         <div class="objective__progress-bar">
           <div
             class="objective__progress-fill"
-            :style="{ width: `${calculateProgress(objective)}%` }"
+            :style="{ width: `${Math.min(calculateProgress(objective), 100)}%` }"
           ></div>
         </div>
 
@@ -136,8 +218,22 @@ const handleContribute = (objectiveId: number) => {
           <span class="objective__target">{{ formatCurrency(objective.target_amount) }}</span>
         </div>
 
-        <!-- Botón Aportar -->
-        <button class="objective__contribute-btn" @click="handleContribute(objective.objective_id)">
+        <!-- Badge cumplido -->
+        <div v-if="calculateProgress(objective) >= 100" class="objective__badge objective__badge--completed">
+          ✓ Objetivo cumplido
+        </div>
+
+        <!-- Badge expirado -->
+        <div v-else-if="isExpired(objective)" class="objective__badge objective__badge--expired">
+          ⚠ Fecha superada sin completar
+        </div>
+
+        <!-- Botón Aportar: solo si no está cumplido ni expirado -->
+        <button 
+          v-if="calculateProgress(objective) < 100 && !isExpired(objective)"
+          class="objective__contribute-btn" 
+          @click="handleContribute(objective.objective_id)"
+        >
           Aportar +
         </button>
       </div>
@@ -153,12 +249,37 @@ const handleContribute = (objectiveId: number) => {
 <style scoped lang="scss">
 @import '@/styles/base/variables.scss';
 
+.success-toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: $bg-success;
+  color: $bg-success-text;
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 3000;
+  white-space: nowrap;
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
+}
+
 .objectives {
   padding: 0 $section-margin-horizontal 1.5rem;
 
   @media (min-width: 768px) {
     padding: 0 0 1.5rem 0;
-
   }
 
   &__header {
@@ -210,6 +331,7 @@ const handleContribute = (objectiveId: number) => {
   flex-direction: column;
   margin: 0 16px;
   gap: 0.75rem;
+  border: 2px solid transparent;
 
   &__header {
     display: flex;
@@ -233,6 +355,7 @@ const handleContribute = (objectiveId: number) => {
     justify-content: center;
     color: $color-white;
     flex-shrink: 0;
+    transition: background-color $transition-speed $transition-ease;
   }
 
   &__name {
@@ -331,12 +454,65 @@ const handleContribute = (objectiveId: number) => {
     margin-top: 0.5rem;
     transition: opacity $transition-speed $transition-ease;
 
-    &:hover {
-      opacity: 0.9;
+    &:hover { opacity: 0.9; }
+    &:active { opacity: 0.8; }
+  }
+
+  &__badge {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 4px 0;
+
+    &--completed {
+      color: $color-success;
     }
 
-    &:active {
-      opacity: 0.8;
+    &--expired {
+      color: $color-danger;
+    }
+  }
+
+  // Estado cumplido
+  &--completed {
+    border-color: $color-success;
+
+    .objective__icon {
+      background-color: $color-success;
+    }
+
+    .objective__progress-fill {
+      background-color: $color-success;
+    }
+
+    .objective__percentage {
+      color: $color-success;
+    }
+
+    .objective__deadline-value {
+      color: $color-success;
+    }
+  }
+
+  // Estado expirado
+  &--expired {
+    border-color: $color-danger;
+
+    .objective__icon {
+      background-color: $color-danger;
+    }
+
+    .objective__progress-fill {
+      background-color: $color-danger;
+    }
+
+    .objective__percentage {
+      color: $color-danger;
+    }
+
+    .objective__deadline-value {
+      color: $color-danger;
+      font-weight: 600;
     }
   }
 }
