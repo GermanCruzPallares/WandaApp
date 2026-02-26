@@ -25,13 +25,13 @@ namespace wandaAPI.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
-            // Nota: Idealmente deberías tener un método GetByEmail en el repositorio para no traer todos los usuarios
+
             var users = await _userRepository.GetAllAsync();
             var user = users.FirstOrDefault(u => u.Email == loginDto.Email);
 
             if (user == null) return Unauthorized("Usuario no encontrado.");
 
-            // Verificar contraseña con BCrypt
+
             if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, user.Password))
             {
                 return Unauthorized("Contraseña incorrecta.");
@@ -39,7 +39,7 @@ namespace wandaAPI.Controllers
 
             // Generar Token
             var tokenHandler = new JwtSecurityTokenHandler();
-            
+
             // IMPORTANTE: Usar UTF8 para coincidir con Program.cs
             var key = Encoding.UTF8.GetBytes(_configuration["JWT:SecretKey"]);
 
@@ -48,16 +48,12 @@ namespace wandaAPI.Controllers
                 Subject = new ClaimsIdentity(new Claim[]
                 {
                     new Claim(ClaimTypes.NameIdentifier, user.User_id.ToString()),
-                    new Claim(ClaimTypes.Email, user.Email)
+                    new Claim(ClaimTypes.Email, user.Email),
+                    new Claim(ClaimTypes.Role, user.Role ?? "User") 
                 }),
                 Expires = DateTime.UtcNow.AddDays(7),
-                
-                // === CORRECCIÓN CLAVE AQUÍ ===
-                // Estos valores son OBLIGATORIOS porque en Program.cs tienes ValidateIssuer/Audience = true
-                Issuer = _configuration["JWT:ValidIssuer"], 
+                Issuer = _configuration["JWT:ValidIssuer"],
                 Audience = _configuration["JWT:ValidAudience"],
-                // =============================
-
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
 

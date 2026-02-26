@@ -80,7 +80,7 @@ namespace wandaAPI.Services
                 Name = user1.Name,
                 Email = user1.Email,
                 Password = passwordHash,
-
+                Role = "User"
             };
 
 
