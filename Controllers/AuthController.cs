@@ -6,6 +6,8 @@ using System.Security.Claims;
 using System.Text;
 using wandaAPI.Repositories;
 using wandaAPI.Services;
+using Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace wandaAPI.Controllers
 {
@@ -16,10 +18,13 @@ namespace wandaAPI.Controllers
         private readonly IUserRepository _userRepository;
         private readonly IConfiguration _configuration;
 
-        public AuthController(IUserRepository userRepository, IConfiguration configuration)
+        private readonly IUserService _userService;
+
+        public AuthController(IUserRepository userRepository, IConfiguration configuration, IUserService userService)
         {
             _userRepository = userRepository;
             _configuration = configuration;
+            _userService = userService;
         }
 
         [HttpPost("login")]
@@ -62,5 +67,36 @@ namespace wandaAPI.Controllers
 
             return Ok(new { Token = tokenString, UserId = user.User_id });
         }
+
+        [HttpPost("register")]
+        public async Task<ActionResult> RegisterUser([FromBody] UserCreateDTO userDto)
+        {
+            try
+            {
+                await _userService.AddAsync(userDto);
+                return Ok("Usuario registrado exitosamente");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost("admin")]
+        public async Task<ActionResult> RegisterAdmin([FromBody] UserCreateDTO adminDto)
+        {
+            try
+            {
+                await _userService.AddAdminAsync(adminDto);
+                return Ok("Administrador creado exitosamente.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
     }
 }

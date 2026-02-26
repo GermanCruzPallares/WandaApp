@@ -110,6 +110,9 @@ VALUES ('Ana García', 'ana@wanda.com', '$2a$12$MQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJq
 INSERT INTO USERS (name, email, password, role) 
 VALUES ('Juan Pérez', 'juan@wanda.com', '$2a$12$MQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4hZ1.Gce3C', 'User');
 
+INSERT INTO USERS (name, email, password, role) 
+VALUES ('Admin', 'admin@gmail.com', '$2a$11$FPiUn.1ESFq4b7TcsiUVAuZipE0RS7rIHj9SuZwVltLzqpqeeRseO', 'Admin');
+
 -- Cuentas 
 INSERT INTO ACCOUNTS (name, account_type, amount, weekly_budget, monthly_budget) 
 VALUES ('Ahorros Ana', 'personal', 1500.00, 100.00, 400.00); 

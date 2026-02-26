@@ -25,7 +25,7 @@ namespace wandaAPI.Services
 
             var users = await _userRepository.GetAllAsync();
 
-       
+
             if (!string.IsNullOrWhiteSpace(email))
             {
                 return users
@@ -176,6 +176,39 @@ namespace wandaAPI.Services
             if (user == null) throw new KeyNotFoundException("El usuario no existe.");
 
             return await _accountService.GetAccountsByUserIdAsync(userId);
+        }
+
+        public async Task AddAdminAsync(UserCreateDTO adminDto)
+        {
+           
+            var users = await _userRepository.GetAllAsync();
+            if (users.Any(u => u.Email.Equals(adminDto.Email)))
+            {
+                throw new InvalidOperationException($"El usuario con email '{adminDto.Email}' ya existe.");
+            }
+
+          
+            if (adminDto.Password.Length < 5)
+                throw new InvalidOperationException("La contraseña no puede tener menos de 5 carácteres");
+
+            if (!adminDto.Password.Any(char.IsUpper))
+                throw new InvalidOperationException("La contraseña debe contener al menos una mayúscula");
+
+           
+            string passwordHash = BCrypt.Net.BCrypt.HashPassword(adminDto.Password);
+
+            
+            var adminUser = new User
+            {
+                Name = adminDto.Name,
+                Email = adminDto.Email,
+                Password = passwordHash,
+                Role = "Admin"
+            };
+
+            // 5. Guardar en la tabla USERS. 
+            // ¡OJO! Aquí NO llamamos a _accountService. ¡El admin no tiene cuenta de Wanda!
+            await _userRepository.AddAsync(adminUser);
         }
 
     }

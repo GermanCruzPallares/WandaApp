@@ -117,7 +117,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-
-// CÓDIGO TEMPORAL PARA OBTENER HASH
-Console.WriteLine("HASH DE PRUEBA: " + BCrypt.Net.BCrypt.HashPassword("Wanda123!"));
+Console.WriteLine("\n=======================================================");
+Console.WriteLine("HASH DE ADMIN: " + BCrypt.Net.BCrypt.HashPassword("Admin1234!"));
+Console.WriteLine("=======================================================\n");
 app.Run();
