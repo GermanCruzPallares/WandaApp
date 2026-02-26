@@ -55,7 +55,7 @@ class AuthService {
   async register(userData: { name: string; email: string; password: string }): Promise<number> {
     try {
       // Primero crear el usuario
-      const response = await fetch(`${this.API_BASE_URL}/User`, {
+      const response = await fetch(`${this.API_BASE_URL}/Auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
