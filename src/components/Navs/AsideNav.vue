@@ -29,13 +29,10 @@
           alt="User avatar"
           class="user-button__avatar"
         />
-        <span class="user-button__name">
-          {{ userStore.activeAccount?.name || 'Cuenta' }}
-        </span>
+        <span class="user-button__name">{{ activeAccountDisplayName }}</span>
       </button>
     </div>
 
-    <!-- ✅ Modal integrado en el AsideNav -->
     <AccountSwitcherModal
       v-if="userStore.currentUser"
       :is-open="isAccountSwitcherOpen"
@@ -46,7 +43,6 @@
       @select-account="handleSelectAccount"
       @create-account="handleCreateJointAccount"
     />
-    <!-- ☝️ CAMBIO: @create-joint-account → @create-account -->
   </aside>
 </template>
 
@@ -69,27 +65,31 @@ interface MenuItem {
   path: string;
 }
 
-// ✅ Sin props, todo del store
 const userStore = useUserStore();
 const accountStore = useAccountStore();
 const router = useRouter();
 
-// ✅ Estado local solo para el modal
 const isAccountSwitcherOpen = ref(false);
 
-// ✅ Obtener ruta activa desde vue-router
 const currentRoute = computed(() => router.currentRoute.value.path);
 
-// ✅ Avatar reactivo del store
 const avatarSrc = computed(() => {
   const account = userStore.activeAccount;
   if (!account) return getAvatarDataUrl('personal');
-  
-  if (account.account_picture_url) {
-    return account.account_picture_url;
-  }
-  
+  if (account.account_picture_url) return account.account_picture_url;
   return getAvatarDataUrl(account.account_type || 'personal');
+});
+
+// ✅ Nombre a mostrar en el botón de cuenta:
+// - Personal con name vacío → nombre del usuario
+// - Cualquier otro → nombre de la cuenta
+const activeAccountDisplayName = computed(() => {
+  const account = userStore.activeAccount;
+  if (!account) return 'Cuenta';
+  if (account.account_type === 'personal' && !account.name) {
+    return userStore.currentUser?.name || 'Cuenta';
+  }
+  return account.name || 'Cuenta';
 });
 
 const menuItems: MenuItem[] = [
@@ -99,36 +99,19 @@ const menuItems: MenuItem[] = [
   { id: 'perfil', label: 'Perfil', icon: UserIcon, path: '/profile' }, 
 ];
 
-// ✅ Funciones del modal
-const openAccountSwitcher = () => {
-  console.log('🖱️ Opening account switcher from AsideNav');
-  isAccountSwitcherOpen.value = true;
-};
-
-const closeAccountSwitcher = () => {
-  console.log('❌ Closing account switcher');
-  isAccountSwitcherOpen.value = false;
-};
+const openAccountSwitcher = () => { isAccountSwitcherOpen.value = true; };
+const closeAccountSwitcher = () => { isAccountSwitcherOpen.value = false; };
 
 const handleSelectAccount = (accountId: number) => {
-  console.log('🔄 Account selected:', accountId);
   userStore.setActiveAccount(accountId);
   closeAccountSwitcher();
 };
 
-// ✅ CORREGIDO: Recibir userIds (números) en lugar de userEmails
 const handleCreateJointAccount = async (accountName: string, userIds: number[]) => {
-  console.log('4️⃣ AsideNav recibió:', accountName, userIds);
-  
   try {
-    await accountStore.createJointAccount({
-      name: accountName,
-      userIds: userIds // ✅ Ya son números
-    });
-    
+    await accountStore.createJointAccount({ name: accountName, userIds });
     await userStore.refreshAccounts();
     closeAccountSwitcher();
-    
   } catch (error) {
     console.error('❌ Error creando cuenta conjunta:', error);
     alert('Error al crear la cuenta. Por favor, intenta de nuevo.');
@@ -195,23 +178,12 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
   text-decoration: none;
   transition: transform $transition-speed $transition-ease;
 
-  &:hover {
-    transform: translateX(2px);
-  }
-
-  &:active {
-    transform: scale(0.98);
-  }
+  &:hover { transform: translateX(2px); }
+  &:active { transform: scale(0.98); }
 
   &--active {
-    .menu-item__icon {
-      opacity: 1;
-    }
-
-    .menu-item__label {
-      font-weight: 600;
-      color: $color-text;
-    }
+    .menu-item__icon { opacity: 1; }
+    .menu-item__label { font-weight: 600; color: $color-text; }
   }
 
   &__icon {
@@ -240,9 +212,7 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
   cursor: pointer;
   transition: transform $transition-speed $transition-ease;
 
-  &:hover {
-    transform: translateX(2px);
-  }
+  &:hover { transform: translateX(2px); }
 
   &__avatar {
     width: 40px;

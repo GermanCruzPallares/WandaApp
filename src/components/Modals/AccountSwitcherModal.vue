@@ -6,7 +6,6 @@ import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
 import type { Account, User } from '@/types/models';
 import CreateJointAccountModal from './CreateJointAccountModal.vue';
 
-// ✅ Interfaz extendida para incluir usuarios
 interface AccountWithUsers extends Account {
   users?: User[];
 }
@@ -20,142 +19,96 @@ interface Props {
 
 const props = defineProps<Props>();
 
-// ✅ IMPORTANTE: Declarar TODOS los eventos que se emiten
 const emit = defineEmits<{
   close: [];
   selectAccount: [accountId: number];
-  createAccount: [accountName: string, userIds: number[]]; // ✅ CORRECTO: userIds (números)
+  createAccount: [accountName: string, userIds: number[]];
 }>();
 
-// ✅ Usar los stores de Pinia
 const userStore = useUserStore();
 const accountStore = useAccountStore();
 
-// Estado local
 const accounts = ref<Account[]>([]);
 const accountsWithUsers = ref<AccountWithUsers[]>([]);
 const isLoading = ref(false);
 const isJointAccountModalOpen = ref(false);
 
-// ✅ Función para obtener el avatar correcto
 const getAccountAvatar = (account: Account): string => {
-  // Si tiene imagen personalizada, usarla
-  if (account.account_picture_url) {
-    return account.account_picture_url;
-  }
-  
-  // Si no, usar avatar por defecto según el tipo
-  const accountType = account.account_type || 'personal';
-  return getAvatarDataUrl(accountType);
+  if (account.account_picture_url) return account.account_picture_url;
+  return getAvatarDataUrl(account.account_type || 'personal');
 };
 
-// ✅ Cargar cuentas desde el userStore (que tiene las cuentas del usuario actual)
 const loadUserAccounts = async (userId: number) => {
   isLoading.value = true;
-  
-  // Las cuentas ya están en userStore.accounts (cargadas en login)
-  // Pero podemos refrescarlas si queremos
   await userStore.loadUserData(userId);
-  
   accounts.value = userStore.accounts;
-  
-  // Para cada cuenta conjunta, obtener sus usuarios
   await loadUsersForAccounts(accounts.value);
-  
   isLoading.value = false;
 };
 
-// ✅ Cargar usuarios para cuentas conjuntas
 const loadUsersForAccounts = async (accountsList: Account[]) => {
-  const accountsWithUsersData: AccountWithUsers[] = [];
+  const result: AccountWithUsers[] = [];
 
   for (const account of accountsList) {
     if (account.account_type === 'joint') {
-      // Usar accountStore para obtener los miembros de la cuenta
       try {
         const users = await accountStore.fetchAccountMembers(account.account_id);
-        accountsWithUsersData.push({
-          ...account,
-          users,
-        });
-      } catch (error) {
-        console.error(`Error cargando usuarios de cuenta ${account.account_id}:`, error);
-        accountsWithUsersData.push(account);
+        result.push({ ...account, users });
+      } catch {
+        result.push(account);
       }
     } else {
-      accountsWithUsersData.push(account);
+      result.push(account);
     }
   }
 
-  accountsWithUsers.value = accountsWithUsersData;
+  accountsWithUsers.value = result;
 };
 
-// Cargar cuando se abre el modal
 watch(() => props.isOpen, (isOpen) => {
   if (isOpen && props.userId) {
-    // Si ya tenemos cuentas en el userStore, usarlas directamente
     if (userStore.accounts.length > 0) {
       accounts.value = userStore.accounts;
       loadUsersForAccounts(accounts.value);
     } else {
-      // Si no, cargarlas
       loadUserAccounts(props.userId);
     }
   }
-  
-  if (isOpen) {
-    document.body.style.overflow = 'hidden';
-  } else {
-    document.body.style.overflow = '';
-  }
+
+  document.body.style.overflow = isOpen ? 'hidden' : '';
 });
 
-// Recargar si cambia el userId
 watch(() => props.userId, (newUserId) => {
-  if (newUserId && props.isOpen) {
-    loadUserAccounts(newUserId);
-  }
+  if (newUserId && props.isOpen) loadUserAccounts(newUserId);
 });
 
-const handleClose = () => {
-  emit('close');
-};
+const handleClose = () => emit('close');
 
 const handleSelectAccount = (accountId: number) => {
   emit('selectAccount', accountId);
   handleClose();
 };
 
-const handleAddAccount = () => {
-  isJointAccountModalOpen.value = true;
-};
+const handleAddAccount = () => { isJointAccountModalOpen.value = true; };
+const handleCloseJointAccountModal = () => { isJointAccountModalOpen.value = false; };
 
-const handleCloseJointAccountModal = () => {
-  isJointAccountModalOpen.value = false;
-};
-
-// ✅ CORREGIDO: Recibir userIds (números) y reemitir correctamente
 const handleCreateJointAccount = (accountName: string, userIds: number[]) => {
-  console.log('2️⃣ AccountSwitcherModal recibió:', accountName, userIds);
-  
-  // ✅ Reenviar al padre (TopNav)
   emit('createAccount', accountName, userIds);
-  
-  console.log('3️⃣ AccountSwitcherModal reemitió:', accountName, userIds);
-  
-  // Cerrar modales
   isJointAccountModalOpen.value = false;
   handleClose();
 };
 
-// ✅ Formatear usuarios de cuenta conjunta
-const formatAccountUsers = (account: AccountWithUsers): string => {
-  if (!account.users || account.users.length === 0) {
-    return '';
+// ✅ Subtítulo de cada cuenta:
+// - Personal → nombre del usuario logueado
+// - Conjunta → nombres de los miembros
+const getAccountSubtitle = (account: AccountWithUsers): string => {
+  if (account.account_type === 'personal') {
+    return props.currentUser.name;
   }
-  
-  const userNames = account.users.map(u => u.name).join(', ');
-  return userNames;
+  if (account.users && account.users.length > 0) {
+    return account.users.map(u => u.name).join(', ');
+  }
+  return '';
 };
 </script>
 
@@ -178,25 +131,21 @@ const formatAccountUsers = (account: AccountWithUsers): string => {
                 @click="handleSelectAccount(account.account_id)"
               >
                 <div class="account-item__wrapper">
-                  <!-- ✅ Avatar con sistema de fallback -->
                   <div class="account-item__avatar">
-                    <img 
-                      :src="getAccountAvatar(account)" 
-                      :alt="account.name"
-                    />
+                    <img :src="getAccountAvatar(account)" :alt="account.name" />
                   </div>
-                  
+
                   <div class="account-item__info">
-                    <span class="account-item__name">{{ account.name }}</span>
-                    <!-- ✅ Mostrar usuarios si es cuenta conjunta -->
-                    <span 
-                      v-if="account.account_type === 'joint' && account.users" 
+                    <span class="account-item__name">{{ account.name || (account.account_type === 'personal' ? currentUser.name : '') }}</span>
+                    <!-- Subtítulo solo para cuentas conjuntas -->
+                    <span
+                      v-if="account.account_type === 'joint'"
                       class="account-item__users"
                     >
-                      {{ formatAccountUsers(account) }}
+                      {{ getAccountSubtitle(account) }}
                     </span>
                   </div>
-                  
+
                   <div v-if="account.account_id === activeAccountId" class="account-item__check">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                       <circle cx="12" cy="12" r="10" fill="#4285F4"/>
@@ -236,25 +185,6 @@ const formatAccountUsers = (account: AccountWithUsers): string => {
 <style scoped lang="scss">
 @import '@/styles/base/variables.scss';
 
-.account-item {
-  &__info {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  &__users {
-    font-size: 12px;
-    color: $color-text-gray;
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-}
-
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -282,7 +212,6 @@ const formatAccountUsers = (account: AccountWithUsers): string => {
 .loading-state {
   padding: 40px 20px;
   text-align: center;
-  
   p {
     margin: 0;
     font-size: 14px;
@@ -302,13 +231,8 @@ const formatAccountUsers = (account: AccountWithUsers): string => {
   background-color: $color-white;
   padding: 16px 0;
 
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.02);
-  }
-
-  &:active {
-    background-color: rgba(0, 0, 0, 0.05);
-  }
+  &:hover { background-color: rgba(0, 0, 0, 0.02); }
+  &:active { background-color: rgba(0, 0, 0, 0.05); }
 
   &__wrapper {
     display: flex;
@@ -326,7 +250,6 @@ const formatAccountUsers = (account: AccountWithUsers): string => {
     border-radius: 50%;
     overflow: hidden;
     flex-shrink: 0;
-
     img {
       width: 100%;
       height: 100%;
@@ -338,13 +261,26 @@ const formatAccountUsers = (account: AccountWithUsers): string => {
   &__info {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
 
   &__name {
     font-size: 16px;
-    font-weight: 400;
+    font-weight: 500;
     color: $color-text;
     display: block;
+  }
+
+  // ✅ Subtítulo siempre presente (usuario o miembros)
+  &__users {
+    font-size: 12px;
+    color: $color-text-gray;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   &__check {
@@ -372,13 +308,8 @@ const formatAccountUsers = (account: AccountWithUsers): string => {
   color: $color-text;
   padding: 16px 0;
 
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.02);
-  }
-
-  &:active {
-    background-color: rgba(0, 0, 0, 0.05);
-  }
+  &:hover { background-color: rgba(0, 0, 0, 0.02); }
+  &:active { background-color: rgba(0, 0, 0, 0.05); }
 
   &__wrapper {
     display: flex;
@@ -411,34 +342,11 @@ const formatAccountUsers = (account: AccountWithUsers): string => {
   }
 }
 
-// Animaciones
-.modal-enter-active,
-.modal-leave-active {
-  transition: opacity 0.3s ease;
-}
+.modal-enter-active, .modal-leave-active { transition: opacity 0.3s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; }
 
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-
-.slide-enter-active {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.slide-leave-active {
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.6, 1);
-}
-
-.slide-enter-from {
-  transform: translateY(100%);
-}
-
-.slide-leave-to {
-  transform: translateY(100%);
-}
-
-.slide-enter-to {
-  transform: translateY(0);
-}
+.slide-enter-active { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.slide-leave-active { transition: transform 0.25s cubic-bezier(0.4, 0, 0.6, 1); }
+.slide-enter-from, .slide-leave-to { transform: translateY(100%); }
+.slide-enter-to { transform: translateY(0); }
 </style>

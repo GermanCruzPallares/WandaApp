@@ -17,8 +17,6 @@ const userStore = useUserStore();
 
 // ==================== COMPUTED ====================
 
-const currentUser = computed(() => userStore.currentUser);
-
 const accounts = computed<AccountUI[]>(() => {
   return userStore.accounts.map(account => ({
     ...account,
@@ -106,7 +104,6 @@ const handleTransactionClick = (transactionId: number) => {
       <CardComponent
         v-else
         :account-id="activeAccount?.account_id"
-        :user-name="currentUser?.name"
         @edit="handleEditCard"
       />
 
