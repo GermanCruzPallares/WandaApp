@@ -126,6 +126,7 @@ const handleTransactionClick = (transactionId: number) => {
       <div class="home-content__right">
         <TransactionsHistoryComponent
           :account-id="activeAccount?.account_id"
+          :account-type="activeAccount?.account_type"
           :initial-limit="5"
           :load-more-increment="10"
           @transaction-click="handleTransactionClick"
