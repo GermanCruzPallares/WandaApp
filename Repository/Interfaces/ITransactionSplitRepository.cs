@@ -17,5 +17,7 @@ namespace wandaAPI.Repositories
         
 
         Task<List<TransactionSplit>> GetByTransactionIdAsync(int transactionId);
+
+        Task<List<TransactionSplit>> GetByAccountIdAsync(int accountId);
     }
 }

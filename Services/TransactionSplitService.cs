@@ -126,5 +126,13 @@ namespace wandaAPI.Services
 
             return (split, originalTransaction, cuentaDeudor, cuentaAcreedor, userDeudor, userAcreedor);
         }
+
+        public async Task<List<TransactionSplit>> GetAccountSplitsAsync(int accountId)
+        {
+            var account = await _accountRepository.GetByIdAsync(accountId);
+            if (account == null) throw new KeyNotFoundException("La cuenta no existe.");
+
+            return await _splitRepository.GetByAccountIdAsync(accountId);
+        }
     }
 }

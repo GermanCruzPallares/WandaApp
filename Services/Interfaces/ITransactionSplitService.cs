@@ -8,5 +8,7 @@ namespace wandaAPI.Services
         Task<List<TransactionSplit>> GetUserSplitsAsync(int userId, string? statusFilter);
         
         Task AcceptDebtAsync(int splitId);
+
+        Task<List<TransactionSplit>> GetAccountSplitsAsync(int accountId);
     }
 }

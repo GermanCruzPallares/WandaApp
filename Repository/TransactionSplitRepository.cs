@@ -47,7 +47,7 @@ namespace wandaAPI.Repositories
             {
                 await connection.OpenAsync();
 
-                
+
                 string query = @"SELECT split_id, user_id, transaction_id, amount_assigned, status, paid_at 
                          FROM TRANSACTION_SPLITS 
                          WHERE user_id = @user_id";
@@ -137,7 +137,36 @@ namespace wandaAPI.Repositories
             return splits;
         }
 
-       
+        public async Task<List<TransactionSplit>> GetByAccountIdAsync(int accountId)
+        {
+            var splits = new List<TransactionSplit>();
+
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                string query = @"
+                    SELECT ts.split_id, ts.user_id, ts.transaction_id, ts.amount_assigned, ts.status, ts.paid_at
+                    FROM TRANSACTION_SPLITS ts
+                    INNER JOIN TRANSACTIONS t ON ts.transaction_id = t.transaction_id
+                    WHERE t.account_id = @account_id";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@account_id", accountId);
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            splits.Add(MapReaderToSplit(reader));
+                        }
+                    }
+                }
+            }
+            return splits;
+        }
+
         private TransactionSplit MapReaderToSplit(SqlDataReader reader)
         {
             return new TransactionSplit
@@ -150,5 +179,8 @@ namespace wandaAPI.Repositories
                 Paid_at = reader.IsDBNull(5) ? (DateTime?)null : reader.GetDateTime(5)
             };
         }
+
+
+
     }
 }
