@@ -1,5 +1,3 @@
-// src/services/apiService.ts
-
 import { authService } from './authService';
 import type { Account, User, Transaction, Objective } from '@/types/models';
 
@@ -44,21 +42,21 @@ class ApiService {
       throw new Error(error.message || `Error ${response.status}`);
     }
     if (response.status === 204) {
-    console.log('✅ 204 No Content - Operación exitosa');
+    console.log('204 No Content - Operación exitosa');
     return {} as T;
   }
    const contentType = response.headers.get('content-type');
   if (!contentType || !contentType.includes('application/json')) {
     const textResponse = await response.text();
     console.log('✅ Respuesta de texto:', textResponse);
-    return {} as T; // Devolver objeto vacío si es texto plano
+    return {} as T; 
   }
 
     return response.json();
   }
 
   private async putWithAuth<T>(url: string, body: any): Promise<T> {
-    // ✅ LOG: Ver qué estamos enviando
+
     console.log('🔵 PUT Request:', url);
     console.log('📦 Payload:', JSON.stringify(body, null, 2));
     console.trace('🔍 ¿Quién llamó a putWithAuth?');
@@ -75,13 +73,12 @@ class ApiService {
     }
 
     if (!response.ok) {
-      // ✅ Capturar el error completo del backend
+    
       let errorDetails = 'Error desconocido';
       try {
         const errorBody = await response.text();
         console.error('❌ Response body:', errorBody);
         
-        // Intentar parsear como JSON
         try {
           const errorJson = JSON.parse(errorBody);
           errorDetails = errorJson.message || errorJson.title || JSON.stringify(errorJson);
@@ -181,7 +178,7 @@ class ApiService {
   }
 
   async updateAccount(accountId: number, data: Partial<Account>): Promise<void> {
-    // ✅ Obtener la cuenta actual para no sobreescribir campos con vacíos
+  
     const currentAccount = await this.getAccount(accountId);
     
     const updatePayload = {

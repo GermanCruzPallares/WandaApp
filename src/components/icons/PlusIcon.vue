@@ -10,7 +10,7 @@
     @blur="handleFocus(false)"
     :tabindex="focusable ? 0 : -1"
   >
-    <!-- Cuadrado - stroke cuando inactivo, fill cuando activo -->
+   
     <rect
       v-if="!isActive"
       x="4"
@@ -37,7 +37,7 @@
       class="plus-rect-fill"
     />
     
-    <!-- Cruz - negro cuando inactivo, blanco cuando activo -->
+
     <path
       d="M12 8V16M8 12H16"
       :stroke="isActive ? '#FFFFFF' : '#000000'"

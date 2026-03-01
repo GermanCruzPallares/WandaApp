@@ -93,7 +93,7 @@ const handleSavingClick = (transactionId: number) => {
 
     <template v-else>
       <div class="filter-section">
-        <!-- Wrapper que porta los estilos visuales, igual que month-selector__trigger -->
+   
         <div class="objective-filter-wrap">
           <select v-model="selectedObjectiveId" class="objective-filter">
             <option :value="null">Todos los objetivos</option>
@@ -177,7 +177,7 @@ const handleSavingClick = (transactionId: number) => {
   margin-bottom: 20px;
 }
 
-// Mismo patrón visual que month-selector__trigger
+
 .objective-filter-wrap {
   position: relative;
   width: 100%;
@@ -207,7 +207,6 @@ const handleSavingClick = (transactionId: number) => {
   }
 }
 
-// El select es transparente, el wrapper porta los estilos
 .objective-filter {
   width: 100%;
   font-size: 15px;
@@ -219,7 +218,7 @@ const handleSavingClick = (transactionId: number) => {
   appearance: none;
   -webkit-appearance: none;
   cursor: pointer;
-  padding-right: 28px; // espacio para el chevron
+  padding-right: 28px; 
 }
 
 .savings-list {

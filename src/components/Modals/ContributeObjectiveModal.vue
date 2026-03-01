@@ -4,14 +4,11 @@
       <div v-if="isOpen" class="modal-overlay" @click="handleClose">
         <div class="modal-content" @click.stop>
 
-          <!-- Botón cerrar -->
           <button class="modal-close" @click="handleClose">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
           </button>
-
-          <!-- Cabecera: icono + nombre objetivo -->
           <div class="modal-header">
             <div class="modal-header__icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -21,7 +18,6 @@
             <span class="modal-header__name">{{ objectiveName }}</span>
           </div>
 
-          <!-- Input de cantidad -->
           <div class="amount-field">
             <label class="amount-field__label">Cantidad a aportar</label>
             <div class="amount-field__wrapper">
@@ -39,10 +35,7 @@
             </div>
           </div>
 
-          <!-- Mensaje de error -->
           <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
-
-          <!-- Acciones -->
           <div class="modal-actions">
             <button class="btn-cancel" @click="handleClose" :disabled="isSubmitting">
               Cancelar

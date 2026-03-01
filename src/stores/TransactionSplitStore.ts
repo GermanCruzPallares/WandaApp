@@ -8,7 +8,6 @@ export const useTransactionSplitStore = defineStore('transactionSplit', () => {
 
   // ==================== ESTADO ====================
 
-  // Cache: userId → splits
   const splitsByUser = ref<Map<number, TransactionSplit[]>>(new Map());
 
   // ==================== HELPERS ====================
@@ -30,14 +29,44 @@ export const useTransactionSplitStore = defineStore('transactionSplit', () => {
   // ==================== API CALLS ====================
 
   /**
-   * ✅ NUEVO: Obtener todos los splits de una cuenta
+   * Obtener todos los splits de una cuenta
    * GET /api/accounts/{accountId}/transactionSplits
-   * Usado en el historial conjunto para saber quién participa en cada gasto divided
    */
   const fetchAccountSplits = async (accountId: number): Promise<TransactionSplit[]> => {
     try {
-      const url = `${API_BASE_URL}/accounts/${accountId}/transactionSplits`;
-      console.log(`📡 GET ${url}`);
+      const response = await fetch(`${API_BASE_URL}/accounts/${accountId}/transactionSplits`, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+
+      if (response.status === 401) { handleUnauthorized(); return []; }
+      if (response.status === 404) return [];
+      if (!response.ok) throw new Error(`Error ${response.status}`);
+
+      return await response.json();
+
+    } catch (error) {
+      console.error('Error fetchAccountSplits:', error);
+      return [];
+    }
+  };
+
+  /**
+   * Obtener splits del usuario con filtro opcional de estado
+   * GET /api/users/{userId}/transactionSplits?status=pending|settled
+   *
+   * Ejemplos:
+   * - fetchUserSplits(4)             → Todos los splits
+   * - fetchUserSplits(4, 'pending')  → Solo deudas pendientes
+   * - fetchUserSplits(4, 'settled')  → Solo deudas pagadas
+   */
+  const fetchUserSplits = async (
+    userId: number,
+    status?: 'pending' | 'settled'
+  ): Promise<TransactionSplit[]> => {
+    try {
+      let url = `${API_BASE_URL}/users/${userId}/transactionSplits`;
+      if (status) url += `?status=${status}`;
 
       const response = await fetch(url, {
         method: 'GET',
@@ -49,55 +78,7 @@ export const useTransactionSplitStore = defineStore('transactionSplit', () => {
       if (!response.ok) throw new Error(`Error ${response.status}`);
 
       const splits: TransactionSplit[] = await response.json();
-      console.log(`✅ ${splits.length} splits de cuenta cargados`);
-      return splits;
 
-    } catch (error) {
-      console.error('❌ Error fetchAccountSplits:', error);
-      return [];
-    }
-  };
-
-  /**
-   * Obtener splits del usuario con filtro opcional de estado
-   * GET /api/users/{userId}/transactionSplits?status=pending|settled
-   *
-   * Ejemplos:
-   * - fetchUserSplits(4)                  → Todos los splits
-   * - fetchUserSplits(4, 'pending')       → Solo deudas pendientes
-   * - fetchUserSplits(4, 'settled')       → Solo deudas pagadas
-   */
-  const fetchUserSplits = async (
-    userId: number,
-    status?: 'pending' | 'settled'
-  ): Promise<TransactionSplit[]> => {
-    try {
-      let url = `${API_BASE_URL}/users/${userId}/transactionSplits`;
-      if (status) url += `?status=${status}`;
-
-      console.log(`📡 GET ${url}`);
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: getAuthHeaders()
-      });
-
-      if (response.status === 401) {
-        handleUnauthorized();
-        return [];
-      }
-
-      if (response.status === 404) {
-        console.log('ℹ️ No hay splits');
-        return [];
-      }
-
-      if (!response.ok) throw new Error(`Error ${response.status}`);
-
-      const splits: TransactionSplit[] = await response.json();
-      console.log(`✅ ${splits.length} splits cargados`);
-
-      // Cachear solo si no hay filtro (datos completos)
       if (!status) {
         splitsByUser.value.set(userId, splits);
       }
@@ -105,14 +86,13 @@ export const useTransactionSplitStore = defineStore('transactionSplit', () => {
       return splits;
 
     } catch (error) {
-      console.error('❌ Error fetchUserSplits:', error);
+      console.error('Error fetchUserSplits:', error);
       return [];
     }
   };
 
   /**
    * Obtener splits de una transacción concreta filtrando desde el cache
-   * Útil para saber quién participa en un gasto divided específico
    */
   const getSplitsByTransactionId = (
     userId: number,
@@ -128,32 +108,23 @@ export const useTransactionSplitStore = defineStore('transactionSplit', () => {
    */
   const acceptDebt = async (splitId: number): Promise<boolean> => {
     try {
-      console.log(`📡 POST /transactionSplits/${splitId}/`);
-
       const response = await fetch(`${API_BASE_URL}/transactionSplits/${splitId}/`, {
         method: 'POST',
         headers: getAuthHeaders()
       });
 
-      if (response.status === 401) {
-        handleUnauthorized();
-        return false;
-      }
+      if (response.status === 401) { handleUnauthorized(); return false; }
 
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(errorText || `Error ${response.status}`);
       }
 
-      console.log('✅ Deuda aceptada y liquidada');
-
-      // Limpiar caché completo (el saldo y splits cambian)
       splitsByUser.value.clear();
-
       return true;
 
     } catch (error) {
-      console.error('❌ Error acceptDebt:', error);
+      console.error('Error acceptDebt:', error);
       throw error;
     }
   };
@@ -180,16 +151,11 @@ export const useTransactionSplitStore = defineStore('transactionSplit', () => {
   // ==================== RETURN ====================
 
   return {
-    // Estado
     splitsByUser,
-
-    // Métodos principales
     fetchAccountSplits,
     fetchUserSplits,
     getSplitsByTransactionId,
     acceptDebt,
-
-    // Utilidades
     getSplitsFromCache,
     clearCache,
     refreshSplits

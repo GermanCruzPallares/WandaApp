@@ -3,14 +3,13 @@
     class="transaction-card"
     @click="$emit('click', transaction.transaction_id)"
   >
-    <!-- Icono de categoría + avatares superpuestos en conjunta -->
     <div class="transaction-card__icon-wrap">
       <div class="transaction-card__icon">
         <component :is="getCategoryIcon(transaction.category)" />
       </div>
 
       <div v-if="isJoint" class="transaction-card__user-avatars">
-        <!-- Divided: un avatar por participante en los splits -->
+
         <template v-if="transaction.split_type === 'divided'">
           <img
             v-for="split in splits"
@@ -19,14 +18,14 @@
             :alt="getMemberName(split.user_id)"
             class="transaction-card__user-avatar"
           />
-          <!-- También el que pagó -->
+
           <img
             :src="getMemberAvatar(transaction.user_id)"
             :alt="getMemberName(transaction.user_id)"
             class="transaction-card__user-avatar"
           />
         </template>
-        <!-- Individual / contribution: solo quien hizo la transacción -->
+      
         <img
           v-else
           :src="getMemberAvatar(transaction.user_id)"
@@ -40,7 +39,7 @@
       <h4 class="transaction-card__title">{{ transaction.category }}</h4>
       <p class="transaction-card__description">{{ description }}</p>
 
-      <!-- Nombres de participantes solo en cuenta conjunta -->
+  
       <p v-if="isJoint" class="transaction-card__user-name">
         <template v-if="transaction.split_type === 'divided'">
           {{ dividedParticipantNames }}
@@ -160,7 +159,6 @@ const formattedAmount = computed(() => {
     color: $color-white;
   }
 
-  // Grupo de avatares superpuestos en esquina inferior derecha
   &__user-avatars {
     position: absolute;
     bottom: -4px;

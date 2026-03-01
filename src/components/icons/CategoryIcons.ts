@@ -1,6 +1,6 @@
 import { h } from 'vue';
 
-// Función helper para crear componentes SVG
+
 const createSvgComponent = (pathData: string) => {
   return () => h('svg', {
     width: '24',
@@ -52,7 +52,7 @@ const categoryIcons: Record<string, any> = {
 
 };
 
-// Icono por defecto (círculo simple)
+// Icono por defecto 
 const defaultIcon = () => h('svg', {
   width: '24',
   height: '24',
@@ -60,11 +60,11 @@ const defaultIcon = () => h('svg', {
   fill: 'currentColor'
 }, h('circle', { cx: '12', cy: '12', r: '10', opacity: '0.3' }));
 
-// Función para obtener el icono por nombre de categoría
+
 export const getCategoryIcon = (categoryName: string) => {
   const normalizedName = categoryName.toLowerCase().trim();
   return categoryIcons[normalizedName] || defaultIcon;
 };
 
-// Exportar lista de categorías disponibles (útil para dropdowns)
+
 export const availableCategories = Object.keys(categoryIcons);

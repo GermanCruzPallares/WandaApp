@@ -19,9 +19,9 @@
       </button>
     </div>
 
-    <!-- Form Fields -->
+
     <form class="account-form" @submit.prevent="handleSubmit">
-      <!-- Nombre -->
+
       <div class="form-field">
         <label class="field-label">Nombre</label>
         <input
@@ -35,7 +35,6 @@
         <p v-if="errors.name" class="field-error">{{ errors.name }}</p>
       </div>
 
-    <!-- Saldo (Editable) — solo en cuentas personales -->
     <div v-if="formData.account_type === 'personal'" class="form-field">
       <label class="field-label">Saldo</label>
       <div class="field-input-wrapper">
@@ -53,7 +52,6 @@
       <p v-if="errors.amount" class="field-error">{{ errors.amount }}</p>
     </div>
 
-      <!-- Presupuesto Mensual -->
       <div class="form-field">
         <label class="field-label">Presupuesto mensual</label>
         <div class="field-input-wrapper">
@@ -71,7 +69,6 @@
         <p v-if="errors.monthly_budget" class="field-error">{{ errors.monthly_budget }}</p>
       </div>
 
-      <!-- Presupuesto Semanal -->
       <div class="form-field">
         <label class="field-label">Presupuesto semanal</label>
         <div class="field-input-wrapper">
@@ -89,7 +86,6 @@
         <p v-if="errors.weekly_budget" class="field-error">{{ errors.weekly_budget }}</p>
       </div>
 
-      <!-- Botones de acción -->
       <div class="form-actions">
         <button 
           type="button" 
@@ -110,7 +106,6 @@
         </button>
       </div>
 
-      <!-- Mensaje de éxito -->
       <div v-if="showSuccessMessage" class="success-message">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
           <circle cx="12" cy="12" r="10" fill="#4CAF50"/>
@@ -119,7 +114,6 @@
         <span>Cambios guardados correctamente</span>
       </div>
 
-      <!-- Mensaje de error -->
       <div v-if="saveError" class="error-message">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
           <circle cx="12" cy="12" r="10" fill="#f44336"/>
@@ -129,7 +123,6 @@
       </div>
     </form>
 
-    <!-- Modal para cambiar foto (simplificado por ahora) -->
     <Teleport to="body">
       <Transition name="modal">
         <div v-if="isPhotoModalOpen" class="photo-modal-overlay" @click="closePhotoModal">
@@ -321,8 +314,7 @@ const handleSubmit = async () => {
   showSuccessMessage.value = false;
 
   try {
-    // ✅ Preparar datos EXACTAMENTE como el backend los espera
-    // El backend requiere account_picture_url SIEMPRE (puede ser string vacío)
+
     const updateData = {
       name: formData.value.name.trim(),
       amount: formData.value.account_type === 'personal' ? Number(formData.value.amount) : 0,
@@ -333,19 +325,17 @@ const handleSubmit = async () => {
     
     console.log('📤 Datos a enviar:', updateData);
 
-    // Llamar al store para actualizar
+
     await accountStore.updateAccount(props.accountId, updateData);
 
-    // Actualizar datos originales
     originalData.value = { ...formData.value };
 
-    // Mostrar mensaje de éxito
+
     showSuccessMessage.value = true;
     setTimeout(() => {
       showSuccessMessage.value = false;
     }, 3000);
 
-    // Recargar datos actualizados
     const updatedAccount = await accountStore.fetchAccount(props.accountId);
     if (updatedAccount) {
       emit('saved', updatedAccount);
@@ -360,7 +350,7 @@ const handleSubmit = async () => {
 };
 
 const handleCancel = () => {
-  // Restaurar datos originales
+
   formData.value = { ...originalData.value };
   errors.value = {
     name: '',

@@ -252,7 +252,6 @@ const closeDropdown = () => {
   }
 }
 
-// Animación dropdown
 .dropdown-enter-active,
 .dropdown-leave-active {
   transition: opacity 0.2s ease, transform 0.2s ease;

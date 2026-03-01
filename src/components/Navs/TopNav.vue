@@ -6,8 +6,7 @@ import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
 import AccountSwitcherModal from '@/components/Modals/AccountSwitcherModal.vue';
 import router from '@/router';
 
-// ✅ IMPORTANTE: Mantener las props aunque no las usemos directamente
-// HomeView las pasa para mantener la reactividad
+
 interface Props {
   accountId?: number;
 }
@@ -19,7 +18,7 @@ const accountStore = useAccountStore();
 
 const isAccountSwitcherOpen = ref(false);
 
-// ✅ Avatar reactivo desde el store
+
 const avatarSrc = computed(() => {
   const account = userStore.activeAccount;
   if (!account) return getAvatarDataUrl('personal');
@@ -74,7 +73,7 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
       <img src="../../images/OscuroReducido.png" alt="Logo" class="logo-image" />
     </div>
     
-    <!-- Avatar -->
+
     <div class="header-nav__avatar">
       <img 
         :src="avatarSrc" 
@@ -84,7 +83,7 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
       />
     </div>
 
-    <!-- Modal -->
+
     <AccountSwitcherModal
       v-if="userStore.currentUser"
       :is-open="isAccountSwitcherOpen"

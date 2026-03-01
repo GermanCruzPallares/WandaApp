@@ -44,7 +44,6 @@ watch(() => props.accountId, (id) => {
   if (id) loadAccount(id);
 });
 
-// ✅ Nombre leído directamente del store — reactivo, sin problemas de timing
 const greeting = computed(() => {
   const name = userStore.currentUser?.name;
   return name ? `Hola ${name} !` : 'Hola !';

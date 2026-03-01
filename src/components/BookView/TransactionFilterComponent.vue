@@ -1,6 +1,6 @@
 <template>
   <div class="transaction-filter">
-    <!-- Barra de búsqueda + botón filtro -->
+
     <div class="transaction-filter__bar">
       <div class="search-input-wrapper">
         <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -34,10 +34,10 @@
       </button>
     </div>
 
-    <!-- Panel de filtros expandible -->
+
     <Transition name="filter-panel">
       <div v-if="showFilterPanel" class="filter-panel">
-        <!-- Tipo de transacción -->
+
         <div class="filter-section">
           <p class="filter-section__title">Tipo</p>
           <div class="filter-chips">
@@ -53,7 +53,7 @@
           </div>
         </div>
 
-        <!-- Categoría -->
+ 
         <div class="filter-section">
           <p class="filter-section__title">Categoría</p>
           <div class="filter-chips filter-chips--wrap">
@@ -69,7 +69,7 @@
           </div>
         </div>
 
-        <!-- Importe -->
+
         <div class="filter-section">
           <p class="filter-section__title">Importe</p>
           <div class="amount-range">
@@ -101,7 +101,7 @@
           </div>
         </div>
 
-        <!-- Acciones -->
+   
         <div class="filter-actions">
           <button class="clear-filters-btn" @click="clearFilters" :disabled="!hasActiveFilters">
             Limpiar filtros
@@ -312,7 +312,6 @@ const emitFilters = () => {
   font-weight: 700;
 }
 
-// Panel de filtros
 .filter-panel {
   background-color: $color-white;
   border: 1px solid #e0e0e0;
@@ -468,7 +467,7 @@ const emitFilters = () => {
   &:hover { opacity: 0.88; }
 }
 
-// Animación panel
+
 .filter-panel-enter-active,
 .filter-panel-leave-active {
   transition: opacity 0.2s ease, transform 0.2s ease;

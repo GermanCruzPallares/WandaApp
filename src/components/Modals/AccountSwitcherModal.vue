@@ -287,8 +287,6 @@ const getAccountSubtitle = (account: AccountWithUsers): string => {
     color: $color-text;
     display: block;
   }
-
-  // ✅ Subtítulo siempre presente (usuario o miembros)
   &__users {
     font-size: 12px;
     color: $color-text-gray;

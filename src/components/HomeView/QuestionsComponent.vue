@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-// 1. Definimos los datos de las FAQs
 const faqs = [
   {
     question: "¿Que es Wanda?",

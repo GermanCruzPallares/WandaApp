@@ -80,9 +80,7 @@ const avatarSrc = computed(() => {
   return getAvatarDataUrl(account.account_type || 'personal');
 });
 
-// ✅ Nombre a mostrar en el botón de cuenta:
-// - Personal con name vacío → nombre del usuario
-// - Cualquier otro → nombre de la cuenta
+
 const activeAccountDisplayName = computed(() => {
   const account = userStore.activeAccount;
   if (!account) return 'Cuenta';

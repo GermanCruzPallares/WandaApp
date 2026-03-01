@@ -55,12 +55,11 @@
             </button>
           </section>
 
-          <!-- Sección: Usuarios de la cuenta -->
           <section class="modal-section">
             <h3 class="section-title">| Usuarios de la cuenta</h3>
 
             <div class="users-list">
-              <!-- Usuario actual (el que crea la cuenta) -->
+              <!-- Usuario actual -->
               <div class="user-item user-item--owner">
                 <img 
                   :src="getAccountAvatar(userStore.activeAccount)" 
@@ -161,7 +160,7 @@ const emit = defineEmits<{
   createAccount: [accountName: string, userIds: number[]];
 }>();
 
-// ✅ Usar el store
+
 const userStore = useUserStore();
 
 // ==================== ESTADO LOCAL ====================
@@ -239,7 +238,7 @@ const handleAddUser = async () => {
 
   isValidatingEmail.value = true;
   try {
-    // ✅ PASO 1: Buscar usuario por email
+
     const user = await userStore.checkUserExists(newUserEmail.value.trim());
     
     if (!user) {
@@ -247,23 +246,10 @@ const handleAddUser = async () => {
       return;
     }
 
-    console.log('✅ Usuario encontrado:', user);
-
-    // ✅ PASO 2: Buscar cuentas del usuario usando apiService
     const accounts = await apiService.getUserAccounts(user.user_id);
-    
-    console.log('📋 Cuentas del usuario:', accounts);
-
-    // ✅ PASO 3: Filtrar cuenta personal
+  
     const personalAccount = accounts.find(acc => acc.account_type === 'personal') || null;
 
-    if (personalAccount) {
-      console.log('✅ Cuenta personal encontrada:', personalAccount.account_id);
-    } else {
-      console.warn('⚠️ Usuario sin cuenta personal');
-    }
-
-    // ✅ PASO 4: Añadir usuario con su cuenta personal
     addedUsersWithAccounts.value.push({
       user,
       account: personalAccount
@@ -300,10 +286,10 @@ const handleCreateAccount = async () => {
   errorMessage.value = '';
 
   try {
-    // ✅ CORRECCIÓN: Recoger los user_ids (números), NO emails
+
     const userIds = [
-      props.currentUser.user_id, // ✅ user_id del usuario actual (número)
-      ...addedUsersWithAccounts.value.map(item => item.user.user_id) // ✅ user_ids de los añadidos (números)
+      props.currentUser.user_id, 
+      ...addedUsersWithAccounts.value.map(item => item.user.user_id)
     ];
     
     console.log('1️⃣ CreateJointAccountModal emitiendo:');
@@ -311,10 +297,8 @@ const handleCreateAccount = async () => {
     console.log('   User IDs:', userIds);
     console.log('   Tipo de userIds:', typeof userIds, Array.isArray(userIds));
     
-    // ✅ Emitir evento al padre
     emit('createAccount', accountName.value.trim(), userIds);
     
-    // ✅ Cerrar modal
     handleClose();
     
   } catch (error) {
@@ -339,9 +323,6 @@ const handleClose = () => {
   emit('close');
 };
 
-/**
- * ✅ Obtener avatar de la cuenta
- */
 const getAccountAvatar = (account: Account | null): string => {
   if (!account) {
     return getAvatarDataUrl('personal');

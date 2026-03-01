@@ -5,13 +5,13 @@ import type { Transaction } from '@/types/models';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:7085/api';
 
 export const useTransactionStore = defineStore('transaction', () => {
-  
+
   // ==================== ESTADO ====================
-  
+
   const transactionsByAccount = ref<Map<number, Transaction[]>>(new Map());
 
   // ==================== HELPERS ====================
-  
+
   const getAuthHeaders = (): HeadersInit => {
     const token = localStorage.getItem('wanda_auth_token');
     return {
@@ -44,55 +44,35 @@ export const useTransactionStore = defineStore('transaction', () => {
     }
   ): Promise<Transaction[]> => {
     try {
-      // Construir URL
       let url = `${API_BASE_URL}/accounts/${accountId}/transactions`;
-      
-      // Añadir filtros si existen
+
       if (filters) {
         const params = new URLSearchParams();
         if (filters.objectiveId !== undefined) params.append('objectiveId', filters.objectiveId.toString());
         if (filters.type) params.append('type', filters.type);
-        
         const query = params.toString();
         if (query) url += `?${query}`;
       }
-      
-      console.log(`📡 GET ${url}`);
-      
-      // Hacer petición
-      const response = await fetch(url, { 
-        method: 'GET', 
-        headers: getAuthHeaders() 
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getAuthHeaders()
       });
 
-      // Manejar errores
-      if (response.status === 401) {
-        handleUnauthorized();
-        return [];
-      }
-      
-      if (response.status === 404) {
-        console.log('ℹ️ No hay transacciones');
-        return [];
-      }
-      
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}`);
-      }
+      if (response.status === 401) { handleUnauthorized(); return []; }
+      if (response.status === 404) return [];
+      if (!response.ok) throw new Error(`Error ${response.status}`);
 
-      // Obtener datos
       const transactions = await response.json();
-      console.log(`✅ ${transactions.length} transacciones cargadas`);
-      
-      // Cachear solo si no hay filtros (datos completos)
+
       if (!filters) {
         transactionsByAccount.value.set(accountId, transactions);
       }
-      
+
       return transactions;
 
     } catch (error) {
-      console.error('❌ Error:', error);
+      console.error('Error fetchTransactions:', error);
       return [];
     }
   };
@@ -104,7 +84,7 @@ export const useTransactionStore = defineStore('transaction', () => {
    * - fetchSavings(1, 5) → Aportaciones del objetivo 5
    */
   const fetchSavings = async (
-    accountId: number, 
+    accountId: number,
     objectiveId?: number
   ): Promise<Transaction[]> => {
     return fetchTransactions(accountId, {
@@ -134,11 +114,11 @@ export const useTransactionStore = defineStore('transaction', () => {
       });
 
       if (!response.ok) return null;
-      
+
       return await response.json();
 
     } catch (error) {
-      console.error('❌ Error:', error);
+      console.error('Error fetchTransactionById:', error);
       return null;
     }
   };
@@ -174,16 +154,13 @@ export const useTransactionStore = defineStore('transaction', () => {
         throw new Error(errorText || `Error ${response.status}`);
       }
 
-      console.log('✅ Transacción creada');
-
-      // Limpiar caché y recargar
       transactionsByAccount.value.delete(accountId);
       await fetchTransactions(accountId);
 
       return true;
 
     } catch (error) {
-      console.error('❌ Error:', error);
+      console.error('Error createTransaction:', error);
       throw error;
     }
   };
@@ -214,15 +191,12 @@ export const useTransactionStore = defineStore('transaction', () => {
 
       if (!response.ok) throw new Error(`Error ${response.status}`);
 
-      console.log('✅ Transacción actualizada');
-      
-      // Limpiar todo el caché
       transactionsByAccount.value.clear();
 
       return true;
 
     } catch (error) {
-      console.error('❌ Error:', error);
+      console.error('Error updateTransaction:', error);
       throw error;
     }
   };
@@ -231,7 +205,7 @@ export const useTransactionStore = defineStore('transaction', () => {
    * Eliminar una transacción
    */
   const deleteTransaction = async (
-    transactionId: number, 
+    transactionId: number,
     accountId?: number
   ): Promise<boolean> => {
     try {
@@ -242,9 +216,6 @@ export const useTransactionStore = defineStore('transaction', () => {
 
       if (!response.ok) throw new Error(`Error ${response.status}`);
 
-      console.log('✅ Transacción eliminada');
-
-      // Limpiar caché
       if (accountId) {
         transactionsByAccount.value.delete(accountId);
         await fetchTransactions(accountId);
@@ -255,23 +226,17 @@ export const useTransactionStore = defineStore('transaction', () => {
       return true;
 
     } catch (error) {
-      console.error('❌ Error:', error);
+      console.error('Error deleteTransaction:', error);
       throw error;
     }
   };
 
   // ==================== UTILIDADES ====================
 
-  /**
-   * Obtener desde caché (sin llamar al backend)
-   */
   const getTransactionsFromCache = (accountId: number): Transaction[] | null => {
     return transactionsByAccount.value.get(accountId) || null;
   };
 
-  /**
-   * Limpiar caché
-   */
   const clearCache = (accountId?: number) => {
     if (accountId) {
       transactionsByAccount.value.delete(accountId);
@@ -280,9 +245,6 @@ export const useTransactionStore = defineStore('transaction', () => {
     }
   };
 
-  /**
-   * Refrescar (forzar recarga)
-   */
   const refreshTransactions = async (accountId: number): Promise<Transaction[]> => {
     transactionsByAccount.value.delete(accountId);
     return await fetchTransactions(accountId);
@@ -291,10 +253,7 @@ export const useTransactionStore = defineStore('transaction', () => {
   // ==================== RETURN ====================
 
   return {
-    // Estado
     transactionsByAccount,
-    
-    // Métodos principales
     fetchTransactions,
     fetchSavings,
     fetchTransactionsByObjective,
@@ -302,8 +261,6 @@ export const useTransactionStore = defineStore('transaction', () => {
     createTransaction,
     updateTransaction,
     deleteTransaction,
-    
-    // Utilidades
     getTransactionsFromCache,
     clearCache,
     refreshTransactions

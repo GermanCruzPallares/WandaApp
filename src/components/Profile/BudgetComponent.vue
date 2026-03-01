@@ -9,7 +9,7 @@ const accountStore = useAccountStore();
 const weeklyBudget = ref(0);
 const monthlyBudget = ref(0);
 
-// Estado del modal
+
 const isModalOpen = ref(false);
 const selectedBudgetType = ref<'weekly' | 'monthly'>('weekly');
 

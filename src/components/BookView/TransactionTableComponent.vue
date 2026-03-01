@@ -1,15 +1,15 @@
 <template>
   <div class="transaction-table">
-    <!-- Estado de carga -->
+   
     <div v-if="isLoading" class="table-skeleton">
       <div class="table-skeleton__header"></div>
       <div v-for="i in 6" :key="i" class="table-skeleton__row"></div>
     </div>
 
-    <!-- Tabla con datos -->
+  
     <template v-else>
       <div class="table-wrapper">
-        <!-- Encabezado -->
+    
         <div class="table-header">
           <span class="col-cat">Cat.</span>
           <span class="col-concept">Concepto</span>
@@ -17,7 +17,7 @@
           <span class="col-amount">Importe</span>
         </div>
 
-        <!-- Filas -->
+   
         <TransitionGroup name="row" tag="div" class="table-body">
           <div
             v-for="transaction in filteredTransactions"
@@ -25,7 +25,7 @@
             class="table-row"
             @click="$emit('rowClick', transaction.transaction_id)"
           >
-            <!-- Icono categoría + avatares superpuestos en cuenta conjunta -->
+        
             <div class="col-cat">
               <div class="icon-wrap">
                 <div class="category-icon">
@@ -33,7 +33,7 @@
                 </div>
 
                 <div v-if="isJoint" class="user-avatars">
-                  <!-- Divided: avatares de cada participante del split + el pagador -->
+          
                   <template v-if="transaction.split_type === 'divided'">
                     <img
                       v-for="split in getSplits(transaction.transaction_id)"
@@ -48,7 +48,7 @@
                       class="user-avatar"
                     />
                   </template>
-                  <!-- Individual / contribution: solo quien hizo la transacción -->
+                 
                   <img
                     v-else
                     :src="getMemberAvatar(transaction.user_id)"
@@ -59,7 +59,7 @@
               </div>
             </div>
 
-            <!-- Concepto + nombres de participantes en cuenta conjunta -->
+ 
             <div class="col-concept">
               <div class="concept-stack">
                 <div class="concept-top">
@@ -72,7 +72,7 @@
                     </svg>
                   </span>
                 </div>
-                <!-- Nombres de participantes, solo en cuenta conjunta -->
+               
                 <span v-if="isJoint" class="concept-author">
                   <template v-if="transaction.split_type === 'divided'">
                     {{ getDividedParticipantNames(transaction) }}
@@ -104,7 +104,7 @@
           </div>
         </TransitionGroup>
 
-        <!-- Estado vacío -->
+
         <div v-if="filteredTransactions.length === 0" class="empty-state">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
             <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
@@ -131,7 +131,7 @@ const props = defineProps<{
   isLoading?: boolean;
   isJoint?: boolean;
   members?: User[];
-  splits?: TransactionSplit[];  // todos los splits de las transacciones del mes
+  splits?: TransactionSplit[];  
 }>();
 
 defineEmits<{
@@ -148,12 +148,12 @@ const getMemberName = (userId: number): string => {
   return props.members?.find(m => m.user_id === userId)?.name ?? '';
 };
 
-/** Devuelve los splits asociados a una transacción concreta */
+
 const getSplits = (transactionId: number): TransactionSplit[] => {
   return props.splits?.filter(s => s.transaction_id === transactionId) ?? [];
 };
 
-/** Igual que dividedParticipantNames en TransactionCard */
+
 const getDividedParticipantNames = (transaction: Transaction): string => {
   const debtorIds = getSplits(transaction.transaction_id).map(s => s.user_id);
   const allIds = [...new Set([transaction.user_id, ...debtorIds])];
@@ -163,7 +163,7 @@ const getDividedParticipantNames = (transaction: Transaction): string => {
 const filteredTransactions = computed(() => {
   let result = [...props.transactions];
 
-  // Filtro por búsqueda
+
   if (props.filters.search.trim()) {
     const q = props.filters.search.toLowerCase().trim();
     result = result.filter(
@@ -173,29 +173,28 @@ const filteredTransactions = computed(() => {
     );
   }
 
-  // Filtro por tipo
+ 
   if (props.filters.types.length > 0) {
     result = result.filter(t => props.filters.types.includes(t.transaction_type));
   }
 
-  // Filtro por categoría
+
   if (props.filters.categories.length > 0) {
     result = result.filter(t =>
       props.filters.categories.includes(t.category?.toLowerCase())
     );
   }
 
-  // Filtro por importe mínimo
+ 
   if (props.filters.minAmount !== null) {
     result = result.filter(t => t.amount >= (props.filters.minAmount ?? 0));
   }
 
-  // Filtro por importe máximo
   if (props.filters.maxAmount !== null) {
     result = result.filter(t => t.amount <= (props.filters.maxAmount ?? Infinity));
   }
 
-  // Ordenar por fecha descendente
+  
   return result.sort(
     (a, b) =>
       new Date(b.transaction_date).getTime() -
@@ -357,7 +356,6 @@ const formatAmount = (amount: number, type: string): string => {
   min-width: 0;
 }
 
-// Stack vertical: concepto arriba, nombre del autor abajo
 .concept-stack {
   display: flex;
   flex-direction: column;
@@ -381,7 +379,6 @@ const formatAmount = (amount: number, type: string): string => {
   text-overflow: ellipsis;
 }
 
-// Nombre del autor de la transacción (solo cuenta conjunta)
 .concept-author {
   font-size: 11px;
   color: $color-text-gray;
@@ -424,7 +421,7 @@ const formatAmount = (amount: number, type: string): string => {
   &--income { color: $color-success; }
 }
 
-// Pie de tabla
+
 .table-footer {
   display: flex;
   justify-content: space-between;
@@ -449,7 +446,7 @@ const formatAmount = (amount: number, type: string): string => {
   &.negative { color: $color-danger; }
 }
 
-// Estado vacío
+
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -495,7 +492,6 @@ const formatAmount = (amount: number, type: string): string => {
   100% { background-position: -200% 0; }
 }
 
-// Transición de filas
 .row-enter-active {
   transition: opacity 0.2s ease, transform 0.2s ease;
 }

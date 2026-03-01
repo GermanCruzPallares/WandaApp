@@ -8,7 +8,6 @@
     
     <h1 class="header-nav__title">{{ title }}</h1>
     
-    <!-- Espacio vacío para centrar el título -->
     <div class="header-nav__spacer"></div>
   </header>
 </template>
@@ -46,7 +45,7 @@ const handleBack = () => {
   z-index: 1000;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 
-  // En desktop con AsideNav
+
   @media (min-width: 768px) {
     left: 240px;
     width: calc(100% - 240px);

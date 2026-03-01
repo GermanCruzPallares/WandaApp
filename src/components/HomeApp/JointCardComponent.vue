@@ -219,19 +219,18 @@ const getMemberAvatar = (_user: User): string => getAvatarDataUrl('personal');
     color: rgba(255, 255, 255, 0.9);
   }
 
-  // Barra que arranca alineada con el texto, igual que en el diseño
   &__bar {
     height: 6px;
     border-radius: 3px;
     overflow: hidden;
-    background-color: rgba(255, 255, 255, 0.25); // mismo que stat__bar--expense
+    background-color: rgba(255, 255, 255, 0.25); 
   }
 
   &__bar-fill {
     height: 100%;
     border-radius: 3px;
     background-color: rgba(255, 255, 255, 0.85);
-    transition: width 0.3s ease; // mismo timing que CardComponent
+    transition: width 0.3s ease; 
   }
 }
 </style>
