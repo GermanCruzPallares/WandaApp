@@ -45,10 +45,15 @@ const router = createRouter({
       component: () => import('../views/ProfileView.vue'),
     },
     {
+      path: '/book',
+      name: 'book',
+      component: () => import('../views/BookView.vue'),
+    },
+    {
       path: '/home/editAccount',
       name: 'edit',
       component: () => import('../views/EditAccountView.vue'),
-    },    
+    },
     {
       path: '/home/contributions/:objectiveId?',
       name: 'ObjectiveContributions',
