@@ -1,8 +1,19 @@
 <template>
   <aside class="aside-nav">
-  
+
     <div class="aside-nav__logo">
-      <img src="../../images/OscuroPrincipal.png" alt="Wanda Logo" class="logo-image" />
+      <img
+        ref="logoRef"
+        src="../../images/OscuroPrincipal.png"
+        alt="Wanda Logo"
+        class="logo-image"
+        @click="isWandaMenuOpen = true"
+      />
+      <WandaMenuModal
+        :is-open="isWandaMenuOpen"
+        :anchor-el="logoRef"
+        @close="isWandaMenuOpen = false"
+      />
     </div>
 
     <nav class="aside-nav__menu">
@@ -13,10 +24,10 @@
         class="menu-item"
         :class="{ 'menu-item--active': currentRoute === item.path }"
       >
-        <component 
-          :is="item.icon" 
+        <component
+          :is="item.icon"
           :is-active="currentRoute === item.path"
-          class="menu-item__icon" 
+          class="menu-item__icon"
         />
         <span class="menu-item__label">{{ item.label }}</span>
       </router-link>
@@ -24,8 +35,8 @@
 
     <div class="aside-nav__footer">
       <button class="user-button" @click="openAccountSwitcher">
-        <img 
-          :src="avatarSrc" 
+        <img
+          :src="avatarSrc"
           alt="User avatar"
           class="user-button__avatar"
         />
@@ -43,6 +54,7 @@
       @select-account="handleSelectAccount"
       @create-account="handleCreateJointAccount"
     />
+
   </aside>
 </template>
 
@@ -53,6 +65,7 @@ import { useUserStore } from '@/stores/UserStore';
 import { useAccountStore } from '@/stores/AccountStore';
 import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
 import AccountSwitcherModal from '@/components/Modals/AccountSwitcherModal.vue';
+import WandaMenuModal from '@/components/Modals/WandaMenuModal.vue';
 import HomeIcon from '../icons/HomeIcon.vue';
 import PlusIcon from '../icons/PlusIcon.vue';
 import CalculatorIcon from '../icons/CalculatorIcon.vue';
@@ -70,6 +83,8 @@ const accountStore = useAccountStore();
 const router = useRouter();
 
 const isAccountSwitcherOpen = ref(false);
+const isWandaMenuOpen = ref(false);
+const logoRef = ref<HTMLElement | null>(null);
 
 const currentRoute = computed(() => router.currentRoute.value.path);
 
@@ -79,7 +94,6 @@ const avatarSrc = computed(() => {
   if (account.account_picture_url) return account.account_picture_url;
   return getAvatarDataUrl(account.account_type || 'personal');
 });
-
 
 const activeAccountDisplayName = computed(() => {
   const account = userStore.activeAccount;
@@ -91,10 +105,10 @@ const activeAccountDisplayName = computed(() => {
 });
 
 const menuItems: MenuItem[] = [
-  { id: 'inicio', label: 'Inicio', icon: HomeIcon, path: '/home' }, 
+  { id: 'inicio', label: 'Inicio', icon: HomeIcon, path: '/home' },
   { id: 'add', label: 'Añadir movimiento', icon: PlusIcon, path: '/transaction' },
   { id: 'libro', label: 'Libro Cuentas', icon: CalculatorIcon, path: '/book' },
-  { id: 'perfil', label: 'Perfil', icon: UserIcon, path: '/profile' }, 
+  { id: 'perfil', label: 'Perfil', icon: UserIcon, path: '/profile' },
 ];
 
 const openAccountSwitcher = () => { isAccountSwitcherOpen.value = true; };
@@ -139,15 +153,20 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
   }
 
   &__logo {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 12px;
     margin-bottom: 32px;
     padding: 0 8px;
+    border-radius: $card-border-radius;
 
     .logo-image {
       height: 2.5em;
       border-radius: 8px;
+      cursor: pointer;
+      transition: opacity $transition-speed $transition-ease;
+      
     }
   }
 
