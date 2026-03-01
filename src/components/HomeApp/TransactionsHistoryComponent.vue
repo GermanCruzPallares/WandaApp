@@ -147,8 +147,12 @@ const groupedTransactions = computed<TransactionGroup[]>(() => {
   const groups = new Map<string, Transaction[]>();
 
   const sorted = [...transactions.value].sort(
-    (a, b) => parseDate(b.transaction_date).getTime() - parseDate(a.transaction_date).getTime()
-  );
+  (a, b) => {
+    const dateDiff = parseDate(b.transaction_date).getTime() - parseDate(a.transaction_date).getTime();
+    if (dateDiff !== 0) return dateDiff;
+    return b.transaction_id - a.transaction_id;
+  }
+);
 
   sorted.forEach(t => {
     const dateKey = parseDate(t.transaction_date).toISOString().split('T')[0] ?? '';

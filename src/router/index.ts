@@ -50,6 +50,11 @@ const router = createRouter({
       component: () => import('../views/BookView.vue'),
     },
     {
+      path: '/notifications',
+      name: 'notifications',
+      component: () => import('../views/NotificationsView.vue'),
+    },
+    {
       path: '/home/editAccount',
       name: 'edit',
       component: () => import('../views/EditAccountView.vue'),
