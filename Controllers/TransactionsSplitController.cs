@@ -66,5 +66,25 @@ namespace wandaAPI.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
+
+        [HttpGet("accounts/{accountId}/transactionSplits")]
+        public async Task<ActionResult<List<TransactionSplit>>> GetAccountSplits(int accountId)
+        {
+            if (accountId <= 0) return BadRequest("El ID de cuenta es obligatorio.");
+
+            try
+            {
+                var splits = await _transactionSplitService.GetAccountSplitsAsync(accountId);
+                return Ok(splits);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }

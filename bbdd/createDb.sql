@@ -23,7 +23,8 @@ CREATE TABLE USERS (
     user_id INT IDENTITY(1,1) PRIMARY KEY,
     name NVARCHAR(100) NOT NULL,
     email NVARCHAR(100) NOT NULL UNIQUE,
-    password NVARCHAR(255) NOT NULL
+    password NVARCHAR(255) NOT NULL,
+    role NVARCHAR(50) NOT NULL DEFAULT 'User' -- <--- AÑADIDO EL ROL AQUÍ
 );
 
 -- TABLA DE CUENTAS
@@ -102,11 +103,15 @@ GO
 -- =============================================
 
 -- Usuarios (Password: Wanda123!)
-INSERT INTO USERS (name, email, password) 
-VALUES ('Ana García', 'ana@wanda.com', '$2a$12$MQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4hZ1.Gce3C');
+-- <--- SE HA AÑADIDO EL ROL EN LOS INSERTS --->
+INSERT INTO USERS (name, email, password, role) 
+VALUES ('Ana García', 'ana@wanda.com', '$2a$12$MQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4hZ1.Gce3C', 'Admin');
 
-INSERT INTO USERS (name, email, password) 
-VALUES ('Juan Pérez', 'juan@wanda.com', '$2a$12$MQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4hZ1.Gce3C');
+INSERT INTO USERS (name, email, password, role) 
+VALUES ('Juan Pérez', 'juan@wanda.com', '$2a$12$MQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4hZ1.Gce3C', 'User');
+
+INSERT INTO USERS (name, email, password, role) 
+VALUES ('Admin', 'admin@gmail.com', '$2a$11$FPiUn.1ESFq4b7TcsiUVAuZipE0RS7rIHj9SuZwVltLzqpqeeRseO', 'Admin');
 
 -- Cuentas 
 INSERT INTO ACCOUNTS (name, account_type, amount, weekly_budget, monthly_budget) 

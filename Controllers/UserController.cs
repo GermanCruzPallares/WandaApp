@@ -64,21 +64,6 @@ namespace wandaAPI.Controllers
             }
         }
 
-
-        [HttpPost]
-        public async Task<ActionResult<User>> CreateUser([FromBody] UserCreateDTO user1)
-        {
-            try
-            {
-                await _userService.AddAsync(user1);
-                return Ok("User creado exitosamente");
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
-
         [Authorize]
         [HttpPut("{userId}")]
         public async Task<IActionResult> UpdateUser(int userId, [FromBody] UserUpdateDTO updatedUser)
@@ -125,6 +110,28 @@ namespace wandaAPI.Controllers
             {
 
                 return NotFound(ex.Message);
+            }
+        }
+
+        [Authorize(Roles = "Admin")] 
+        [HttpGet("stats")]
+        public async Task<ActionResult> GetSystemStats()
+        {
+            try
+            {
+                
+                var allUsers = await _userService.GetAllAsync();
+
+                return Ok(new
+                {
+                    TotalUsers = allUsers.Count,
+                    TotalAdmins = allUsers.Count(u => u.Role == "Admin"),
+                    TotalRegularUsers = allUsers.Count(u => u.Role == "User")
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
             }
         }
 

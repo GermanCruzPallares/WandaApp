@@ -97,9 +97,10 @@ namespace wandaAPI.Services
                     {
                         Account_id = fundingAccount.Account_id,
                         User_id = userId,
+                        Objective_id = dto.Objective_id,
                         Category = dto.Category,
                         Amount = dto.Amount,
-                        Transaction_type = "expense",
+                        Transaction_type = dto.Transaction_type.ToLower(),
                         Concept = espejoConcepto,
                         Transaction_date = dto.Transaction_date,
                         IsRecurring = dto.IsRecurring,
