@@ -276,7 +276,6 @@ const formatDate = (date: Date | string): string => {
 }
 
 .objectives {
-  padding: 0 $section-margin-horizontal 1.5rem;
 
   @media (min-width: 768px) {
     padding: 0 0 1.5rem 0;

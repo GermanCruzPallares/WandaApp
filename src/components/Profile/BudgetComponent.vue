@@ -103,7 +103,6 @@ const handleBudgetUpdated = async () => {
 @import '@/styles/base/variables.scss';
 
 .budget {
-  padding: 0 $section-margin-horizontal 1.5rem;
 
   @media (min-width: 768px) {
     padding: 0 0 1.5rem 0;

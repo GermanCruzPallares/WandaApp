@@ -251,20 +251,19 @@ const formatAmount = (amount: number, type: string): string => {
 }
 
 .table-wrapper {
-  background-color: $color-white;
-  border: 1px solid #e8e8e8;
+  background-color: $section-bg-primary;
   border-radius: $card-border-radius;
   overflow: hidden;
 }
 
-// Encabezado
+
 .table-header {
   display: grid;
   grid-template-columns: 56px 1fr 70px 100px;
   align-items: center;
   padding: 10px 20px;
   background-color: $section-bg-primary;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #ffffff;
 
   span {
     font-size: 11px;
@@ -277,7 +276,7 @@ const formatAmount = (amount: number, type: string): string => {
   .col-amount { text-align: right; }
 }
 
-// Filas
+
 .table-body {
   display: flex;
   flex-direction: column;
@@ -287,7 +286,7 @@ const formatAmount = (amount: number, type: string): string => {
   display: grid;
   grid-template-columns: 56px 1fr 70px 100px;
   align-items: center;
-  padding: 14px 20px;
+  padding: 20px 20px;
   border-bottom: 1px solid #f5f5f5;
   cursor: pointer;
   transition: background-color $transition-speed $transition-ease;
@@ -295,21 +294,20 @@ const formatAmount = (amount: number, type: string): string => {
   &:last-child { border-bottom: none; }
 
   &:hover {
-    background-color: #fafafa;
+    background-color: rgba(0, 0, 0, 0.03);
   }
 
   &:active {
-    background-color: $section-bg-primary;
+    background-color: rgba(0, 0, 0, 0.03);
   }
 }
 
-// Columnas
+
 .col-cat {
   display: flex;
   align-items: center;
 }
 
-// Wrapper posicionamiento relativo igual que transaction-card__icon-wrap
 .icon-wrap {
   position: relative;
   width: 36px;

@@ -11,12 +11,7 @@
     />
 
     <main class="book-content">
-      <!-- Título (solo desktop) -->
-      <div class="book-content__title desktop-only">
-        <h1>Libro de Cuentas</h1>
-      </div>
 
-      <!-- Selector de mes -->
       <div class="book-content__section">
         <MonthSelectorComponent
           v-model="selectedPeriod"
@@ -24,7 +19,6 @@
         />
       </div>
 
-      <!-- Tarjetas resumen -->
       <div class="book-content__section">
         <MonthlySummaryComponent
           :income="monthlyIncome"
@@ -33,14 +27,12 @@
         />
       </div>
 
-      <!-- Filtros -->
       <div class="book-content__section">
         <TransactionFilterComponent
           v-model:filters="activeFilters"
         />
       </div>
 
-      <!-- Tabla de transacciones -->
       <div class="book-content__section">
         <TransactionTableComponent
           :transactions="monthTransactions"
@@ -219,10 +211,7 @@ watch(
   @media (min-width: 768px) {
     margin-left: $aside-nav-width;
     width: calc(100% - #{$aside-nav-width});
-    padding-top: 40px;
-    padding-bottom: 40px;
-    padding-left: 40px;
-    padding-right: 40px;
+    padding: 40px 40px;
   }
 
   &__title {

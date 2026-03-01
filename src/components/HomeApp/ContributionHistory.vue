@@ -18,37 +18,25 @@ const emit = defineEmits<{
   transactionsLoaded: [transactions: Transaction[]];
 }>();
 
-// ✅ Usar el store de Pinia
 const transactionStore = useTransactionStore();
 
-// Estado local
 const transactions = ref<Transaction[]>([]);
 const isLoading = ref(false);
 const selectedObjectiveId = ref<number | null>(props.initialSelectedObjective);
 
-// ✅ Cargar aportaciones desde el store
 const loadSavings = async (accountId: number) => {
   isLoading.value = true;
-  
   transactions.value = await transactionStore.fetchSavings(accountId);
-  
   emit('transactionsLoaded', transactions.value);
-  
   isLoading.value = false;
 };
 
-// Cargar cuando se monta
 onMounted(() => {
-  if (props.accountId) {
-    loadSavings(props.accountId);
-  }
+  if (props.accountId) loadSavings(props.accountId);
 });
 
-// Recargar cuando cambia la cuenta
 watch(() => props.accountId, (newAccountId) => {
-  if (newAccountId) {
-    loadSavings(newAccountId);
-  }
+  if (newAccountId) loadSavings(newAccountId);
 });
 
 watch(() => props.initialSelectedObjective, (newValue) => {
@@ -66,11 +54,9 @@ const getObjectiveName = (objectiveId: number): string => {
 
 const filteredSavings = computed(() => {
   let result = transactions.value;
-
   if (selectedObjectiveId.value !== null) {
     result = result.filter(t => t.objective_id === selectedObjectiveId.value);
   }
-
   return result.sort((a, b) => parseDate(b.transaction_date).getTime() - parseDate(a.transaction_date).getTime());
 });
 
@@ -80,19 +66,14 @@ const formatDate = (date: Date | string): string => {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
   const transactionDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-
   const time = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 
-  if (transactionDay.getTime() === today.getTime()) {
-    return `Hoy, ${time}`;
-  } else if (transactionDay.getTime() === yesterday.getTime()) {
-    return `Ayer, ${time}`;
-  } else {
-    const day = d.getDate().toString().padStart(2, '0');
-    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    const month = months[d.getMonth()];
-    return `${day} ${month}, ${time}`;
-  }
+  if (transactionDay.getTime() === today.getTime()) return `Hoy, ${time}`;
+  if (transactionDay.getTime() === yesterday.getTime()) return `Ayer, ${time}`;
+
+  const day = d.getDate().toString().padStart(2, '0');
+  const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  return `${day} ${months[d.getMonth()]}, ${time}`;
 };
 
 const formatAmount = (amount: number): string => {
@@ -105,7 +86,6 @@ const handleSavingClick = (transactionId: number) => {
 </script>
 
 <template>
-  <!-- Template sin cambios -->
   <div class="savings-history">
     <div v-if="isLoading" class="loading-state">
       <p>Cargando aportaciones...</p>
@@ -113,16 +93,28 @@ const handleSavingClick = (transactionId: number) => {
 
     <template v-else>
       <div class="filter-section">
-        <select v-model="selectedObjectiveId" class="objective-filter">
-          <option :value="null">Todos los objetivos</option>
-          <option 
-            v-for="objective in objectives" 
-            :key="objective.objective_id"
-            :value="objective.objective_id"
+        <!-- Wrapper que porta los estilos visuales, igual que month-selector__trigger -->
+        <div class="objective-filter-wrap">
+          <select v-model="selectedObjectiveId" class="objective-filter">
+            <option :value="null">Todos los objetivos</option>
+            <option
+              v-for="objective in objectives"
+              :key="objective.objective_id"
+              :value="objective.objective_id"
+            >
+              {{ objective.name }}
+            </option>
+          </select>
+          <svg
+            class="objective-filter-wrap__chevron"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
           >
-            {{ objective.name }}
-          </option>
-        </select>
+            <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
       </div>
 
       <div class="savings-list">
@@ -144,10 +136,7 @@ const handleSavingClick = (transactionId: number) => {
           </div>
 
           <div class="saving-item__right">
-            <span class="saving-item__amount">
-              +{{ formatAmount(transaction.amount) }}
-            </span>
-            
+            <span class="saving-item__amount">+{{ formatAmount(transaction.amount) }}</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="saving-item__arrow">
               <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -175,7 +164,7 @@ const handleSavingClick = (transactionId: number) => {
 .loading-state {
   padding: 60px 20px;
   text-align: center;
-  
+
   p {
     margin: 0;
     font-size: 14px;
@@ -184,34 +173,53 @@ const handleSavingClick = (transactionId: number) => {
 }
 
 .filter-section {
-  margin-top: 20px;
+  
   margin-bottom: 20px;
 }
 
-.objective-filter {
+// Mismo patrón visual que month-selector__trigger
+.objective-filter-wrap {
+  position: relative;
   width: 100%;
-  padding: 12px 16px;
-  font-size: 14px;
-  color: $color-text;
-  background-color: $background-principal;
-  border: 1px solid $color-text--dk;
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  background-color: $section-bg-primary;
+  border: 1.5px solid transparent;
   border-radius: $card-border-radius;
   cursor: pointer;
+  transition: all $transition-speed $transition-ease;
+
+  &:hover,
+  &:focus-within {
+    border-color: $color-border--dk;
+    background-color: $section-bg-secondary;
+  }
+
+  &__chevron {
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: $color-text-gray;
+    pointer-events: none;
+    flex-shrink: 0;
+  }
+}
+
+// El select es transparente, el wrapper porta los estilos
+.objective-filter {
+  width: 100%;
+  font-size: 15px;
+  font-weight: 600;
+  color: $color-text;
+  background: transparent;
+  border: none;
+  outline: none;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 36px;
-  transition: border-color $transition-speed $transition-ease;
-
-  &:focus {
-    outline: none;
-    border-color: $color-text;
-  }
-
-  &:hover {
-    border-color: $color-text-gray;
-  }
+  -webkit-appearance: none;
+  cursor: pointer;
+  padding-right: 28px; // espacio para el chevron
 }
 
 .savings-list {

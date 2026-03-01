@@ -41,8 +41,7 @@ const getAccountAvatar = (account: any) => {
 @import '@/styles/base/variables.scss';
 
 .accounts-section {
-  padding: 0 $section-margin-horizontal 1.5rem;
-
+  
   @media (min-width: 768px) {
     padding: 0;
   }
