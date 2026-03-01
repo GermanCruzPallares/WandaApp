@@ -61,6 +61,7 @@ class ApiService {
     // ✅ LOG: Ver qué estamos enviando
     console.log('🔵 PUT Request:', url);
     console.log('📦 Payload:', JSON.stringify(body, null, 2));
+    console.trace('🔍 ¿Quién llamó a putWithAuth?');
     
     const response = await fetch(url, {
       method: 'PUT',
@@ -180,16 +181,18 @@ class ApiService {
   }
 
   async updateAccount(accountId: number, data: Partial<Account>): Promise<void> {
-    // ✅ IMPORTANTE: El backend requiere estos campos siempre
+    // ✅ Obtener la cuenta actual para no sobreescribir campos con vacíos
+    const currentAccount = await this.getAccount(accountId);
+    
     const updatePayload = {
-      name: data.name || '',
-      amount: data.amount ?? 0, // ✅ Incluir saldo
-      weekly_budget: data.weekly_budget ?? 0,
-      monthly_budget: data.monthly_budget ?? 0,
-      account_picture_url: data.account_picture_url ?? '' // ✅ Campo obligatorio en el backend
+      name: data.name !== undefined ? data.name : currentAccount.name,
+      amount: data.amount !== undefined ? data.amount : currentAccount.amount,
+      weekly_budget: data.weekly_budget !== undefined ? data.weekly_budget : currentAccount.weekly_budget,
+      monthly_budget: data.monthly_budget !== undefined ? data.monthly_budget : currentAccount.monthly_budget,
+      account_picture_url: data.account_picture_url !== undefined ? data.account_picture_url : (currentAccount.account_picture_url ?? ''),
     };
     
-    console.log('🔵 updateAccount llamado con:', updatePayload);
+    console.log('🔵 updateAccount - merge con datos actuales:', updatePayload);
     
     return this.putWithAuth<void>(`${API_BASE_URL}/Account/${accountId}`, updatePayload);
   }

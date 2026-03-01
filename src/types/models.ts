@@ -60,3 +60,12 @@ export interface Objective {
   current_save: number;
   deadline: Date | string;
 }
+
+export interface TransactionSplit {
+  split_id: number;
+  user_id: number;
+  transaction_id: number;
+  amount_assigned: number;
+  status: 'pending' | 'settled';
+  paid_at?: Date | string | null;
+}

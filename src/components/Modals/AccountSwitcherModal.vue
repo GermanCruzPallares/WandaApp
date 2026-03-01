@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/UserStore';
 import { useAccountStore } from '@/stores/AccountStore';
 import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
@@ -27,6 +28,7 @@ const emit = defineEmits<{
 
 const userStore = useUserStore();
 const accountStore = useAccountStore();
+const router = useRouter();
 
 const accounts = ref<Account[]>([]);
 const accountsWithUsers = ref<AccountWithUsers[]>([]);
@@ -87,6 +89,7 @@ const handleClose = () => emit('close');
 const handleSelectAccount = (accountId: number) => {
   emit('selectAccount', accountId);
   handleClose();
+  router.push('/home');
 };
 
 const handleAddAccount = () => { isJointAccountModalOpen.value = true; };
@@ -136,7 +139,9 @@ const getAccountSubtitle = (account: AccountWithUsers): string => {
                   </div>
 
                   <div class="account-item__info">
-                    <span class="account-item__name">{{ account.name || (account.account_type === 'personal' ? currentUser.name : '') }}</span>
+                    <span class="account-item__name">
+                      {{ account.name || (account.account_type === 'personal' ? currentUser.name : '') }}
+                    </span>
                     <!-- Subtítulo solo para cuentas conjuntas -->
                     <span
                       v-if="account.account_type === 'joint'"

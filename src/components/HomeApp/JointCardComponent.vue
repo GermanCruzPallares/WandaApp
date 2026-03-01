@@ -31,6 +31,10 @@ const loadData = async (accountId: number) => {
     accountStore.fetchAccountMembers(accountId),
   ]);
 
+  console.log('🏦 fetchedAccount:', JSON.stringify(fetchedAccount));
+  console.log('👥 fetchedMembers:', JSON.stringify(fetchedMembers));
+  console.log('🔢 accountId recibido:', accountId);
+
   account.value = fetchedAccount;
   members.value = fetchedMembers;
 
