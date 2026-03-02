@@ -1,5 +1,3 @@
-// src/services/apiService.ts
-
 import { authService } from './authService';
 import type { Account, User, Transaction, Objective } from '@/types/models';
 
@@ -60,23 +58,24 @@ class ApiService {
     }
 
     if (response.status === 204) {
-    console.log('✅ 204 No Content - Operación exitosa');
+    console.log('204 No Content - Operación exitosa');
     return {} as T;
   }
    const contentType = response.headers.get('content-type');
   if (!contentType || !contentType.includes('application/json')) {
     const textResponse = await response.text();
-    console.log('✅ Respuesta de texto:', textResponse);
-    return {} as T; // Devolver objeto vacío si es texto plano
+    console.log('Respuesta de texto:', textResponse);
+    return {} as T; 
   }
 
     return response.json();
   }
 
   private async putWithAuth<T>(url: string, body: any): Promise<T> {
-    // ✅ LOG: Ver qué estamos enviando
+
     console.log('🔵 PUT Request:', url);
     console.log('📦 Payload:', JSON.stringify(body, null, 2));
+    console.trace('🔍 ¿Quién llamó a putWithAuth?');
     
     const response = await fetch(url, {
       method: 'PUT',
@@ -90,13 +89,12 @@ class ApiService {
     }
 
     if (!response.ok) {
-      // ✅ Capturar el error completo del backend
+    
       let errorDetails = 'Error desconocido';
       try {
         const errorBody = await response.text();
-        console.error('❌ Response body:', errorBody);
+        console.error('Response body:', errorBody);
         
-        // Intentar parsear como JSON
         try {
           const errorJson = JSON.parse(errorBody);
           errorDetails = errorJson.message || errorJson.title || JSON.stringify(errorJson);
@@ -104,7 +102,7 @@ class ApiService {
           errorDetails = errorBody;
         }
       } catch (e) {
-        console.error('❌ No se pudo leer el cuerpo de la respuesta:', e);
+        console.error('No se pudo leer el cuerpo de la respuesta:', e);
       }
       
       throw new Error(`Error ${response.status}: ${errorDetails}`);
@@ -196,16 +194,18 @@ class ApiService {
   }
 
   async updateAccount(accountId: number, data: Partial<Account>): Promise<void> {
-    // ✅ IMPORTANTE: El backend requiere estos campos siempre
+  
+    const currentAccount = await this.getAccount(accountId);
+    
     const updatePayload = {
-      name: data.name || '',
-      amount: data.amount ?? 0, // ✅ Incluir saldo
-      weekly_budget: data.weekly_budget ?? 0,
-      monthly_budget: data.monthly_budget ?? 0,
-      account_picture_url: data.account_picture_url ?? '' // ✅ Campo obligatorio en el backend
+      name: data.name !== undefined ? data.name : currentAccount.name,
+      amount: data.amount !== undefined ? data.amount : currentAccount.amount,
+      weekly_budget: data.weekly_budget !== undefined ? data.weekly_budget : currentAccount.weekly_budget,
+      monthly_budget: data.monthly_budget !== undefined ? data.monthly_budget : currentAccount.monthly_budget,
+      account_picture_url: data.account_picture_url !== undefined ? data.account_picture_url : (currentAccount.account_picture_url ?? ''),
     };
     
-    console.log('🔵 updateAccount llamado con:', updatePayload);
+    console.log('🔵 updateAccount - merge con datos actuales:', updatePayload);
     
     return this.putWithAuth<void>(`${API_BASE_URL}/Account/${accountId}`, updatePayload);
   }

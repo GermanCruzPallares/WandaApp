@@ -10,7 +10,7 @@
     @blur="handleFocus(false)"
     :tabindex="focusable ? 0 : -1"
   >
-    <!-- Usuario con stroke cuando inactivo -->
+   
     <g v-if="!isActive">
       <circle
         cx="12"

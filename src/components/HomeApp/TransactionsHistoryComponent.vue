@@ -185,69 +185,34 @@ const handleTransactionClick = (transactionId: number) => {
 </script>
 
 <template>
-  <!-- ✅ Solo renderizar cuando NO está cargando -->
   <div v-if="!isLoading">
     <SectionTitle title="| Historial" />
 
     <section class="transactions-history">
-      <!-- Transacciones agrupadas por fecha -->
-      <div v-for="group in displayedTransactions" :key="group.date" class="transaction-group">
+      <div
+        v-for="group in displayedTransactions"
+        :key="group.date"
+        class="transaction-group"
+      >
         <div class="transaction-group__date">{{ group.formattedDate }}</div>
 
         <div class="transaction-list">
-          <div
+          <TransactionCard
             v-for="transaction in group.transactions"
             :key="transaction.transaction_id"
-            class="transaction-item"
-            @click="handleTransactionClick(transaction.transaction_id)"
-          >
-            <!-- Icono de categoría -->
-            <div class="transaction-item__icon">
-              <component :is="getCategoryIcon(transaction.category)" />
-            </div>
-
-            <div class="transaction-item__info">
-              <h4 class="transaction-item__title">{{ transaction.category }}</h4>
-              <p class="transaction-item__description">{{ getDescription(transaction) }}</p>
-            </div>
-
-            <div class="transaction-item__right">
-              <span
-                class="transaction-item__amount"
-                :class="{
-                  'transaction-item__amount--negative': transaction.transaction_type === 'expense',
-                  'transaction-item__amount--positive': transaction.transaction_type === 'income',
-                }"
-              >
-                {{ formatAmount(transaction.amount, transaction.transaction_type) }}
-              </span>
-
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                class="transaction-item__arrow"
-              >
-                <path
-                  d="M9 18l6-6-6-6"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </div>
-          </div>
+            :transaction="transaction"
+            :is-joint="isJoint"
+            :members="members"
+            :splits="getSplitsForTransaction(transaction.transaction_id)"
+            @click="handleTransactionClick"
+          />
         </div>
       </div>
 
-      <!-- Mensaje si no hay transacciones -->
       <div v-if="transactions.length === 0" class="empty-state">
         <p>No hay transacciones registradas</p>
       </div>
 
-      <!-- Botón Ver más -->
       <button v-if="canLoadMore" class="load-more-btn" @click="loadMore">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
           <path
@@ -264,22 +229,169 @@ const handleTransactionClick = (transactionId: number) => {
   </div>
 </template>
 
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from 'vue';
+import { useTransactionStore } from '@/stores/TransactionStore';
+import { useTransactionSplitStore } from '@/stores/TransactionSplitStore';
+import { useAccountStore } from '@/stores/AccountStore';
+import SectionTitle from '@/components/SectionTitle.vue';
+import TransactionCard from '@/components/HomeApp/TransactionCard.vue';
+import type { Transaction, TransactionSplit, User } from '@/types/models';
+
+// ==================== TIPOS ====================
+
+interface TransactionGroup {
+  date: string;
+  formattedDate: string;
+  transactions: Transaction[];
+}
+
+// ==================== PROPS ====================
+
+interface Props {
+  accountId?: number;
+  accountType?: 'personal' | 'joint';
+  initialLimit?: number;
+  loadMoreIncrement?: number;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  initialLimit: 5,
+  loadMoreIncrement: 10
+});
+
+const emit = defineEmits<{
+  transactionClick: [transactionId: number];
+  transactionsLoaded: [transactions: Transaction[]];
+}>();
+
+// ==================== STORES ====================
+
+const transactionStore = useTransactionStore();
+const splitStore = useTransactionSplitStore();
+const accountStore = useAccountStore();
+
+// ==================== ESTADO ====================
+
+const transactions = ref<Transaction[]>([]);
+const members = ref<User[]>([]);
+const splits = ref<TransactionSplit[]>([]);
+const isLoading = ref(false);
+const displayLimit = ref(props.initialLimit);
+
+const isJoint = computed(() => props.accountType === 'joint');
+
+// ==================== CARGA ====================
+
+const loadTransactions = async (accountId: number) => {
+  isLoading.value = true;
+  transactions.value = await transactionStore.fetchTransactions(accountId);
+  emit('transactionsLoaded', transactions.value);
+  isLoading.value = false;
+};
+
+const loadMembers = async (accountId: number) => {
+  if (!isJoint.value) return;
+  members.value = await accountStore.fetchAccountMembers(accountId);
+};
+
+const loadSplits = async (accountId: number) => {
+  if (!isJoint.value) return;
+  splits.value = await splitStore.fetchAccountSplits(accountId);
+};
+
+onMounted(() => {
+  if (props.accountId) {
+    loadTransactions(props.accountId);
+    loadMembers(props.accountId);
+    loadSplits(props.accountId);
+  }
+});
+
+watch(() => props.accountId, (newId) => {
+  if (newId) {
+    displayLimit.value = props.initialLimit;
+    loadTransactions(newId);
+    loadMembers(newId);
+    loadSplits(newId);
+  }
+});
+
+watch(() => props.accountType, () => {
+  if (props.accountId) {
+    loadMembers(props.accountId);
+    loadSplits(props.accountId);
+  }
+});
+
+// ==================== SPLITS ====================
+
+const getSplitsForTransaction = (transactionId: number): TransactionSplit[] => {
+  return splits.value.filter(s => s.transaction_id === transactionId);
+};
+
+// ==================== HELPERS ====================
+
+const parseDate = (date: Date | string): Date =>
+  typeof date === 'string' ? new Date(date) : date;
+
+const groupedTransactions = computed<TransactionGroup[]>(() => {
+  const groups = new Map<string, Transaction[]>();
+
+  const sorted = [...transactions.value].sort(
+  (a, b) => {
+    const dateDiff = parseDate(b.transaction_date).getTime() - parseDate(a.transaction_date).getTime();
+    if (dateDiff !== 0) return dateDiff;
+    return b.transaction_id - a.transaction_id;
+  }
+);
+
+  sorted.forEach(t => {
+    const dateKey = parseDate(t.transaction_date).toISOString().split('T')[0] ?? '';
+    if (!dateKey) return;
+    if (!groups.has(dateKey)) groups.set(dateKey, []);
+    groups.get(dateKey)!.push(t);
+  });
+
+  return Array.from(groups.entries()).map(([date, txs]) => ({
+    date,
+    formattedDate: formatDate(new Date(date)),
+    transactions: txs
+  }));
+});
+
+const displayedTransactions = computed(() => {
+  let count = 0;
+  const result: TransactionGroup[] = [];
+
+  for (const group of groupedTransactions.value) {
+    if (count >= displayLimit.value) break;
+    const slots = displayLimit.value - count;
+    const toShow = group.transactions.slice(0, slots);
+    if (toShow.length > 0) {
+      result.push({ ...group, transactions: toShow });
+      count += toShow.length;
+    }
+  }
+  return result;
+});
+
+const canLoadMore = computed(() => displayLimit.value < transactions.value.length);
+
+const formatDate = (date: Date): string => {
+  const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return `${date.getDate().toString().padStart(2,'0')} ${months[date.getMonth()]} ${date.getFullYear()}`;
+};
+
+const loadMore = () => { displayLimit.value += props.loadMoreIncrement; };
+const handleTransactionClick = (id: number) => emit('transactionClick', id);
+</script>
+
 <style scoped lang="scss">
 @import '@/styles/base/variables.scss';
 
 .transactions-history {
   padding: 0 $section-margin-horizontal 1.5rem;
-}
-
-.loading-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: $color-text-gray;
-
-  p {
-    margin: 0;
-    font-size: 14px;
-  }
 }
 
 .transaction-group {
@@ -290,7 +402,6 @@ const handleTransactionClick = (transactionId: number) => {
     color: $color-text-gray;
     font-weight: 500;
     margin-bottom: 0.9rem;
-    padding-left: 0;
     line-height: 3em;
     border-bottom: 1px solid $color-text-gray;
   }
@@ -302,86 +413,11 @@ const handleTransactionClick = (transactionId: number) => {
   gap: 1rem;
 }
 
-.transaction-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background-color: $section-bg-primary;
-  border-radius: $card-border-radius;
-  padding: 25px 16px;
-
-  cursor: pointer;
-  transition:
-    transform $transition-speed $transition-ease,
-    box-shadow $transition-speed $transition-ease;
-
-  &:hover {
-    transform: translateX(2px);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-  }
-
-  &:active {
-    transform: translateX(1px);
-  }
-
-  &__icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: $color-text-gray;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: $color-white;
-    flex-shrink: 0;
-  }
-
-  &__info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  &__title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: $color-text;
-    margin: 0 0 5px 0;
-  }
-
-  &__description {
-    font-size: 0.8rem;
-    color: $color-text-gray;
-    margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  &__right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-  }
-
-  &__amount {
-    font-size: 14px;
-    font-weight: 600;
-    white-space: nowrap;
-
-    &--negative {
-      color: $color-danger;
-    }
-
-    &--positive {
-      color: $color-success;
-    }
-  }
-
-  &__arrow {
-    color: $color-text-gray;
-    flex-shrink: 0;
-  }
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: $color-text-gray;
+  p { margin: 0; font-size: 14px; }
 }
 
 .load-more-btn {
@@ -400,20 +436,12 @@ const handleTransactionClick = (transactionId: number) => {
   cursor: pointer;
   transition: color $transition-speed $transition-ease;
 
-  svg {
-    transition: transform $transition-speed $transition-ease;
-  }
+  svg { transition: transform $transition-speed $transition-ease; }
 
   &:hover {
     color: $color-text;
-
-    svg {
-      transform: translateY(2px);
-    }
+    svg { transform: translateY(2px); }
   }
-
-  &:active {
-    transform: scale(0.98);
-  }
+  &:active { transform: scale(0.98); }
 }
 </style>

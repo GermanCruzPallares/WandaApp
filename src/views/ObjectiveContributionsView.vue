@@ -123,7 +123,7 @@ onMounted(async () => {
     try {
       await userStore.loadUserData(userStore.userId);
     } catch (error) {
-      console.error('❌ Error cargando datos:', error);
+      console.error('Error cargando datos:', error);
       router.push('/login');
     }
   }
@@ -135,10 +135,9 @@ onMounted(async () => {
 });
 
 // 4. Recargar objetivos cuando cambia la cuenta activa
-// (El cambio de cuenta ahora lo gestiona AsideNav modificando el store)
 watch(() => activeAccount.value?.account_id, (newAccountId) => {
   if (newAccountId) {
-    console.log('🔄 Cambio de cuenta detectado:', newAccountId);
+    console.log('Cambio de cuenta detectado:', newAccountId);
     loadObjectives(newAccountId);
   }
 });

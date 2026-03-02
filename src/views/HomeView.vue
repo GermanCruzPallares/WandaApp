@@ -5,6 +5,7 @@ import { useUserStore } from '@/stores/UserStore'
 import BottomNav from '@/components/Navs/BottomNav.vue'
 import BalanceComponent from '@/components/HomeApp/BalanceComponent.vue'
 import CardComponent from '@/components/HomeApp/CardComponent.vue'
+import JointCardComponent from '@/components/HomeApp/JointCardComponent.vue'
 import ObjectivesComponent from '@/components/HomeApp/ObjectivesComponent.vue'
 import TransactionsHistoryComponent from '@/components/HomeApp/TransactionsHistoryComponent.vue'
 import TopNav from '@/components/Navs/TopNav.vue'
@@ -16,10 +17,6 @@ const userStore = useUserStore()
 
 // ==================== COMPUTED ====================
 
-// Usuario actual desde el store
-const currentUser = computed(() => userStore.currentUser)
-
-// Cuentas con formato AccountUI (agregando isActive)
 const accounts = computed<AccountUI[]>(() => {
   return userStore.accounts.map((account) => ({
     ...account,
@@ -27,12 +24,12 @@ const accounts = computed<AccountUI[]>(() => {
   }))
 })
 
-// Cuenta activa
 const activeAccount = computed(() => {
-  const active = accounts.value.find((acc) => acc.isActive)
-  console.log('🔍 HomeView: activeAccount =', active)
-  return active
+  return accounts.value.find((acc) => acc.isActive)
 })
+
+// Determina si la cuenta activa es conjunta
+const isJointAccount = computed(() => activeAccount.value?.account_type === 'joint')
 
 // ==================== ESTADO LOCAL ====================
 
@@ -43,19 +40,16 @@ const activeMenuItem = ref('inicio')
 // ==================== LIFECYCLE ====================
 
 onMounted(async () => {
-  // Verificar autenticación
   if (!userStore.isAuthenticated) {
-    console.warn('⚠️ Usuario no autenticado, redirigiendo a login...')
     router.push('/login')
     return
   }
 
-  // Si el store no tiene datos cargados, cargarlos
   if (!userStore.currentUser && userStore.userId) {
     try {
       await userStore.loadUserData(userStore.userId)
     } catch (error) {
-      console.error('❌ Error cargando datos:', error)
+      console.error('Error cargando datos:', error)
       router.push('/login')
     }
   }
@@ -64,12 +58,10 @@ onMounted(async () => {
 // ==================== HANDLERS ====================
 
 const handleObjectivesLoaded = (loadedObjectives: Objective[]) => {
-  console.log('🎯 HomeView: Objetivos recibidos:', loadedObjectives)
   objectives.value = loadedObjectives
 }
 
 const handleTransactionsLoaded = (loadedTransactions: Transaction[]) => {
-  console.log('💳 HomeView: Transacciones recibidas:', loadedTransactions.length)
   transactions.value = loadedTransactions
 }
 
@@ -87,46 +79,36 @@ const handleTransactionClick = (transactionId: number) => {
 </script>
 
 <template>
-  <div class="app-shell">
-    <AsideNav :active-item="activeMenuItem" :account-id="activeAccount?.account_id" />
+  <AsideNav :active-item="activeMenuItem" :account-id="activeAccount?.account_id" />
 
-    <TopNav :account-id="activeAccount?.account_id" class="mobile-only" />
+  <TopNav :account-id="activeAccount?.account_id" class="mobile-only" />
+  <TopNav :account-id="activeAccount?.account_id" class="mobile-only" />
 
-    <main class="home-content">
-      <div class="home-content__header">
-        <CardComponent
-          :account-id="activeAccount?.account_id"
-          :user-name="currentUser?.name"
-          @edit="handleEditCard"
-        />
-      </div>
+  <main class="home-content">
+    <div class="home-content__header">
+      <CardComponent :account-id="activeAccount?.account_id" />
 
-      <div class="home-content__grid">
-        <div class="home-content__left">
-          <BalanceComponent :account-id="activeAccount?.account_id" />
+      <ObjectivesComponent
+        v-if="activeAccount?.account_id"
+        :account-id="activeAccount?.account_id"
+        @add-objective="handleAddObjective"
+        @objectives-loaded="handleObjectivesLoaded"
+      />
+    </div>
 
-          <ObjectivesComponent
-            v-if="activeAccount?.account_id"
-            :account-id="activeAccount.account_id"
-            @add-objective="handleAddObjective"
-            @objectives-loaded="handleObjectivesLoaded"
-          />
-        </div>
+    <div class="home-content__right">
+      <TransactionsHistoryComponent
+        :account-id="activeAccount?.account_id"
+        :account-type="activeAccount?.account_type"
+        :initial-limit="5"
+        :load-more-increment="10"
+        @transaction-click="handleTransactionClick"
+        @transactions-loaded="handleTransactionsLoaded"
+      />
+    </div>
+  </main>
 
-        <div class="home-content__right">
-          <TransactionsHistoryComponent
-            :account-id="activeAccount?.account_id"
-            :initial-limit="5"
-            :load-more-increment="10"
-            @transaction-click="handleTransactionClick"
-            @transactions-loaded="handleTransactionsLoaded"
-          />
-        </div>
-      </div>
-    </main>
-
-    <BottomNav class="mobile-only" />
-  </div>
+  <BottomNav class="mobile-only" />
 </template>
 
 <style scoped lang="scss">

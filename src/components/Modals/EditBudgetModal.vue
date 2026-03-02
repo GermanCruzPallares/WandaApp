@@ -4,28 +4,32 @@
       <div v-if="isOpen" class="modal-overlay" @click="handleClose">
         <div class="modal-content" @click.stop>
 
+  
           <button class="modal-close" @click="handleClose">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
           </button>
+
+
           <div class="modal-header">
             <div class="modal-header__icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
               </svg>
             </div>
-            <span class="modal-header__name">{{ objectiveName }}</span>
+            <span class="modal-header__name">Presupuesto {{ budgetTypeLabel }}</span>
           </div>
 
+          <!-- Input de cantidad -->
           <div class="amount-field">
-            <label class="amount-field__label">Cantidad a aportar</label>
+            <label class="amount-field__label">Nuevo importe</label>
             <div class="amount-field__wrapper">
               <input
                 ref="inputRef"
                 v-model="amountInput"
                 type="number"
-                min="0.01"
+                min="0"
                 step="0.01"
                 placeholder="0.00"
                 class="amount-field__input"
@@ -36,11 +40,13 @@
           </div>
 
           <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+
+
           <div class="modal-actions">
             <button class="btn-cancel" @click="handleClose" :disabled="isSubmitting">
               Cancelar
             </button>
-            <button class="btn-confirm" @click="handleConfirm" :disabled="isSubmitting || !amountInput">
+            <button class="btn-confirm" @click="handleConfirm" :disabled="isSubmitting || amountInput === null">
               {{ isSubmitting ? 'Guardando...' : 'Confirmar' }}
             </button>
           </div>
@@ -52,44 +58,43 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue';
-import { useTransactionStore } from '@/stores/TransactionStore';
-import { useUserStore } from '@/stores/UserStore';
+import { ref, computed, watch, nextTick } from 'vue';
+import { useAccountStore } from '@/stores/AccountStore';
 
 interface Props {
   isOpen: boolean;
   accountId: number;
-  objectiveId: number;
-  objectiveName: string;
+  budgetType: 'weekly' | 'monthly';
+  currentValue: number;
 }
 
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
   close: [];
-  contributed: [];
+  updated: [];
 }>();
 
-const transactionStore = useTransactionStore();
-const userStore = useUserStore();
+const accountStore = useAccountStore();
 
 const amountInput = ref<number | null>(null);
 const isSubmitting = ref(false);
 const errorMessage = ref('');
 const inputRef = ref<HTMLInputElement | null>(null);
 
+// ==================== COMPUTED ====================
+
+const budgetTypeLabel = computed(() =>
+  props.budgetType === 'weekly' ? 'Semanal' : 'Mensual'
+);
+
 // ==================== SUBMIT ====================
 
 const handleConfirm = async () => {
   const numericAmount = amountInput.value;
 
-  if (!numericAmount || numericAmount <= 0) {
-    errorMessage.value = 'Introduce una cantidad válida';
-    return;
-  }
-
-  if (!userStore.userId) {
-    errorMessage.value = 'Error de sesión. Recarga la página.';
+  if (numericAmount === null || numericAmount < 0) {
+    errorMessage.value = 'Introduce un importe válido';
     return;
   }
 
@@ -97,25 +102,17 @@ const handleConfirm = async () => {
   errorMessage.value = '';
 
   try {
-    await transactionStore.createTransaction(props.accountId, {
-      user_id: userStore.userId,
-      objective_id: props.objectiveId,
-      category: 'Ahorro',
-      amount: numericAmount,
-      transaction_type: 'saving',
-      concept: `Ahorro ${props.objectiveName}`,
-      transaction_date: new Date().toISOString(),
-      isRecurring: false,
-      frequency: null,
-      end_date: null,
-      split_type: 'individual',
-    });
+    const updateData =
+      props.budgetType === 'weekly'
+        ? { weekly_budget: numericAmount }
+        : { monthly_budget: numericAmount };
 
-    emit('contributed');
+    await accountStore.updateAccount(props.accountId, updateData);
+
+    emit('updated');
     handleClose();
-
   } catch (error: any) {
-    errorMessage.value = error.message || 'Error al registrar la aportación.';
+    errorMessage.value = error.message || 'Error al actualizar el presupuesto.';
   } finally {
     isSubmitting.value = false;
   }
@@ -132,10 +129,12 @@ const handleClose = () => {
 
 watch(() => props.isOpen, async (val) => {
   if (val) {
-    amountInput.value = null;
+
+    amountInput.value = props.currentValue ?? null;
     errorMessage.value = '';
     await nextTick();
     inputRef.value?.focus();
+    inputRef.value?.select();
   }
 });
 </script>

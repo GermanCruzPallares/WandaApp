@@ -1,69 +1,47 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useUserStore } from '@/stores/UserStore'
-import { useAccountStore } from '@/stores/AccountStore'
-import { getAvatarDataUrl } from '@/components/icons/AvatarIcons'
-import AccountSwitcherModal from '@/components/Modals/AccountSwitcherModal.vue'
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/UserStore';
+import { useAccountStore } from '@/stores/AccountStore';
+import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
+import AccountSwitcherModal from '@/components/Modals/AccountSwitcherModal.vue';
+import WandaMenuModal from '@/components/Modals/WandaMenuModal.vue';
 
-// ✅ IMPORTANTE: Mantener las props aunque no las usemos directamente
-// HomeView las pasa para mantener la reactividad
 interface Props {
   accountId?: number
 }
 
 defineProps<Props>()
 
-const userStore = useUserStore()
-const accountStore = useAccountStore()
+const userStore = useUserStore();
+const accountStore = useAccountStore();
+const router = useRouter();
 
-const isAccountSwitcherOpen = ref(false)
+const isAccountSwitcherOpen = ref(false);
+const isWandaMenuOpen = ref(false);
+const logoRef = ref<HTMLElement | null>(null);
 
-// ✅ Avatar reactivo desde el store
 const avatarSrc = computed(() => {
-  const account = userStore.activeAccount
-  if (!account) return getAvatarDataUrl('personal')
+  const account = userStore.activeAccount;
+  if (!account) return getAvatarDataUrl('personal');
+  if (account.account_picture_url) return account.account_picture_url;
+  return getAvatarDataUrl(account.account_type || 'personal');
+});
 
-  if (account.account_picture_url) {
-    return account.account_picture_url
-  }
-
-  return getAvatarDataUrl(account.account_type || 'personal')
-})
-
-const openAccountSwitcher = () => {
-  console.log('🖱️ Opening account switcher')
-  isAccountSwitcherOpen.value = true
-}
-
-const closeAccountSwitcher = () => {
-  console.log('❌ Closing account switcher')
-  isAccountSwitcherOpen.value = false
-}
+const openAccountSwitcher = () => { isAccountSwitcherOpen.value = true; };
+const closeAccountSwitcher = () => { isAccountSwitcherOpen.value = false; };
 
 const handleSelectAccount = (accountId: number) => {
-  console.log('🔄 Account selected:', accountId)
-  userStore.setActiveAccount(accountId)
-  closeAccountSwitcher()
-}
+  userStore.setActiveAccount(accountId);
+  closeAccountSwitcher();
+};
 
-/**
- * ✅ Manejar creación de cuenta conjunta y activarla automáticamente
- */
 const handleCreateJointAccount = async (accountName: string, userIds: number[]) => {
-  console.log('➕ Creando cuenta conjunta:', accountName, userIds)
-
   try {
-    await accountStore.createJointAccount({
-      name: accountName,
-      userIds: userIds,
-    })
-
-    // ✅ Refrescar cuentas y establecer la nueva como activa
-    await userStore.refreshAccounts(true)
-
-    closeAccountSwitcher()
-
-    console.log('✅ Cuenta conjunta creada y activada')
+    await accountStore.createJointAccount({ name: accountName, userIds });
+    await userStore.refreshAccounts(true);
+    closeAccountSwitcher();
+    router.push('/home');
   } catch (error) {
     console.error('❌ Error creando cuenta conjunta:', error)
     alert('Error al crear la cuenta. Por favor, intenta de nuevo.')
@@ -73,16 +51,30 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
 
 <template>
   <div class="header-nav">
-    <router-link to="/home" class="header-nav__logo">
-      <img src="../../images/OscuroReducido.png" alt="Logo" class="logo-image" />
-    </router-link>
-
-    <!-- Avatar -->
-    <div class="header-nav__avatar">
-      <img :src="avatarSrc" alt="User avatar" class="avatar-image" @click="openAccountSwitcher" />
+    <div class="header-nav__logo">
+      <img
+        ref="logoRef"
+        src="../../images/OscuroReducido.png"
+        alt="Logo"
+        class="logo-image"
+        @click="isWandaMenuOpen = true"
+      />
+      <WandaMenuModal
+        :is-open="isWandaMenuOpen"
+        :anchor-el="logoRef"
+        @close="isWandaMenuOpen = false"
+      />
     </div>
 
-    <!-- Modal -->
+    <div class="header-nav__avatar">
+      <img
+        :src="avatarSrc"
+        alt="User avatar"
+        class="avatar-image"
+        @click="openAccountSwitcher"
+      />
+    </div>
+
     <AccountSwitcherModal
       v-if="userStore.currentUser"
       :is-open="isAccountSwitcherOpen"
@@ -93,6 +85,7 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
       @select-account="handleSelectAccount"
       @create-account="handleCreateJointAccount"
     />
+
   </div>
 </template>
 
@@ -100,12 +93,10 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
 @import '@/styles/base/variables.scss';
 
 .header-nav {
-  position: sticky; // Use sticky instead of fixed
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  height: $navbar-height;
-  flex-shrink: 0; // Prevent navbar from shrinking in flex container
   z-index: 1000;
   box-sizing: border-box;
   background-color: #e5e5e5;
@@ -113,16 +104,19 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 
   &__logo {
+    position: relative;
+
     .logo-image {
       width: 40px;
       height: 40px;
       display: block;
       border-radius: 8px;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+      
     }
   }
 
@@ -130,13 +124,8 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
     cursor: pointer;
     transition: transform 0.2s ease;
 
-    &:hover {
-      transform: scale(1.05);
-    }
-
-    &:active {
-      transform: scale(0.95);
-    }
+    &:hover { transform: scale(1.05); }
+    &:active { transform: scale(0.95); }
 
     .avatar-image {
       width: 40px;

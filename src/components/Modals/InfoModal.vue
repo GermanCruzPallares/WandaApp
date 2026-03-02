@@ -4,7 +4,7 @@
       <div v-if="isOpen" class="info-modal-overlay" @click="handleClose">
         <Transition name="modal-slide">
           <div v-if="isOpen" class="info-modal" @click.stop>
-            <!-- Botón cerrar -->
+
             <button class="info-modal__close" @click="handleClose">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -12,7 +12,6 @@
               </svg>
             </button>
 
-            <!-- Contenido -->
             <h2 class="info-modal__title">{{ title }}</h2>
             <p class="info-modal__content">{{ content }}</p>
           </div>
@@ -41,7 +40,7 @@ const handleClose = () => {
   emit('close');
 };
 
-// Bloquear scroll cuando el modal está abierto
+
 watch(() => props.isOpen, (isOpen) => {
   if (isOpen) {
     document.body.style.overflow = 'hidden';
@@ -105,7 +104,7 @@ watch(() => props.isOpen, (isOpen) => {
     font-weight: 600;
     color: $color-text;
     margin: 0 0 16px 0;
-    padding-right: 32px; // Espacio para el botón cerrar
+    padding-right: 32px; 
   }
 
   &__content {

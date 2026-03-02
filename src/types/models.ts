@@ -1,5 +1,3 @@
-// Tipos que coinciden exactamente con el backend
-
 export interface User {
   user_id: number
   name: string
@@ -24,7 +22,7 @@ export interface UserAccount {
   joined_at: Date | string
 }
 
-// Tipo extendido SOLO para la UI
+
 export interface AccountUI extends Account {
   isActive: boolean
 }
@@ -53,11 +51,19 @@ export interface Transaction {
 
 // Objetivo
 export interface Objective {
-  objective_id: number
-  account_id: number
-  name: string
-  target_amount: number
-  current_save: number
-  deadline: Date | string
-  objective_picture_url: string
+  objective_id: number;
+  account_id: number;
+  name: string;
+  target_amount: number;
+  current_save: number;
+  deadline: Date | string;
+}
+
+export interface TransactionSplit {
+  split_id: number;
+  user_id: number;
+  transaction_id: number;
+  amount_assigned: number;
+  status: 'pending' | 'settled';
+  paid_at?: Date | string | null;
 }

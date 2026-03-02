@@ -5,9 +5,10 @@ import { apiService } from '@/services/apiService'
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:7085/api'
 
 export const useTransactionStore = defineStore('transaction', () => {
+
   // ==================== ESTADO ====================
 
-  const transactionsByAccount = ref<Map<number, Transaction[]>>(new Map())
+  const transactionsByAccount = ref<Map<number, Transaction[]>>(new Map());
 
   // ==================== HELPERS ====================
 
@@ -43,56 +44,37 @@ export const useTransactionStore = defineStore('transaction', () => {
     },
   ): Promise<Transaction[]> => {
     try {
-      // Construir URL
-      let url = `${API_BASE_URL}/accounts/${accountId}/transactions`
+      let url = `${API_BASE_URL}/accounts/${accountId}/transactions`;
 
-      // Añadir filtros si existen
       if (filters) {
-        const params = new URLSearchParams()
-        if (filters.objectiveId !== undefined)
-          params.append('objectiveId', filters.objectiveId.toString())
-        if (filters.type) params.append('type', filters.type)
-
-        const query = params.toString()
-        if (query) url += `?${query}`
+        const params = new URLSearchParams();
+        if (filters.objectiveId !== undefined) params.append('objectiveId', filters.objectiveId.toString());
+        if (filters.type) params.append('type', filters.type);
+        const query = params.toString();
+        if (query) url += `?${query}`;
       }
 
-      console.log(`📡 GET ${url}`)
-
-      // Hacer petición
       const response = await fetch(url, {
         method: 'GET',
-        headers: getAuthHeaders(),
-      })
+        headers: getAuthHeaders()
+      });
 
-      // Manejar errores
-      if (response.status === 401) {
-        handleUnauthorized()
-        return []
-      }
+      if (response.status === 401) { handleUnauthorized(); return []; }
+      if (response.status === 404) return [];
+      if (!response.ok) throw new Error(`Error ${response.status}`);
 
-      if (response.status === 404) {
-        console.log('ℹ️ No hay transacciones')
-        return []
-      }
+      const transactions = await response.json();
 
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}`)
-      }
-
-      // Obtener datos
-      const transactions = await response.json()
-      console.log(`✅ ${transactions.length} transacciones cargadas`)
-
-      // Cachear solo si no hay filtros (datos completos)
       if (!filters) {
         transactionsByAccount.value.set(accountId, transactions)
       }
 
+      return transactions;
+
       return transactions
     } catch (error) {
-      console.error('❌ Error:', error)
-      return []
+      console.error('Error fetchTransactions:', error);
+      return [];
     }
   }
 
@@ -102,7 +84,10 @@ export const useTransactionStore = defineStore('transaction', () => {
    * - fetchSavings(1) → Todas las aportaciones
    * - fetchSavings(1, 5) → Aportaciones del objetivo 5
    */
-  const fetchSavings = async (accountId: number, objectiveId?: number): Promise<Transaction[]> => {
+  const fetchSavings = async (
+    accountId: number,
+    objectiveId?: number
+  ): Promise<Transaction[]> => {
     return fetchTransactions(accountId, {
       type: 'saving',
       ...(objectiveId !== undefined && { objectiveId }),
@@ -126,12 +111,12 @@ export const useTransactionStore = defineStore('transaction', () => {
         headers: getAuthHeaders(),
       })
 
-      if (!response.ok) return null
+      if (!response.ok) return null;
 
-      return await response.json()
+      return await response.json();
     } catch (error) {
-      console.error('❌ Error:', error)
-      return null
+      console.error('Error fetchTransactionById:', error);
+      return null;
     }
   }
 
@@ -157,16 +142,20 @@ export const useTransactionStore = defineStore('transaction', () => {
     try {
       await apiService.createTransaction(accountId, data as Partial<Transaction>)
 
-      console.log('✅ Transacción creada')
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Error ${response.status}`);
+      }
 
-      // Limpiar caché y recargar
-      transactionsByAccount.value.delete(accountId)
-      await fetchTransactions(accountId)
+      transactionsByAccount.value.delete(accountId);
+      await fetchTransactions(accountId);
+
+      return true;
 
       return true
     } catch (error) {
-      console.error('❌ Error:', error)
-      throw error
+      console.error('Error createTransaction:', error);
+      throw error;
     }
   }
 
@@ -191,22 +180,34 @@ export const useTransactionStore = defineStore('transaction', () => {
       await apiService.updateTransaction(transactionId, updates as Partial<Transaction>)
       console.log('✅ Transacción actualizada')
 
-      // Limpiar todo el caché
-      transactionsByAccount.value.clear()
+      if (!response.ok) throw new Error(`Error ${response.status}`);
+
+      transactionsByAccount.value.clear();
+
+      return true;
 
       return true
     } catch (error) {
-      console.error('❌ Error:', error)
-      throw error
+      console.error('Error updateTransaction:', error);
+      throw error;
     }
   }
 
-  const deleteTransaction = async (transactionId: number, accountId?: number): Promise<boolean> => {
+  /**
+   * Eliminar una transacción
+   */
+  const deleteTransaction = async (
+    transactionId: number,
+    accountId?: number
+  ): Promise<boolean> => {
     try {
-      await apiService.deleteTransaction(transactionId)
-      console.log('✅ Transacción eliminada')
+      const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
 
-      // Limpiar caché
+      if (!response.ok) throw new Error(`Error ${response.status}`);
+
       if (accountId) {
         transactionsByAccount.value.delete(accountId)
         await fetchTransactions(accountId)
@@ -216,23 +217,17 @@ export const useTransactionStore = defineStore('transaction', () => {
 
       return true
     } catch (error) {
-      console.error('❌ Error:', error)
-      throw error
+      console.error('Error deleteTransaction:', error);
+      throw error;
     }
   }
 
   // ==================== UTILIDADES ====================
 
-  /**
-   * Obtener desde caché (sin llamar al backend)
-   */
   const getTransactionsFromCache = (accountId: number): Transaction[] | null => {
     return transactionsByAccount.value.get(accountId) || null
   }
 
-  /**
-   * Limpiar caché
-   */
   const clearCache = (accountId?: number) => {
     if (accountId) {
       transactionsByAccount.value.delete(accountId)
@@ -241,9 +236,6 @@ export const useTransactionStore = defineStore('transaction', () => {
     }
   }
 
-  /**
-   * Refrescar (forzar recarga)
-   */
   const refreshTransactions = async (accountId: number): Promise<Transaction[]> => {
     transactionsByAccount.value.delete(accountId)
     return await fetchTransactions(accountId)
@@ -252,9 +244,7 @@ export const useTransactionStore = defineStore('transaction', () => {
   // ==================== RETURN ====================
 
   return {
-    // Estado
     transactionsByAccount,
-    // Métodos principales
     fetchTransactions,
     fetchSavings,
     fetchTransactionsByObjective,
@@ -262,8 +252,6 @@ export const useTransactionStore = defineStore('transaction', () => {
     createTransaction,
     updateTransaction,
     deleteTransaction,
-
-    // Utilidades
     getTransactionsFromCache,
     clearCache,
     refreshTransactions,

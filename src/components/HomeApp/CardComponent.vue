@@ -2,16 +2,14 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useAccountStore } from '@/stores/AccountStore';
 import { useTransactionStore } from '@/stores/TransactionStore';
+import { useUserStore } from '@/stores/UserStore';
 import type { Account } from '@/types/models';
 
 interface Props {
   accountId?: number;
-  userName?: string;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  userName: 'Clara'
-});
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
   edit: [];
@@ -20,6 +18,7 @@ const emit = defineEmits<{
 
 const accountStore = useAccountStore();
 const transactionStore = useTransactionStore();
+const userStore = useUserStore();
 
 const account = ref<Account | null>(null);
 const isLoading = ref(false);
@@ -27,13 +26,10 @@ const isLoading = ref(false);
 const loadAccount = async (accountId: number) => {
   isLoading.value = true;
   
-  // Cargar cuenta
   account.value = await accountStore.fetchAccount(accountId);
   
   if (account.value) {
     emit('accountLoaded', account.value);
-    
-    // Cargar transacciones para calcular gastos/ingresos reales
     await transactionStore.fetchTransactions(accountId);
   }
   
@@ -48,7 +44,10 @@ watch(() => props.accountId, (id) => {
   if (id) loadAccount(id);
 });
 
-const greeting = computed(() => `Hola ${props.userName} !`);
+const greeting = computed(() => {
+  const name = userStore.currentUser?.name;
+  return name ? `Hola ${name} !` : 'Hola !';
+});
 
 const formattedBalance = computed(() => {
   if (!account.value) return '0,00 €';
@@ -60,7 +59,6 @@ const formattedBalance = computed(() => {
   }).format(account.value.amount);
 });
 
-// ✅ CALCULAR GASTOS REALES DEL MES ACTUAL
 const monthlyExpense = computed(() => {
   if (!props.accountId) return 0;
   
@@ -71,7 +69,6 @@ const monthlyExpense = computed(() => {
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
   
-  // Sumar solo gastos (expenses) del mes actual
   return transactions
     .filter(t => {
       const tDate = new Date(t.transaction_date);
@@ -82,7 +79,6 @@ const monthlyExpense = computed(() => {
     .reduce((sum, t) => sum + t.amount, 0);
 });
 
-// ✅ PRESUPUESTO MENSUAL (no ingresos reales)
 const monthlyBudget = computed(() => {
   return account.value?.monthly_budget || 0;
 });
@@ -109,12 +105,9 @@ const expensePercentage = computed(() => {
   if (monthlyBudget.value === 0) return 0;
   return Math.min((monthlyExpense.value / monthlyBudget.value) * 100, 100);
 });
-
-
 </script>
 
 <template>
-  <!-- ✅ Solo renderizar cuando NO está cargando y account existe -->
   <div v-if="!isLoading && account !== null" class="dashboard-card">
     <div class="dashboard-card__header">
       <h2 class="dashboard-card__title">{{ greeting }}</h2>

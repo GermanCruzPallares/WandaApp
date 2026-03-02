@@ -127,7 +127,7 @@ const handleSubmit = async (e: Event) => {
             >
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
               <circle cx="12" cy="12" r="3"></circle>
-              <!-- Línea tachada cuando la contraseña está visible -->
+        
               <line v-if="showPassword" x1="1" y1="1" x2="23" y2="23"></line>
             </svg>
           </button>

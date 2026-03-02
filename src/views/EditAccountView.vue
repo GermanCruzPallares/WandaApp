@@ -12,10 +12,10 @@ const userStore = useUserStore()
 
 // ==================== COMPUTED ====================
 
-// Usuario actual desde el store
-const currentUser = computed(() => userStore.currentUser)
 
-// Cuentas con formato AccountUI (agregando isActive)
+const currentUser = computed(() => userStore.currentUser);
+
+
 const accounts = computed<AccountUI[]>(() => {
   return userStore.accounts.map((account) => ({
     ...account,
@@ -23,26 +23,25 @@ const accounts = computed<AccountUI[]>(() => {
   }))
 })
 
-// Cuenta activa
 const activeAccount = computed(() => {
-  const active = accounts.value.find((acc) => acc.isActive)
-  console.log('🔍 EditAccountView: activeAccount =', active)
-  return active
-})
+  const active = accounts.value.find(acc => acc.isActive);
+  console.log('EditAccountView: activeAccount =', active); 
+  return active;
+});
 
 onMounted(async () => {
   if (!userStore.isAuthenticated) {
-    console.warn('⚠️ Usuario no autenticado, redirigiendo a login...')
-    router.push('/login')
-    return
+    console.warn('Usuario no autenticado, redirigiendo a login...');
+    router.push('/login');
+    return;
   }
 
   if (!userStore.currentUser && userStore.userId) {
     try {
       await userStore.loadUserData(userStore.userId)
     } catch (error) {
-      console.error('❌ Error cargando datos:', error)
-      router.push('/login')
+      console.error('Error cargando datos:', error);
+      router.push('/login');
     }
   }
 })
@@ -52,15 +51,15 @@ onMounted(async () => {
 const handleBack = () => router.push('/home')
 
 const handleSaved = (account: Account) => {
-  console.log('✅ Cuenta guardada:', account)
+  console.log('Cuenta guardada:', account);
   // Redirigir a home después de guardar
   router.push('/home')
 }
 
 const handleCancelled = () => {
-  console.log('❌ Edición cancelada')
-  router.push('/home')
-}
+  console.log('Edición cancelada');
+  router.push('/home');
+};
 
 const activeMenuItem = ref('inicio')
 </script>

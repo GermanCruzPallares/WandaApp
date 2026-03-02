@@ -259,16 +259,15 @@ watch(() => form.value.deadline, () => { errors.value.deadline = ''; });
   }
 
   &--date {
-    // Cuando tiene valor, muestra fecha normal
+
     color: $color-text;
     
-    // Ocultar el placeholder nativo del input date en favor del nuestro
+
     &:not([value=""]):not(:invalid) {
       color: $color-text;
     }
   }
 
-  // Quitar flechas de number
   &[type="number"] {
     -moz-appearance: textfield;
     &::-webkit-inner-spin-button,
@@ -297,7 +296,7 @@ watch(() => form.value.deadline, () => { errors.value.deadline = ''; });
   }
 }
 
-// Wrapper de fecha (placeholder custom)
+
 .date-wrapper {
   position: relative;
 
@@ -309,16 +308,14 @@ watch(() => form.value.deadline, () => { errors.value.deadline = ''; });
     font-size: 14px;
     color: $color-text-gray;
     pointer-events: none;
-    // Solo visible cuando no hay valor
+
   }
 
-  // Si el input tiene valor, ocultamos el placeholder custom
   &:has(input:not([value=""])) .date-placeholder {
     display: none;
   }
 }
 
-// Errores de campo
 .field-error {
   font-size: 12px;
   color: $color-danger;

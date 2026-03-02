@@ -1,23 +1,21 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useAccountStore } from '@/stores/AccountStore';
 import SectionTitle from '@/components/SectionTitle.vue';
-import { watch } from 'vue';
+import EditBudgetModal from '@/components/Modals/EditBudgetModal.vue';
 
 const accountStore = useAccountStore();
-
 
 const weeklyBudget = ref(0);
 const monthlyBudget = ref(0);
 
+
+const isModalOpen = ref(false);
+const selectedBudgetType = ref<'weekly' | 'monthly'>('weekly');
+
 const props = defineProps<{
   accountId: number
 }>();
-
-const emit = defineEmits<{
-  edit: [budgetType: 'weekly' | 'monthly'];
-}>();
-
 
 const loadBudget = async (accountId: number) => {
   const account = await accountStore.fetchAccount(accountId);
@@ -28,12 +26,7 @@ const loadBudget = async (accountId: number) => {
 };
 
 onMounted(async () => {
-  const account = await accountStore.fetchAccount(props.accountId);
-  
-  if (account) {
-    weeklyBudget.value = account.weekly_budget;
-    monthlyBudget.value = account.monthly_budget;
-  }
+  await loadBudget(props.accountId);
 });
 
 watch(() => props.accountId, (newId) => {
@@ -50,7 +43,17 @@ const formatCurrency = (amount: number): string => {
 };
 
 const handleEdit = (budgetType: 'weekly' | 'monthly') => {
-  emit('edit', budgetType);
+  selectedBudgetType.value = budgetType;
+  isModalOpen.value = true;
+};
+
+const handleModalClose = () => {
+  isModalOpen.value = false;
+};
+
+const handleBudgetUpdated = async () => {
+  isModalOpen.value = false;
+  await loadBudget(props.accountId);
 };
 </script>
 
@@ -84,17 +87,25 @@ const handleEdit = (budgetType: 'weekly' | 'monthly') => {
       </div>
     </div>
   </div>
+
+  <!-- Modal de edición de presupuesto -->
+  <EditBudgetModal
+    :is-open="isModalOpen"
+    :account-id="props.accountId"
+    :budget-type="selectedBudgetType"
+    :current-value="selectedBudgetType === 'weekly' ? weeklyBudget : monthlyBudget"
+    @close="handleModalClose"
+    @updated="handleBudgetUpdated"
+  />
 </template>
 
 <style scoped lang="scss">
 @import '@/styles/base/variables.scss';
 
 .budget {
-  padding: 0 $section-margin-horizontal 1.5rem;
 
   @media (min-width: 768px) {
     padding: 0 0 1.5rem 0;
-    
   }
 
   &__header {
@@ -115,8 +126,6 @@ const handleEdit = (budgetType: 'weekly' | 'monthly') => {
     padding: 1.5rem;
     background-color: $section-bg-primary;
     border-radius: $card-border-radius;
-
-
   }
 
   &__content {

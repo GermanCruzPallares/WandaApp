@@ -1,8 +1,20 @@
 <template>
   <aside class="aside-nav">
-    <router-link to="/home" class="aside-nav__logo">
-      <img src="../../images/OscuroPrincipal.png" alt="Wanda Logo" class="logo-image" />
-    </router-link>
+
+    <div class="aside-nav__logo">
+      <img
+        ref="logoRef"
+        src="../../images/OscuroPrincipal.png"
+        alt="Wanda Logo"
+        class="logo-image"
+        @click="isWandaMenuOpen = true"
+      />
+      <WandaMenuModal
+        :is-open="isWandaMenuOpen"
+        :anchor-el="logoRef"
+        @close="isWandaMenuOpen = false"
+      />
+    </div>
 
     <nav class="aside-nav__menu">
       <router-link
@@ -23,14 +35,15 @@
 
     <div class="aside-nav__footer">
       <button class="user-button" @click="openAccountSwitcher">
-        <img :src="avatarSrc" alt="User avatar" class="user-button__avatar" />
-        <span class="user-button__name">
-          {{ userStore.activeAccount?.name || 'Cuenta' }}
-        </span>
+        <img
+          :src="avatarSrc"
+          alt="User avatar"
+          class="user-button__avatar"
+        />
+        <span class="user-button__name">{{ activeAccountDisplayName }}</span>
       </button>
     </div>
 
-    <!-- ✅ Modal integrado en el AsideNav -->
     <AccountSwitcherModal
       v-if="userStore.currentUser"
       :is-open="isAccountSwitcherOpen"
@@ -41,21 +54,22 @@
       @select-account="handleSelectAccount"
       @create-account="handleCreateJointAccount"
     />
-    <!-- ☝️ CAMBIO: @create-joint-account → @create-account -->
+
   </aside>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/UserStore'
-import { useAccountStore } from '@/stores/AccountStore'
-import { getAvatarDataUrl } from '@/components/icons/AvatarIcons'
-import AccountSwitcherModal from '@/components/Modals/AccountSwitcherModal.vue'
-import HomeIcon from '../icons/HomeIcon.vue'
-import PlusIcon from '../icons/PlusIcon.vue'
-import CalculatorIcon from '../icons/CalculatorIcon.vue'
-import UserIcon from '../icons/UserIcon.vue'
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/UserStore';
+import { useAccountStore } from '@/stores/AccountStore';
+import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
+import AccountSwitcherModal from '@/components/Modals/AccountSwitcherModal.vue';
+import WandaMenuModal from '@/components/Modals/WandaMenuModal.vue';
+import HomeIcon from '../icons/HomeIcon.vue';
+import PlusIcon from '../icons/PlusIcon.vue';
+import CalculatorIcon from '../icons/CalculatorIcon.vue';
+import UserIcon from '../icons/UserIcon.vue';
 
 interface MenuItem {
   id: string
@@ -64,65 +78,52 @@ interface MenuItem {
   path: string
 }
 
-// ✅ Sin props, todo del store
-const userStore = useUserStore()
-const accountStore = useAccountStore()
-const router = useRouter()
+const userStore = useUserStore();
+const accountStore = useAccountStore();
+const router = useRouter();
 
-// ✅ Estado local solo para el modal
-const isAccountSwitcherOpen = ref(false)
+const isAccountSwitcherOpen = ref(false);
+const isWandaMenuOpen = ref(false);
+const logoRef = ref<HTMLElement | null>(null);
 
-// ✅ Obtener ruta activa desde vue-router
-const currentRoute = computed(() => router.currentRoute.value.path)
+const currentRoute = computed(() => router.currentRoute.value.path);
 
-// ✅ Avatar reactivo del store
 const avatarSrc = computed(() => {
-  const account = userStore.activeAccount
-  if (!account) return getAvatarDataUrl('personal')
+  const account = userStore.activeAccount;
+  if (!account) return getAvatarDataUrl('personal');
+  if (account.account_picture_url) return account.account_picture_url;
+  return getAvatarDataUrl(account.account_type || 'personal');
+});
 
-  if (account.account_picture_url) {
-    return account.account_picture_url
+const activeAccountDisplayName = computed(() => {
+  const account = userStore.activeAccount;
+  if (!account) return 'Cuenta';
+  if (account.account_type === 'personal' && !account.name) {
+    return userStore.currentUser?.name || 'Cuenta';
   }
-
-  return getAvatarDataUrl(account.account_type || 'personal')
-})
+  return account.name || 'Cuenta';
+});
 
 const menuItems: MenuItem[] = [
   { id: 'inicio', label: 'Inicio', icon: HomeIcon, path: '/home' },
   { id: 'add', label: 'Añadir movimiento', icon: PlusIcon, path: '/transaction' },
   { id: 'libro', label: 'Libro Cuentas', icon: CalculatorIcon, path: '/book' },
   { id: 'perfil', label: 'Perfil', icon: UserIcon, path: '/profile' },
-]
+];
 
-// ✅ Funciones del modal
-const openAccountSwitcher = () => {
-  console.log('🖱️ Opening account switcher from AsideNav')
-  isAccountSwitcherOpen.value = true
-}
-
-const closeAccountSwitcher = () => {
-  console.log('❌ Closing account switcher')
-  isAccountSwitcherOpen.value = false
-}
+const openAccountSwitcher = () => { isAccountSwitcherOpen.value = true; };
+const closeAccountSwitcher = () => { isAccountSwitcherOpen.value = false; };
 
 const handleSelectAccount = (accountId: number) => {
-  console.log('🔄 Account selected:', accountId)
-  userStore.setActiveAccount(accountId)
-  closeAccountSwitcher()
-}
+  userStore.setActiveAccount(accountId);
+  closeAccountSwitcher();
+};
 
-// ✅ CORREGIDO: Recibir userIds (números) en lugar de userEmails
 const handleCreateJointAccount = async (accountName: string, userIds: number[]) => {
-  console.log('4️⃣ AsideNav recibió:', accountName, userIds)
-
   try {
-    await accountStore.createJointAccount({
-      name: accountName,
-      userIds: userIds, // ✅ Ya son números
-    })
-
-    await userStore.refreshAccounts()
-    closeAccountSwitcher()
+    await accountStore.createJointAccount({ name: accountName, userIds });
+    await userStore.refreshAccounts();
+    closeAccountSwitcher();
   } catch (error) {
     console.error('❌ Error creando cuenta conjunta:', error)
     alert('Error al crear la cuenta. Por favor, intenta de nuevo.')
@@ -152,21 +153,20 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
   }
 
   &__logo {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 12px;
     margin-bottom: 32px;
     padding: 0 8px;
-    text-decoration: none;
-    transition: opacity $transition-speed $transition-ease;
-
-    &:hover {
-      opacity: 0.8;
-    }
+    border-radius: $card-border-radius;
 
     .logo-image {
       height: 2.5em;
       border-radius: 8px;
+      cursor: pointer;
+      transition: opacity $transition-speed $transition-ease;
+      
     }
   }
 
@@ -195,23 +195,12 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
   text-decoration: none;
   transition: transform $transition-speed $transition-ease;
 
-  &:hover {
-    transform: translateX(2px);
-  }
-
-  &:active {
-    transform: scale(0.98);
-  }
+  &:hover { transform: translateX(2px); }
+  &:active { transform: scale(0.98); }
 
   &--active {
-    .menu-item__icon {
-      opacity: 1;
-    }
-
-    .menu-item__label {
-      font-weight: 600;
-      color: $color-text;
-    }
+    .menu-item__icon { opacity: 1; }
+    .menu-item__label { font-weight: 600; color: $color-text; }
   }
 
   &__icon {
@@ -240,9 +229,7 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
   cursor: pointer;
   transition: transform $transition-speed $transition-ease;
 
-  &:hover {
-    transform: translateX(2px);
-  }
+  &:hover { transform: translateX(2px); }
 
   &__avatar {
     width: 40px;

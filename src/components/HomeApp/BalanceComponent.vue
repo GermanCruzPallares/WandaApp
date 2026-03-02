@@ -2,7 +2,6 @@
   <div v-if="!isLoading && account !== null">
     <SectionTitle title="| Balance" />
     
-    <!-- Contenido -->
     <div class="weekly-balance">
       <div class="weekly-balance__header">
         <h4 class="weekly-balance__title">Balance Semanal</h4>
@@ -18,18 +17,16 @@
         :class="messageClass"
       >
         <span class="message-icon">
-          <!-- Icono de éxito -->
+
           <svg v-if="spendingStatus === 'good'" width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path d="M7 13l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
           </svg>
           
-          <!-- Icono de advertencia -->
           <svg v-else-if="spendingStatus === 'warning'" width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           
-          <!-- Icono de peligro -->
           <svg v-else width="24" height="24" viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
             <line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -42,7 +39,6 @@
         </div>
       </div>
       
-      <!-- Barra de progreso con indicador de "Hoy" -->
       <div class="weekly-balance__progress">
         <div class="progress-label">
           <span>Tu Gasto</span>
@@ -50,7 +46,6 @@
         </div>
         
         <div class="progress-bar-container">
-          <!-- Barra de gasto -->
           <div class="progress-bar">
             <div 
               class="progress-bar__fill"
@@ -58,8 +53,7 @@
               :style="{ width: spentPercentage + '%' }"
             ></div>
           </div>
-          
-          <!-- Indicador de "Hoy" (día actual de la semana) -->
+        
           <div 
             class="progress-indicator"
             :style="{ left: weekProgress + '%' }"
@@ -68,7 +62,6 @@
           </div>
         </div>
         
-        <!-- Días de la semana -->
         <div class="week-days">
           <span 
             v-for="day in weekDays" 
@@ -81,7 +74,6 @@
         </div>
       </div>
       
-      <!-- Estadísticas -->
       <div class="weekly-balance__stats">
         <div class="stat-card">
           <div class="stat-card__value">{{ formattedBudget }}</div>
@@ -107,7 +99,7 @@
     <InfoModal
         :is-open="isInfoModalOpen"
         title="¿ Como funciona ?"
-        content='Comparamos tu gasto actual con el tiempo transcurrido. Si la barra de gasto está detrás del indicador "Hoy", ¡vas genial! Si está adelante, es momento de ajustar un poco.'
+        content='Comparamos tu gasto semanal con el tiempo transcurrido. Los gastos frecuentes y las aportaciones a objetivos no se incluyen en este cálculo, ya que son compromisos fijos. Si la barra de gasto está detrás del indicador "Hoy", ¡vas genial! Si está adelante, es momento de ajustar un poco.'
         @close="closeInfoModal"
     />    
   </div>
@@ -131,11 +123,10 @@ const emit = defineEmits<{
   accountLoaded: [account: Account];
 }>();
 
-// ✅ Usar los stores de Pinia
 const accountStore = useAccountStore();
 const transactionStore = useTransactionStore();
 
-// Lógica del día de la semana
+
 const getCurrentDayOfWeek = (): number => {
   const today = new Date();
   const day = today.getDay(); 
@@ -144,7 +135,6 @@ const getCurrentDayOfWeek = (): number => {
 
 const todayDayOfWeek = ref(getCurrentDayOfWeek());
 
-// Estado local
 const account = ref<Account | null>(null);
 const currentWeekExpenses = ref(0);
 const isLoading = ref(false);
@@ -158,14 +148,13 @@ const closeInfoModal = () => {
   isInfoModalOpen.value = false;
 };
 
-// ✅ NUEVA FUNCIÓN: Calcular gastos reales de la semana actual
 const calculateCurrentWeekExpenses = (accountId: number): number => {
   const transactions = transactionStore.getTransactionsFromCache(accountId);
   if (!transactions) return 0;
   
   const now = new Date();
   const currentDay = now.getDay();
-  const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay; // Lunes de esta semana
+  const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
   
   const monday = new Date(now);
   monday.setDate(now.getDate() + mondayOffset);
@@ -175,29 +164,24 @@ const calculateCurrentWeekExpenses = (accountId: number): number => {
   sunday.setDate(monday.getDate() + 6);
   sunday.setHours(23, 59, 59, 999);
   
-  // Sumar solo gastos (expenses) de esta semana
   return transactions
     .filter(t => {
       const tDate = new Date(t.transaction_date);
       return t.transaction_type === 'expense' && 
+             !t.isRecurring &&            
              tDate >= monday && 
              tDate <= sunday;
     })
     .reduce((sum, t) => sum + t.amount, 0);
 };
 
-// ✅ Cargar cuenta desde el store
 const loadAccount = async (accountId: number) => {
   isLoading.value = true;
   
-  // Llamar al store para cargar la cuenta
   account.value = await accountStore.fetchAccount(accountId);
   
   if (account.value) {
-    // ✅ Cargar transacciones para calcular gastos reales
     await transactionStore.fetchTransactions(accountId);
-    
-    // ✅ Calcular gastos REALES de la semana actual
     currentWeekExpenses.value = calculateCurrentWeekExpenses(accountId);
     
     emit('accountLoaded', account.value);
@@ -206,14 +190,12 @@ const loadAccount = async (accountId: number) => {
   isLoading.value = false;
 };
 
-// Cargar cuando se monta
 onMounted(() => {
   if (props.accountId) {
     loadAccount(props.accountId);
   }
 });
 
-// Recargar cuando cambia la cuenta
 watch(() => props.accountId, (newAccountId) => {
   if (newAccountId) {
     loadAccount(newAccountId);
@@ -222,7 +204,6 @@ watch(() => props.accountId, (newAccountId) => {
 
 const weekDays = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
-// Cálculos
 const weeklyBudget = computed(() => account.value?.weekly_budget || 0);
 
 const spentPercentage = computed(() => {
@@ -253,7 +234,7 @@ const spendingStatus = computed(() => {
   }
 });
 
-// Formateo
+
 const formattedBudget = computed(() => {
   return `${weeklyBudget.value}€`;
 });
@@ -267,7 +248,7 @@ const formattedDifference = computed(() => {
   return value > 0 ? `+${value}%` : `${value}%`;
 });
 
-// Clases dinámicas
+
 const barColorClass = computed(() => {
   if (spendingStatus.value === 'good') return 'progress-bar__fill--good';
   if (spendingStatus.value === 'warning') return 'progress-bar__fill--warning';
@@ -286,7 +267,7 @@ const differenceClass = computed(() => {
   return 'stat-card__value--negative';
 });
 
-// Mensajes dinámicos
+
 const messageTitle = computed(() => {
   if (spendingStatus.value === 'good') return '¡Excelente ritmo!';
   if (spendingStatus.value === 'warning') return '¡Atención al gasto!';

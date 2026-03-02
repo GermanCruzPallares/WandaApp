@@ -13,8 +13,7 @@
     </button>
 
     <h1 class="header-nav__title">{{ title }}</h1>
-
-    <!-- Espacio vacío para centrar el título -->
+    
     <div class="header-nav__spacer"></div>
   </header>
 </template>

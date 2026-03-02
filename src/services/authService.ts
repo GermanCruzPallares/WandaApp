@@ -16,9 +16,6 @@ class AuthService {
   private readonly API_BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:7085/api';
 
 
-  /**
-   * Realizar login y guardar token + userId
-   */
   async login(credentials: LoginCredentials): Promise<number> {
     try {
       const response = await fetch(`${this.API_BASE_URL}/Auth/login`, {
@@ -36,26 +33,24 @@ class AuthService {
 
       const data: LoginResponse = await response.json();
 
-      // Guardar token y userId
+
       this.setToken(data.token);
       this.setUserId(data.userId);
 
-      console.log('✅ Login exitoso. UserId:', data.userId);
+      console.log('Login exitoso. UserId:', data.userId);
 
       return data.userId;
     } catch (error) {
-      console.error('❌ Error en login:', error);
+      console.error('Error en login:', error);
       throw error;
     }
   }
 
-  /**
-   * Realizar registro
-   */
+
   async register(userData: { name: string; email: string; password: string }): Promise<number> {
     try {
-      // Primero crear el usuario
-      const response = await fetch(`${this.API_BASE_URL}/User`, {
+
+      const response = await fetch(`${this.API_BASE_URL}/Auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -68,36 +63,28 @@ class AuthService {
         throw new Error(error.message || 'Error al registrarse');
       }
 
-      // Luego hacer login automáticamente
       return await this.login({
         email: userData.email,
         password: userData.password
       });
     } catch (error) {
-      console.error('❌ Error en registro:', error);
+      console.error('Error en registro:', error);
       throw error;
     }
   }
 
-  /**
-   * Cerrar sesión
-   */
   logout(): void {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_ID_KEY);
     window.location.href = '/login';
   }
 
-  /**
-   * Obtener token JWT
-   */
+
   getToken(): string | null {
     return localStorage.getItem(this.TOKEN_KEY);
   }
 
-  /**
-   * Guardar token
-   */
+
   private setToken(token: string): void {
     localStorage.setItem(this.TOKEN_KEY, token);
   }
