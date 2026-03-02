@@ -44,17 +44,6 @@
       </button>
     </div>
 
-    <AccountSwitcherModal
-      v-if="userStore.currentUser"
-      :is-open="isAccountSwitcherOpen"
-      :user-id="userStore.userId"
-      :active-account-id="userStore.activeAccountId"
-      :current-user="userStore.currentUser"
-      @close="closeAccountSwitcher"
-      @select-account="handleSelectAccount"
-      @create-account="handleCreateJointAccount"
-    />
-
   </aside>
 </template>
 
@@ -79,7 +68,6 @@ interface MenuItem {
 }
 
 const userStore = useUserStore();
-const accountStore = useAccountStore();
 const router = useRouter();
 
 const isAccountSwitcherOpen = ref(false);
@@ -96,39 +84,17 @@ const avatarSrc = computed(() => {
 });
 
 const activeAccountDisplayName = computed(() => {
-  const account = userStore.activeAccount;
-  if (!account) return 'Cuenta';
-  if (account.account_type === 'personal' && !account.name) {
-    return userStore.currentUser?.name || 'Cuenta';
-  }
-  return account.name || 'Cuenta';
+  return userStore.currentUser?.name || 'Admin';
 });
 
 const menuItems: MenuItem[] = [
-  { id: 'inicio', label: 'Inicio', icon: HomeIcon, path: '/home' },
-  { id: 'add', label: 'Añadir movimiento', icon: PlusIcon, path: '/transaction' },
-  { id: 'libro', label: 'Libro Cuentas', icon: CalculatorIcon, path: '/book' },
-  { id: 'perfil', label: 'Perfil', icon: UserIcon, path: '/profile' },
+  { id: 'dashboard', label: 'Dashboard', icon: HomeIcon, path: '/admin' },
+  { id: 'add', label: 'Usuarios', icon: PlusIcon, path: '/admin/users' },
 ];
 
 const openAccountSwitcher = () => { isAccountSwitcherOpen.value = true; };
 const closeAccountSwitcher = () => { isAccountSwitcherOpen.value = false; };
 
-const handleSelectAccount = (accountId: number) => {
-  userStore.setActiveAccount(accountId);
-  closeAccountSwitcher();
-};
-
-const handleCreateJointAccount = async (accountName: string, userIds: number[]) => {
-  try {
-    await accountStore.createJointAccount({ name: accountName, userIds });
-    await userStore.refreshAccounts();
-    closeAccountSwitcher();
-  } catch (error) {
-    console.error('Error creando cuenta conjunta:', error);
-    alert('Error al crear la cuenta. Por favor, intenta de nuevo.');
-  }
-};
 </script>
 
 <style scoped lang="scss">
@@ -228,8 +194,6 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
   border-radius: $card-border-radius;
   cursor: pointer;
   transition: transform $transition-speed $transition-ease;
-
-  &:hover { transform: translateX(2px); }
 
   &__avatar {
     width: 40px;

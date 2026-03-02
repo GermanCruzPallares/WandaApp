@@ -73,7 +73,7 @@ const loadNotifications = async () => {
 
     notifications.value = enriched;
   } catch (error) {
-    console.error('❌ Error cargando deudas pendientes:', error);
+    console.error('Error cargando deudas pendientes:', error);
     errorMessage.value = 'Error al cargar las notificaciones';
   } finally {
     isLoading.value = false;

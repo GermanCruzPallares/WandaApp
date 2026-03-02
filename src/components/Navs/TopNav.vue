@@ -43,7 +43,7 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
     closeAccountSwitcher();
     router.push('/home');
   } catch (error) {
-    console.error('❌ Error creando cuenta conjunta:', error);
+    console.error('Error creando cuenta conjunta:', error);
     alert('Error al crear la cuenta. Por favor, intenta de nuevo.');
   }
 };
