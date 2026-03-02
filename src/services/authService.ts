@@ -14,8 +14,35 @@ class AuthService {
   private readonly TOKEN_KEY = 'wanda_auth_token';
   private readonly USER_ID_KEY = 'wanda_user_id';
   private readonly API_BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:7085/api';
+  private readonly ROLE_KEY = 'wanda_user_role';
 
+  private decodeToken(token: string): Record<string, any> | null {
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return null;
+    return JSON.parse(atob(payload));
+  } catch {
+    return null;
+  }
+}
 
+  // Extraer y guardar el rol tras login
+  private setRoleFromToken(token: string): void {
+    const decoded = this.decodeToken(token);
+    if (decoded) {
+      
+      const role = decoded['role'] || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || 'User';
+      localStorage.setItem(this.ROLE_KEY, role);
+    }
+  }
+
+  getUserRole(): string {
+    return localStorage.getItem(this.ROLE_KEY) || 'User';
+  }
+
+  isAdmin(): boolean {
+    return this.getUserRole() === 'Admin';
+  }
   async login(credentials: LoginCredentials): Promise<number> {
     try {
       const response = await fetch(`${this.API_BASE_URL}/Auth/login`, {
@@ -35,6 +62,7 @@ class AuthService {
 
 
       this.setToken(data.token);
+      this.setRoleFromToken(data.token);
       this.setUserId(data.userId);
 
       console.log('Login exitoso. UserId:', data.userId);
@@ -76,6 +104,7 @@ class AuthService {
   logout(): void {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_ID_KEY);
+    localStorage.removeItem(this.ROLE_KEY);
     window.location.href = '/login';
   }
 

@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/UserStore';
+import { authService } from '@/services/authService';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -18,8 +19,7 @@ const togglePasswordVisibility = () => {
 
 const handleSubmit = async (e: Event) => {
   e.preventDefault();
-  
-  // Validación básica
+
   if (!email.value || !password.value) {
     errorMessage.value = 'Por favor, completa todos los campos';
     return;
@@ -30,13 +30,13 @@ const handleSubmit = async (e: Event) => {
 
   try {
     await userStore.login(email.value, password.value);
-
-    console.log('✅ Login exitoso');
-    
-    // Redirigir a la home
-    router.push('/home');
+    if (authService.isAdmin()) {
+      router.push('/admin');
+    } else {
+      router.push('/home');
+    }
   } catch (error: any) {
-    console.error('❌ Error en login:', error);
+    console.error('Error en login:', error);
     errorMessage.value = error.message || 'Error al iniciar sesión. Por favor, verifica tus credenciales.';
   } finally {
     isLoading.value = false;
@@ -60,74 +60,34 @@ const handleSubmit = async (e: Event) => {
       <div class="form-group">
         <div class="form-group__field">
           <span class="form-group__icon">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              aria-hidden="true"
-            >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path
-                d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"
-              />
+                d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
             </svg>
           </span>
-          <input 
-            type="email" 
-            v-model="email"
-            class="form-group__input" 
-            placeholder="Correo electrónico" 
-            required 
-            :disabled="isLoading"
-          />
+          <input type="email" v-model="email" class="form-group__input" placeholder="Correo electrónico" required
+            :disabled="isLoading" />
         </div>
       </div>
 
       <div class="form-group">
         <div class="form-group__field" style="position: relative">
           <span class="form-group__icon">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              aria-hidden="true"
-            >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path
-                d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"
-              />
+                d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
             </svg>
           </span>
 
-          <input
-            :type="showPassword ? 'text' : 'password'"
-            v-model="password"
-            id="password-input"
-            class="form-group__input"
-            placeholder="Contraseña"
-            required
-            :disabled="isLoading"
-          />
+          <input :type="showPassword ? 'text' : 'password'" v-model="password" id="password-input"
+            class="form-group__input" placeholder="Contraseña" required :disabled="isLoading" />
 
-          <button 
-            type="button" 
-            id="toggle-password" 
-            class="form-group__toggle-btn"
-            @click="togglePasswordVisibility"
-          >
-            <svg
-              id="eye-icon"
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
+          <button type="button" id="toggle-password" class="form-group__toggle-btn" @click="togglePasswordVisibility">
+            <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
               <circle cx="12" cy="12" r="3"></circle>
-        
+
               <line v-if="showPassword" x1="1" y1="1" x2="23" y2="23"></line>
             </svg>
           </button>
@@ -141,8 +101,8 @@ const handleSubmit = async (e: Event) => {
   </section>
 
   <section class="bottom">
-      <p class="bottom__question">¿No tienes una cuenta?</p>
-      <RouterLink to="/register"><a href="./signUp.html" class="bottom__link">Regístrate</a></RouterLink>
+    <p class="bottom__question">¿No tienes una cuenta?</p>
+    <RouterLink to="/register"><a href="./signUp.html" class="bottom__link">Regístrate</a></RouterLink>
   </section>
 
 </template>

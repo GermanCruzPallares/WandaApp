@@ -27,16 +27,23 @@ export const useUserStore = defineStore('user', () => {
 
   // ==================== ACTIONS ====================
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    try {
-      const userId = await authService.login({ email, password });
-      await loadUserData(userId);
+const login = async (email: string, password: string): Promise<boolean> => {
+  try {
+    const userId = await authService.login({ email, password });
+    if (authService.isAdmin()) {
+      isLoadingUser.value = true;
+      currentUser.value = await apiService.getUser(userId);
+      isLoadingUser.value = false;
       return true;
-    } catch (error) {
-      console.error('Error en login:', error);
-      throw error;
     }
-  };
+
+    await loadUserData(userId);
+    return true;
+  } catch (error) {
+    console.error('Error en login:', error);
+    throw error;
+  }
+};
 
   const register = async (userData: {
     name: string;
@@ -172,17 +179,23 @@ export const useUserStore = defineStore('user', () => {
     }
   };
 
-  const initialize = async () => {
-    const userId = authService.getUserId();
-    if (userId && authService.isAuthenticated()) {
-      try {
+const initialize = async () => {
+  const userId = authService.getUserId();
+  if (userId && authService.isAuthenticated()) {
+    try {
+      if (authService.isAdmin()) {
+        isLoadingUser.value = true;
+        currentUser.value = await apiService.getUser(userId);
+        isLoadingUser.value = false;
+      } else {
         await loadUserData(userId, false);
-      } catch (error) {
-        console.error('Error restaurando sesión:', error);
-        logout();
       }
+    } catch (error) {
+      console.error('Error restaurando sesión:', error);
+      logout();
     }
-  };
+  }
+};
 
   // ==================== RETURN ====================
 

@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { authService } from '@/services/authService';
 
 
 const router = createRouter({
@@ -64,8 +65,23 @@ const router = createRouter({
       name: 'ObjectiveContributions',
       component: () => import('../views/ObjectiveContributionsView.vue'),
       props: true
+    },
+    {
+      path: '/admin',
+      name: 'admin',
+      component: () => import('../views/AdminView.vue'),
+      meta: { requiresAdmin: true }
     }
   ],
 })
+
+router.beforeEach((to, from, next) => {
+  if (to.meta.requiresAdmin && !authService.isAdmin()) {
+    next('/home');
+  } else {
+    next();
+  }
+});
+
 
 export default router
