@@ -18,13 +18,10 @@
     </div>
   </nav>
 </template>
-
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import DashboardIcon from '../icons/DashboardIcon.vue';
 import UserIcon from '../icons/UserIcon.vue';
-
-
 interface NavItem {
   id: string;
   label: string;
