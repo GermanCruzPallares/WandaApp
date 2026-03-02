@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { Transaction, FrequencyType, SplitType } from '@/types/models'
-
+import { apiService } from '@/services/apiService'
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:7085/api'
 
 export const useTransactionStore = defineStore('transaction', () => {
@@ -141,30 +141,21 @@ export const useTransactionStore = defineStore('transaction', () => {
   const createTransaction = async (
     accountId: number,
     data: {
-      user_id: number
-      objective_id?: number
+      objective_id: number
       category: string
       amount: number
       transaction_type: 'expense' | 'income' | 'saving'
-      concept?: string | null
+      concept: string
       transaction_date: Date | string
       isRecurring?: boolean
       frequency?: FrequencyType
       end_date?: Date | string | null
-      split_type?: SplitType
+      split_type: string
+      customSplits: null
     },
   ): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/accounts/${accountId}/transactions`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(data),
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(errorText || `Error ${response.status}`)
-      }
+      await apiService.createTransaction(accountId, data as Partial<Transaction>)
 
       console.log('✅ Transacción creada')
 
@@ -197,14 +188,7 @@ export const useTransactionStore = defineStore('transaction', () => {
     },
   ): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}`, {
-        method: 'PUT',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(updates),
-      })
-
-      if (!response.ok) throw new Error(`Error ${response.status}`)
-
+      await apiService.updateTransaction(transactionId, updates as Partial<Transaction>)
       console.log('✅ Transacción actualizada')
 
       // Limpiar todo el caché
@@ -217,18 +201,9 @@ export const useTransactionStore = defineStore('transaction', () => {
     }
   }
 
-  /**
-   * Eliminar una transacción
-   */
   const deleteTransaction = async (transactionId: number, accountId?: number): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/transactions/${transactionId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      })
-
-      if (!response.ok) throw new Error(`Error ${response.status}`)
-
+      await apiService.deleteTransaction(transactionId)
       console.log('✅ Transacción eliminada')
 
       // Limpiar caché

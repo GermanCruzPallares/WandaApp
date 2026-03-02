@@ -31,7 +31,7 @@ export interface AccountUI extends Account {
 
 // Tipos de transacciones
 export type TransactionType = 'expense' | 'income' | 'saving'
-export type FrequencyType = 'weekly' | 'monthly' | 'yearly' | null
+export type FrequencyType = 'weekly' | 'monthly' | 'annual' | null
 export type SplitType = null | 'individual' | 'contribution' | 'divided'
 
 export interface Transaction {

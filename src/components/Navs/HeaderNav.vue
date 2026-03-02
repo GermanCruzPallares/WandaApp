@@ -43,12 +43,13 @@ const handleBack = () => {
   top: 0;
   left: 0;
   width: 100%;
-  height: 80px;
+  height: $navbar-height;
   background-color: $background-principal;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
+  padding: 0 16px; // Horizontal only, height handles vertical
+  box-sizing: border-box;
   z-index: 1000;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 

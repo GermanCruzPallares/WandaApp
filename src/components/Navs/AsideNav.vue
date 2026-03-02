@@ -1,9 +1,8 @@
 <template>
   <aside class="aside-nav">
-  
-    <div class="aside-nav__logo">
+    <router-link to="/home" class="aside-nav__logo">
       <img src="../../images/OscuroPrincipal.png" alt="Wanda Logo" class="logo-image" />
-    </div>
+    </router-link>
 
     <nav class="aside-nav__menu">
       <router-link
@@ -13,10 +12,10 @@
         class="menu-item"
         :class="{ 'menu-item--active': currentRoute === item.path }"
       >
-        <component 
-          :is="item.icon" 
+        <component
+          :is="item.icon"
           :is-active="currentRoute === item.path"
-          class="menu-item__icon" 
+          class="menu-item__icon"
         />
         <span class="menu-item__label">{{ item.label }}</span>
       </router-link>
@@ -24,11 +23,7 @@
 
     <div class="aside-nav__footer">
       <button class="user-button" @click="openAccountSwitcher">
-        <img 
-          :src="avatarSrc" 
-          alt="User avatar"
-          class="user-button__avatar"
-        />
+        <img :src="avatarSrc" alt="User avatar" class="user-button__avatar" />
         <span class="user-button__name">
           {{ userStore.activeAccount?.name || 'Cuenta' }}
         </span>
@@ -51,89 +46,88 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { useUserStore } from '@/stores/UserStore';
-import { useAccountStore } from '@/stores/AccountStore';
-import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
-import AccountSwitcherModal from '@/components/Modals/AccountSwitcherModal.vue';
-import HomeIcon from '../icons/HomeIcon.vue';
-import PlusIcon from '../icons/PlusIcon.vue';
-import CalculatorIcon from '../icons/CalculatorIcon.vue';
-import UserIcon from '../icons/UserIcon.vue';
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/UserStore'
+import { useAccountStore } from '@/stores/AccountStore'
+import { getAvatarDataUrl } from '@/components/icons/AvatarIcons'
+import AccountSwitcherModal from '@/components/Modals/AccountSwitcherModal.vue'
+import HomeIcon from '../icons/HomeIcon.vue'
+import PlusIcon from '../icons/PlusIcon.vue'
+import CalculatorIcon from '../icons/CalculatorIcon.vue'
+import UserIcon from '../icons/UserIcon.vue'
 
 interface MenuItem {
-  id: string;
-  label: string;
-  icon: any;
-  path: string;
+  id: string
+  label: string
+  icon: any
+  path: string
 }
 
 // ✅ Sin props, todo del store
-const userStore = useUserStore();
-const accountStore = useAccountStore();
-const router = useRouter();
+const userStore = useUserStore()
+const accountStore = useAccountStore()
+const router = useRouter()
 
 // ✅ Estado local solo para el modal
-const isAccountSwitcherOpen = ref(false);
+const isAccountSwitcherOpen = ref(false)
 
 // ✅ Obtener ruta activa desde vue-router
-const currentRoute = computed(() => router.currentRoute.value.path);
+const currentRoute = computed(() => router.currentRoute.value.path)
 
 // ✅ Avatar reactivo del store
 const avatarSrc = computed(() => {
-  const account = userStore.activeAccount;
-  if (!account) return getAvatarDataUrl('personal');
-  
+  const account = userStore.activeAccount
+  if (!account) return getAvatarDataUrl('personal')
+
   if (account.account_picture_url) {
-    return account.account_picture_url;
+    return account.account_picture_url
   }
-  
-  return getAvatarDataUrl(account.account_type || 'personal');
-});
+
+  return getAvatarDataUrl(account.account_type || 'personal')
+})
 
 const menuItems: MenuItem[] = [
-  { id: 'inicio', label: 'Inicio', icon: HomeIcon, path: '/home' }, 
+  { id: 'inicio', label: 'Inicio', icon: HomeIcon, path: '/home' },
   { id: 'add', label: 'Añadir movimiento', icon: PlusIcon, path: '/transaction' },
   { id: 'libro', label: 'Libro Cuentas', icon: CalculatorIcon, path: '/book' },
-  { id: 'perfil', label: 'Perfil', icon: UserIcon, path: '/profile' }, 
-];
+  { id: 'perfil', label: 'Perfil', icon: UserIcon, path: '/profile' },
+]
 
 // ✅ Funciones del modal
 const openAccountSwitcher = () => {
-  console.log('🖱️ Opening account switcher from AsideNav');
-  isAccountSwitcherOpen.value = true;
-};
+  console.log('🖱️ Opening account switcher from AsideNav')
+  isAccountSwitcherOpen.value = true
+}
 
 const closeAccountSwitcher = () => {
-  console.log('❌ Closing account switcher');
-  isAccountSwitcherOpen.value = false;
-};
+  console.log('❌ Closing account switcher')
+  isAccountSwitcherOpen.value = false
+}
 
 const handleSelectAccount = (accountId: number) => {
-  console.log('🔄 Account selected:', accountId);
-  userStore.setActiveAccount(accountId);
-  closeAccountSwitcher();
-};
+  console.log('🔄 Account selected:', accountId)
+  userStore.setActiveAccount(accountId)
+  closeAccountSwitcher()
+}
 
 // ✅ CORREGIDO: Recibir userIds (números) en lugar de userEmails
 const handleCreateJointAccount = async (accountName: string, userIds: number[]) => {
-  console.log('4️⃣ AsideNav recibió:', accountName, userIds);
-  
+  console.log('4️⃣ AsideNav recibió:', accountName, userIds)
+
   try {
     await accountStore.createJointAccount({
       name: accountName,
-      userIds: userIds // ✅ Ya son números
-    });
-    
-    await userStore.refreshAccounts();
-    closeAccountSwitcher();
-    
+      userIds: userIds, // ✅ Ya son números
+    })
+
+    await userStore.refreshAccounts()
+    closeAccountSwitcher()
   } catch (error) {
-    console.error('❌ Error creando cuenta conjunta:', error);
-    alert('Error al crear la cuenta. Por favor, intenta de nuevo.');
+    console.error('❌ Error creando cuenta conjunta:', error)
+    alert('Error al crear la cuenta. Por favor, intenta de nuevo.')
   }
-};
+}
 </script>
 
 <style scoped lang="scss">
@@ -163,6 +157,12 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
     gap: 12px;
     margin-bottom: 32px;
     padding: 0 8px;
+    text-decoration: none;
+    transition: opacity $transition-speed $transition-ease;
+
+    &:hover {
+      opacity: 0.8;
+    }
 
     .logo-image {
       height: 2.5em;

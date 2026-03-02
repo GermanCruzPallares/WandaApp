@@ -9,39 +9,34 @@
         active-class="navbar__item--active"
         :aria-label="item.label"
       >
-        <component 
-          :is="item.icon" 
-          :is-active="$route.path === item.path"
-          class="navbar__icon"
-        />
+        <component :is="item.icon" :is-active="$route.path === item.path" class="navbar__icon" />
       </router-link>
     </div>
   </nav>
 </template>
 
 <script setup lang="ts">
-import { useRoute } from 'vue-router';
-import HomeIcon from '../icons/HomeIcon.vue';
-import PlusIcon from '../icons/PlusIcon.vue';
-import CalculatorIcon from '../icons/CalculatorIcon.vue';
-import UserIcon from '../icons/UserIcon.vue';
-
+import { useRoute } from 'vue-router'
+import HomeIcon from '../icons/HomeIcon.vue'
+import PlusIcon from '../icons/PlusIcon.vue'
+import CalculatorIcon from '../icons/CalculatorIcon.vue'
+import UserIcon from '../icons/UserIcon.vue'
 
 interface NavItem {
-  id: string;
-  label: string;
-  icon: any;
-  path: string;
+  id: string
+  label: string
+  icon: any
+  path: string
 }
 
-const route = useRoute();
+const route = useRoute()
 
 const navItems: NavItem[] = [
-  { id: 'inicio', label: 'Inicio', icon: HomeIcon, path: '/home' }, 
+  { id: 'inicio', label: 'Inicio', icon: HomeIcon, path: '/home' },
   { id: 'add', label: 'Añadir', icon: PlusIcon, path: '/transaction' },
   { id: 'libro', label: 'Cuentas', icon: CalculatorIcon, path: '/book' },
-  { id: 'perfil', label: 'Perfil', icon: UserIcon, path: '/profile' }, 
-];
+  { id: 'perfil', label: 'Perfil', icon: UserIcon, path: '/profile' },
+]
 </script>
 
 <style scoped lang="scss">
@@ -49,11 +44,9 @@ const navItems: NavItem[] = [
 
 .navbar {
   width: 100%;
-  background-color: $section-bg-primary; 
+  background-color: $section-bg-primary;
   border-top: 1px solid #e0e0e0;
-  position: fixed;
-  bottom: 0;
-  left: 0;
+  flex-shrink: 0; // Prevent footer from shrinking
   z-index: 100;
 
   &__container {
@@ -73,13 +66,13 @@ const navItems: NavItem[] = [
     align-items: center;
     justify-content: center;
     transition: transform $transition-speed ease;
-    
+
     &:active {
       transform: scale(0.95);
     }
 
     &--active {
-      filter: drop-shadow(0 0 2px rgba(0,0,0,0.1));
+      filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.1));
     }
   }
 

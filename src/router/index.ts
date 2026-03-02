@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -45,16 +44,22 @@ const router = createRouter({
       component: () => import('../views/ProfileView.vue'),
     },
     {
+      path: '/edit-transaction/:id',
+      name: 'edit-transaction',
+      component: () => import('../views/EditTransactionView.vue'),
+      props: true,
+    },
+    {
       path: '/home/editAccount',
       name: 'edit',
       component: () => import('../views/EditAccountView.vue'),
-    },    
+    },
     {
       path: '/home/contributions/:objectiveId?',
       name: 'ObjectiveContributions',
       component: () => import('../views/ObjectiveContributionsView.vue'),
-      props: true
-    }
+      props: true,
+    },
   ],
 })
 

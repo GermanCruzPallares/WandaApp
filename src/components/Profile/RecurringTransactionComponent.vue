@@ -1,106 +1,110 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
-import { useTransactionStore } from '@/stores/TransactionStore';
-import SectionTitle from '@/components/SectionTitle.vue';
-import { getCategoryIcon } from '@/components/icons/CategoryIcons';
-import type { Transaction } from '@/types/models';
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useTransactionStore } from '@/stores/TransactionStore'
+import SectionTitle from '@/components/SectionTitle.vue'
+import { getCategoryIcon } from '@/components/icons/CategoryIcons'
+import type { Transaction } from '@/types/models'
 
 interface Props {
-  accountId?: number;
-  type: 'expense' | 'income'; // Para filtrar gastos o ingresos
+  accountId?: number
+  type: 'expense' | 'income' // Para filtrar gastos o ingresos
 }
 
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  transactionClick: [transactionId: number];
-}>();
+  transactionClick: [transactionId: number]
+}>()
 
-const transactionStore = useTransactionStore();
-const transactions = ref<Transaction[]>([]);
-const isLoading = ref(false);
-const showAll = ref(false);
+const transactionStore = useTransactionStore()
+const router = useRouter()
+const transactions = ref<Transaction[]>([])
+const isLoading = ref(false)
+const showAll = ref(false)
 
 const loadRecurringTransactions = async (accountId: number) => {
-  isLoading.value = true;
-  
+  isLoading.value = true
+
   try {
     // Cargar todas las transacciones de la cuenta
-    const allTransactions = await transactionStore.fetchTransactions(accountId);
-    
+    const allTransactions = await transactionStore.fetchTransactions(accountId)
+
     // Filtrar solo las recurrentes del tipo especificado
-    transactions.value = allTransactions.filter(t => 
-      t.isRecurring && t.transaction_type === props.type
-    );
-    
+    transactions.value = allTransactions.filter(
+      (t) => t.isRecurring && t.transaction_type === props.type,
+    )
   } catch (error) {
-    console.error('Error cargando transacciones recurrentes:', error);
-    transactions.value = [];
+    console.error('Error cargando transacciones recurrentes:', error)
+    transactions.value = []
   }
-  
-  isLoading.value = false;
-};
+
+  isLoading.value = false
+}
 
 onMounted(() => {
   if (props.accountId) {
-    loadRecurringTransactions(props.accountId);
+    loadRecurringTransactions(props.accountId)
   }
-});
+})
 
-watch(() => props.accountId, (newAccountId) => {
-  if (newAccountId) {
-    loadRecurringTransactions(newAccountId);
-  }
-});
+watch(
+  () => props.accountId,
+  (newAccountId) => {
+    if (newAccountId) {
+      loadRecurringTransactions(newAccountId)
+    }
+  },
+)
 
 // Mostrar solo las primeras 2 transacciones o todas
 const displayedTransactions = computed(() => {
-  return showAll.value ? transactions.value : transactions.value.slice(0, 2);
-});
+  return showAll.value ? transactions.value : transactions.value.slice(0, 2)
+})
 
 const canShowMore = computed(() => {
-  return transactions.value.length > 2;
-});
+  return transactions.value.length > 2
+})
 
 const getFrequencyLabel = (transaction: Transaction): string => {
-  if (!transaction.frequency) return '';
-  
+  if (!transaction.frequency) return ''
+
   const labels = {
     weekly: 'Semanal',
     monthly: 'Mensual',
-    yearly: 'Anual'
-  };
-  
-  return labels[transaction.frequency] || '';
-};
+    annual: 'Anual',
+  }
+
+  return labels[transaction.frequency] || ''
+}
 
 const formatAmount = (amount: number, type: 'expense' | 'income'): string => {
-  const formatted = amount.toFixed(2).replace('.', ',');
-  return type === 'expense' ? `-${formatted} €` : `+${formatted} €`;
-};
+  const formatted = amount.toFixed(2).replace('.', ',')
+  return type === 'expense' ? `-${formatted} €` : `+${formatted} €`
+}
 
 const handleTransactionClick = (transactionId: number) => {
-  emit('transactionClick', transactionId);
-};
+  emit('transactionClick', transactionId)
+  router.push(`/edit-transaction/${transactionId}`)
+}
 
 const toggleShowAll = () => {
-  showAll.value = !showAll.value;
-};
+  showAll.value = !showAll.value
+}
 
 const sectionTitle = computed(() => {
-  const count = transactions.value.length;
-  const baseTitle = props.type === 'expense' ? 'Gastos Frecuentes' : 'Ingresos Frecuentes';
-  return `| ${baseTitle} (${count})`;
-});
+  const count = transactions.value.length
+  const baseTitle = props.type === 'expense' ? 'Gastos Frecuentes' : 'Ingresos Frecuentes'
+  return `| ${baseTitle} (${count})`
+})
 </script>
 
 <template>
   <div v-if="!isLoading" class="recurring">
     <div class="recurring__header">
       <SectionTitle :title="sectionTitle" />
-
     </div>
-    
+
     <div class="recurring__list">
       <div
         v-for="transaction in displayedTransactions"
@@ -108,35 +112,39 @@ const sectionTitle = computed(() => {
         class="recurring-item"
         @click="handleTransactionClick(transaction.transaction_id)"
       >
-
         <div class="recurring-item__icon">
           <component :is="getCategoryIcon(transaction.category)" />
         </div>
-        
+
         <div class="recurring-item__info">
           <h4 class="recurring-item__title">{{ transaction.category }}</h4>
           <div class="recurring-item__details">
             <span v-if="transaction.concept">{{ transaction.concept }}</span>
             <span v-if="transaction.concept && transaction.frequency"> - </span>
             <span>{{ getFrequencyLabel(transaction) }}</span>
-
           </div>
         </div>
-        
+
         <!-- Cantidad y flecha -->
         <div class="recurring-item__right">
-          <span 
+          <span
             class="recurring-item__amount"
-            :class="{ 
+            :class="{
               'recurring-item__amount--negative': type === 'expense',
-              'recurring-item__amount--positive': type === 'income'
+              'recurring-item__amount--positive': type === 'income',
             }"
           >
             {{ formatAmount(transaction.amount, type) }}
           </span>
-          
+
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="recurring-item__arrow">
-            <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path
+              d="M9 18l6-6-6-6"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
         </div>
       </div>
@@ -147,17 +155,13 @@ const sectionTitle = computed(() => {
       </div>
 
       <!-- Botón Ver más / Ver menos -->
-      <button 
-        v-if="canShowMore"
-        class="recurring__toggle-btn"
-        @click="toggleShowAll"
-      >
+      <button v-if="canShowMore" class="recurring__toggle-btn" @click="toggleShowAll">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path 
-            :d="showAll ? 'M19 15l-7-7-7 7' : 'M19 9l-7 7-7-7'" 
-            stroke="currentColor" 
-            stroke-width="2" 
-            stroke-linecap="round" 
+          <path
+            :d="showAll ? 'M19 15l-7-7-7 7' : 'M19 9l-7 7-7-7'"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
             stroke-linejoin="round"
           />
         </svg>
@@ -183,7 +187,6 @@ const sectionTitle = computed(() => {
     justify-content: space-between;
     margin-bottom: 1rem;
   }
-
 
   &__list {
     display: flex;
@@ -241,8 +244,9 @@ const sectionTitle = computed(() => {
   padding: 25px 16px;
   margin: 0 16px;
   cursor: pointer;
-  transition: transform $transition-speed $transition-ease,
-              box-shadow $transition-speed $transition-ease;
+  transition:
+    transform $transition-speed $transition-ease,
+    box-shadow $transition-speed $transition-ease;
 
   &:hover {
     transform: translateX(2px);

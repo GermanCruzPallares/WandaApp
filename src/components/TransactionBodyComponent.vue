@@ -1,19 +1,32 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTransactionStore } from '@/stores/TransactionStore'
 import { useUserStore } from '@/stores/UserStore'
 import { useToast } from '@/composables/useToast'
-import IconFood from './icons/IconFood.vue'
-import IconTransport from './icons/IconTransport.vue'
-import IconShopping from './icons/IconShopping.vue'
-import IconInvoice from './icons/IconInvoice.vue'
-import IconSubscription from './icons/IconSubscription.vue'
+import { getCategoryIcon } from './icons/CategoryIcons'
 import IconArrow from './icons/IconArrow.vue'
+import type { FrequencyType, SplitType } from '@/types/models'
+
+const props = defineProps<{
+  transactionId?: number
+}>()
 
 const router = useRouter()
 const transactionStore = useTransactionStore()
 const userStore = useUserStore()
+
+// Replicando la lógica de HomeView para garantizar la cuenta activa correcta
+const accounts = computed(() => {
+  return userStore.accounts.map((account) => ({
+    ...account,
+    isActive: account.account_id === userStore.activeAccountId,
+  }))
+})
+
+const activeAccount = computed(() => {
+  return accounts.value.find((acc) => acc.isActive)
+})
 
 const type = ref<'expense' | 'income'>('expense')
 const amount = ref('0')
@@ -21,10 +34,10 @@ const selectedCategory = ref<number | null>(null)
 const conceptExpanded = ref(false)
 const conceptText = ref('')
 const isRecurring = ref(false)
-const frequency = ref<'weekly' | 'monthly' | 'yearly'>('monthly')
+const frequency = ref<'weekly' | 'monthly' | 'annual'>('monthly')
 const duration = ref<'defined' | 'indefinite'>('defined')
 const endDate = ref('')
-const showKeypad = ref(true)
+const showKeypad = ref(false)
 
 const keypadRef = ref<HTMLElement | null>(null)
 const amountTriggerRef = ref<HTMLElement | null>(null)
@@ -72,19 +85,38 @@ const scrollSlider = (direction: 'left' | 'right') => {
   }
 }
 
-const categories = [
-  { id: 1, name: 'Comida', icon: IconFood },
-  { id: 2, name: 'Transporte', icon: IconTransport },
-  { id: 3, name: 'Compras', icon: IconShopping },
-  { id: 4, name: 'Facturas', icon: IconInvoice },
-  { id: 5, name: 'Subs', icon: IconSubscription },
+const expenseCategories = [
+  { id: 1, name: 'Alimentación' },
+  { id: 2, name: 'Transporte' },
+  { id: 3, name: 'Compras' },
+  { id: 4, name: 'Facturas' },
+  { id: 5, name: 'Suscripciones' },
+  { id: 6, name: 'Ocio' },
+  { id: 7, name: 'Salud' },
+  { id: 8, name: 'Hogar' },
+  { id: 9, name: 'Otros' },
 ]
+
+const incomeCategories = [
+  { id: 10, name: 'Salario' },
+  { id: 11, name: 'Freelance' },
+  { id: 12, name: 'Inversión' },
+  { id: 13, name: 'Venta' },
+]
+
+const categories = computed(() => {
+  return type.value === 'expense' ? expenseCategories : incomeCategories
+})
+
 const formattedAmount = computed(() => {
   return amount.value
 })
 
 const setType = (newType: 'expense' | 'income') => {
-  type.value = newType
+  if (type.value !== newType) {
+    type.value = newType
+    selectedCategory.value = null
+  }
 }
 
 const toggleConcept = () => {
@@ -127,12 +159,133 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // Verificar autenticación y asegurar datos igual que HomeView
+  if (!userStore.isAuthenticated) {
+    router.push('/login')
+    return
+  }
+
+  // Si el store no tiene datos cargados, cargarlos
+  if (!userStore.currentUser && userStore.userId) {
+    try {
+      await userStore.loadUserData(userStore.userId)
+    } catch (error) {
+      console.error('❌ Error cargando datos en TransactionBody:', error)
+      router.push('/login')
+    }
+  }
+
+  // Cargar datos si estamos en modo Edición
+  if (props.transactionId) {
+    loadTransactionData(props.transactionId)
+  }
+
   window.addEventListener('keydown', handleKeydown)
+  document.addEventListener('mousedown', handleClickOutside)
 })
+
+const handleClickOutside = (e: MouseEvent) => {
+  if (!showKeypad.value) return
+
+  const keypad = document.querySelector('.keypad-overlay')
+  const amountTrigger = amountTriggerRef.value
+
+  if (
+    keypad &&
+    !keypad.contains(e.target as Node) &&
+    amountTrigger &&
+    !amountTrigger.contains(e.target as Node)
+  ) {
+    showKeypad.value = false
+  }
+}
+
+const scrollToSelected = () => {
+  const slider = sliderRef.value
+  if (!slider) return
+
+  setTimeout(() => {
+    const selectedEl = slider.querySelector('.category-item.selected') as HTMLElement
+    if (selectedEl) {
+      const containerWidth = slider.offsetWidth
+      const itemOffset = selectedEl.offsetLeft
+      const itemWidth = selectedEl.offsetWidth
+      // Center the selected category
+      slider.scrollTo({
+        left: itemOffset - containerWidth / 2 + itemWidth / 2,
+        behavior: 'smooth',
+      })
+    }
+  }, 100)
+}
+
+watch(
+  () => props.transactionId,
+  (newId) => {
+    if (newId) {
+      loadTransactionData(newId)
+    }
+  },
+)
+
+const loadTransactionData = async (id: number) => {
+  try {
+    const trx = await transactionStore.fetchTransactionById(id)
+    if (trx) {
+      // ✅ Security Check: Only allow access if the transaction belongs to the current user
+      if (trx.user_id !== userStore.userId) {
+        console.error('❌ Unauthorized access attempt to transaction:', id)
+        showToast('No tienes permiso para acceder a esta transacción', 'error')
+        router.push('/home')
+        return
+      }
+
+      type.value = trx.transaction_type === 'income' ? 'income' : 'expense'
+      // Formatear monto: cambiar punto por coma si tiene decimales, y convertir a string
+      amount.value = trx.amount.toString().replace('.', ',')
+
+      console.log('--- CATEGORY MATCHING DEBUG ---')
+      console.log('Incoming category from DB:', trx.category)
+      const foundCat = categories.value.find((c) => {
+        if (!c.name || !trx.category) return false
+        return c.name.localeCompare(trx.category, undefined, { sensitivity: 'base' }) === 0
+      })
+      console.log('Found local category:', foundCat)
+      selectedCategory.value = foundCat ? foundCat.id : null
+
+      conceptText.value = trx.concept && trx.concept !== trx.category ? trx.concept : ''
+      conceptExpanded.value = true // Always expand when editing so they can see it
+
+      isRecurring.value = !!trx.isRecurring
+      if (trx.frequency) {
+        frequency.value = trx.frequency as 'weekly' | 'monthly' | 'annual'
+      }
+
+      if (trx.end_date) {
+        duration.value = 'defined'
+        // Extraer YYYY-MM-DD
+        endDate.value =
+          typeof trx.end_date === 'string'
+            ? trx.end_date.split('T')[0] || ''
+            : new Date(trx.end_date).toISOString().split('T')[0] || ''
+      } else {
+        duration.value = 'indefinite'
+      }
+
+      // Auto-scroll only triggered when loading existing data
+      await nextTick()
+      scrollToSelected()
+    }
+  } catch (error) {
+    console.error('Error cargando transacción a editar:', error)
+    showToast('No se pudo cargar la transacción', 'error')
+  }
+}
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
+  document.removeEventListener('mousedown', handleClickOutside)
 })
 
 const { showToast } = useToast()
@@ -143,7 +296,8 @@ const save = async () => {
     return
   }
 
-  if (!userStore.activeAccountId || userStore.activeAccountId <= 0) {
+  // Verificar la cuenta activa usando la misma lógica robusta que HomeView
+  if (!activeAccount.value || !activeAccount.value.account_id) {
     showToast('No hay una cuenta activa seleccionada', 'error')
     return
   }
@@ -153,65 +307,99 @@ const save = async () => {
     return
   }
 
-  const categoryName = categories.find((c) => c.id === selectedCategory.value)?.name || 'Varios'
+  const categoryName =
+    categories.value.find((c) => c.id === selectedCategory.value)?.name || 'Varios'
 
-  // Preparar datos para el backend
+  // Preparar datos para el backend, coincidiendo exactamente con TransactionCreateDTO
   const transactionData = {
-    user_id: userStore.userId || 0, // Fallback if null
+    objective_id: 0, // Requerido por el DTO (int no nulo)
     category: categoryName,
     amount: parseFloat(amount.value.replace(',', '.')),
     transaction_type: type.value, // 'expense' | 'income'
-    concept: conceptText.value || null,
+    concept: conceptText.value || categoryName, // string no nulo en C#
     transaction_date: new Date().toISOString(),
     isRecurring: isRecurring.value,
-    frequency: isRecurring.value ? frequency.value : null,
+    frequency: isRecurring.value ? frequency.value : null, // string? en C#
     end_date:
-      isRecurring.value && duration.value === 'defined' && endDate.value ? endDate.value : null,
-    split_type: null, // Opcional, dependiendo de la lógica de negocio
+      isRecurring.value && duration.value === 'defined' && endDate.value ? endDate.value : null, // DateTime? en C#
+    split_type: 'individual' as const,
+    customSplits: null,
   }
 
   try {
-    const success = await transactionStore.createTransaction(
-      userStore.activeAccountId,
-      transactionData,
-    )
+    let success = false
+
+    if (props.transactionId) {
+      // Modo Edición
+      success = await transactionStore.updateTransaction(props.transactionId, transactionData)
+    } else {
+      // Modo Creación
+      success = await transactionStore.createTransaction(
+        activeAccount.value.account_id,
+        transactionData,
+      )
+    }
 
     if (success) {
-      showToast('Transacción guardada con éxito', 'success')
+      showToast(
+        props.transactionId ? 'Transacción actualizada' : 'Transacción guardada con éxito',
+        'success',
+      )
       closeKeypad()
-      // Opcional: navegar de vuelta o resetear formulario
-      // router.push('/')
 
-      // Reset form
-      amount.value = '0'
-      selectedCategory.value = null
-      conceptText.value = ''
-      isRecurring.value = false
+      if (props.transactionId) {
+        setTimeout(() => {
+          router.push('/home')
+        }, 500)
+      } else {
+        // Reset form
+        amount.value = '0'
+        selectedCategory.value = null
+        conceptText.value = ''
+        isRecurring.value = false
+      }
     } else {
       showToast('Error al guardar la transacción', 'error')
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error saving transaction:', error)
-    showToast('Ocurrió un error al guardar', 'error')
+    const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error al guardar'
+    const cleanMessage = errorMessage.replace(/^Error \d+: /, '')
+    showToast(cleanMessage, 'error')
   }
 }
 </script>
 
 <template>
-  <div class="add-movement">
+  <div class="add-movement" :class="{ 'spacer-active': showKeypad }">
     <div class="form-container">
-      <div class="type-selector">
+      <slot name="desktop-header"></slot>
+      <div
+        v-if="!props.transactionId"
+        class="type-selector"
+        :class="{ 'is-add-view': !props.transactionId }"
+      >
         <button :class="{ active: type === 'expense' }" @click="setType('expense')">Gasto</button>
         <button :class="{ active: type === 'income' }" @click="setType('income')">Ingreso</button>
       </div>
 
       <div class="amount-display" ref="amountTriggerRef" @click="openKeypad">
         <span class="currency-label">
-          {{ type === 'expense' ? 'Nuevo Gasto' : 'Nuevo Ingreso' }}
+          {{
+            props.transactionId
+              ? type === 'expense'
+                ? 'Editar Gasto'
+                : 'Editar Ingreso'
+              : type === 'expense'
+                ? 'Nuevo Gasto'
+                : 'Nuevo Ingreso'
+          }}
         </span>
-        <div class="amount-value">
+        <div class="amount-value" :class="{ 'is-active': showKeypad }">
           <span class="currency">EUR</span>
-          <span class="value">{{ formattedAmount }}</span>
+          <span class="value"
+            >{{ formattedAmount }}<span class="cursor" v-if="showKeypad">|</span></span
+          >
         </div>
       </div>
 
@@ -229,7 +417,7 @@ const save = async () => {
             @click="selectedCategory = category.id"
           >
             <div class="icon-circle">
-              <component :is="category.icon" class="category-icon" />
+              <component :is="getCategoryIcon(category.name)" class="category-icon" />
             </div>
             <span class="cat-name">{{ category.name }}</span>
           </button>
@@ -241,27 +429,20 @@ const save = async () => {
       </div>
 
       <div class="concept-section">
-        <button class="concept-toggle" @click="toggleConcept">
-          <div class="toggle-content">
-            <span class="toggle-text">{{
-              conceptExpanded ? 'Ocultar concepto' : 'Añadir concepto (opcional)'
-            }}</span>
-            <IconArrow class="arrow-icon" :class="{ 'is-expanded': conceptExpanded }" />
-          </div>
-        </button>
-        <div v-if="conceptExpanded" class="concept-input-wrapper">
+        <div class="concept-input-wrapper">
           <input
             type="text"
             v-model="conceptText"
-            placeholder="Ej: Mercadona"
+            placeholder="Añadir concepto (Ej: Mercadona, Nómina...)"
             class="concept-input"
+            @focus="showKeypad = false"
           />
         </div>
       </div>
 
-      <div class="recurring-section">
+      <div class="recurring-section" :class="{ 'is-active': isRecurring }">
         <div class="recurring-header">
-          <span>Gasto Frecuente</span>
+          <span>{{ type === 'expense' ? 'Gasto Frecuente' : 'Ingreso Frecuente' }}</span>
           <label class="switch">
             <input type="checkbox" v-model="isRecurring" />
             <span class="slider round"></span>
@@ -276,7 +457,7 @@ const save = async () => {
             <button :class="{ active: frequency === 'monthly' }" @click="frequency = 'monthly'">
               Mensual
             </button>
-            <button :class="{ active: frequency === 'yearly' }" @click="frequency = 'yearly'">
+            <button :class="{ active: frequency === 'annual' }" @click="frequency = 'annual'">
               Anual
             </button>
           </div>
@@ -334,7 +515,9 @@ const save = async () => {
           <button @click="handleKeypad(0)">0</button>
           <button @click="handleKeypad('backspace')" class="backspace">←</button>
         </div>
-        <button class="save-btn" @click="save">Guardar</button>
+        <button class="save-btn" @click="save">
+          {{ props.transactionId ? 'Guardar cambios' : 'Guardar' }}
+        </button>
       </div>
     </Teleport>
   </div>

@@ -6,7 +6,12 @@
           <!-- Botón cerrar -->
           <button class="modal-close" @click="handleClose">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path
+                d="M18 6L6 18M6 6l12 12"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
             </svg>
           </button>
 
@@ -27,13 +32,19 @@
                 :disabled="isValidatingEmail"
                 @keyup.enter="handleAddUser"
               />
-              <button 
+              <button
                 v-if="isValidEmail(newUserEmail) && !isValidatingEmail"
                 class="input-check"
                 @click="handleAddUser"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M20 6L9 17l-5-5" stroke="#4CAF50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path
+                    d="M20 6L9 17l-5-5"
+                    stroke="#4CAF50"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
                 </svg>
               </button>
               <!-- Spinner de validación -->
@@ -46,8 +57,8 @@
             <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
             <!-- Botón añadir usuario -->
-            <button 
-              class="add-user-btn" 
+            <button
+              class="add-user-btn"
               :disabled="isValidatingEmail || !isValidEmail(newUserEmail)"
               @click="handleAddUser"
             >
@@ -62,8 +73,8 @@
             <div class="users-list">
               <!-- Usuario actual (el que crea la cuenta) -->
               <div class="user-item user-item--owner">
-                <img 
-                  :src="getAccountAvatar(userStore.activeAccount)" 
+                <img
+                  :src="getAccountAvatar(userStore.activeAccount)"
                   :alt="currentUser.name"
                   class="user-avatar"
                 />
@@ -71,24 +82,25 @@
               </div>
 
               <!-- Usuarios añadidos -->
-              <div
-                v-for="item in addedUsersWithAccounts"
-                :key="item.user.email"
-                class="user-item"
-              >
-                <img 
-                  :src="getAccountAvatar(item.account)" 
+              <div v-for="item in addedUsersWithAccounts" :key="item.user.email" class="user-item">
+                <img
+                  :src="getAccountAvatar(item.account)"
                   :alt="item.user.name"
                   class="user-avatar"
                 />
                 <span class="user-name">{{ item.user.name }}</span>
-                <button 
+                <button
                   class="remove-user-btn"
                   @click="handleRemoveUser(item.user.email)"
                   title="Eliminar usuario"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path
+                      d="M18 6L6 18M6 6l12 12"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    />
                   </svg>
                 </button>
               </div>
@@ -112,19 +124,22 @@
                 class="account-name-input"
                 maxlength="50"
               />
-              <button 
-                v-if="accountName.trim().length > 0"
-                class="input-check"
-              >
+              <button v-if="accountName.trim().length > 0" class="input-check">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M20 6L9 17l-5-5" stroke="#4CAF50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path
+                    d="M20 6L9 17l-5-5"
+                    stroke="#4CAF50"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
                 </svg>
               </button>
             </div>
           </section>
 
           <!-- Botón crear cuenta -->
-          <button 
+          <button
             class="create-account-btn"
             :disabled="!canCreateAccount || isCreating"
             @click="handleCreateAccount"
@@ -143,66 +158,68 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useUserStore } from '@/stores/UserStore';
-import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
-import { apiService } from '@/services/apiService';
-import type { User, Account } from '@/types/models';
+import { ref, computed } from 'vue'
+import { useUserStore } from '@/stores/UserStore'
+import { getAvatarDataUrl } from '@/components/icons/AvatarIcons'
+import { apiService } from '@/services/apiService'
+import type { User, Account } from '@/types/models'
 
 interface Props {
-  isOpen: boolean;
-  currentUser: User;
+  isOpen: boolean
+  currentUser: User
 }
 
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  close: [];
-  createAccount: [accountName: string, userIds: number[]];
-}>();
+  close: []
+  createAccount: [accountName: string, userIds: number[]]
+}>()
 
 // ✅ Usar el store
-const userStore = useUserStore();
+const userStore = useUserStore()
 
 // ==================== ESTADO LOCAL ====================
 
-const newUserEmail = ref('');
-const accountName = ref('');
-const addedUsersWithAccounts = ref<Array<{ 
-  user: User; 
-  account: Account | null;
-}>>([]);
-const isValidatingEmail = ref(false);
-const isCreating = ref(false);
-const errorMessage = ref('');
+const newUserEmail = ref('')
+const accountName = ref('')
+const addedUsersWithAccounts = ref<
+  Array<{
+    user: User
+    account: Account | null
+  }>
+>([])
+const isValidatingEmail = ref(false)
+const isCreating = ref(false)
+const errorMessage = ref('')
 
 // ==================== COMPUTED ====================
 
 // Verificar si se puede crear la cuenta
 const canCreateAccount = computed(() => {
-  return addedUsersWithAccounts.value.length >= 1 && accountName.value.trim().length > 0;
-});
+  return addedUsersWithAccounts.value.length >= 1 && accountName.value.trim().length > 0
+})
 
 // Mensaje de validación
 const validationMessage = computed(() => {
   if (!canCreateAccount.value) {
     if (addedUsersWithAccounts.value.length === 0) {
-      return 'Añade al menos un usuario más para continuar';
+      return 'Añade al menos un usuario más para continuar'
     }
     if (accountName.value.trim().length === 0) {
-      return 'Introduce un nombre para la cuenta';
+      return 'Introduce un nombre para la cuenta'
     }
   }
-  return '';
-});
+  return ''
+})
 
 // ==================== VALIDACIONES ====================
 
 // Validar formato de email
 const isValidEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email.trim());
-};
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email.trim())
+}
 
 // ==================== FUNCIONES ====================
 
@@ -210,149 +227,147 @@ const isValidEmail = (email: string): boolean => {
  * Añadir usuario con validación
  */
 const handleAddUser = async () => {
-  errorMessage.value = '';
+  errorMessage.value = ''
 
   // Validar formato de email
   if (!isValidEmail(newUserEmail.value)) {
-    errorMessage.value = 'Por favor, introduce un email válido';
-    return;
+    errorMessage.value = 'Por favor, introduce un email válido'
+    return
   }
 
-  const emailToCheck = newUserEmail.value.trim().toLowerCase();
+  const emailToCheck = newUserEmail.value.trim().toLowerCase()
 
   // Verificar si es el usuario actual
   if (emailToCheck === props.currentUser.email.toLowerCase()) {
-    errorMessage.value = 'No puedes añadirte a ti mismo. Ya eres miembro de la cuenta.';
-    newUserEmail.value = '';
-    return;
+    errorMessage.value = 'No puedes añadirte a ti mismo. Ya eres miembro de la cuenta.'
+    newUserEmail.value = ''
+    return
   }
 
   // Verificar si el usuario ya está añadido
   const alreadyAdded = addedUsersWithAccounts.value.some(
-    item => item.user.email.toLowerCase() === emailToCheck
-  );
+    (item) => item.user.email.toLowerCase() === emailToCheck,
+  )
   if (alreadyAdded) {
-    errorMessage.value = 'Este usuario ya está añadido';
-    newUserEmail.value = '';
-    return;
+    errorMessage.value = 'Este usuario ya está añadido'
+    newUserEmail.value = ''
+    return
   }
 
-  isValidatingEmail.value = true;
+  isValidatingEmail.value = true
   try {
     // ✅ PASO 1: Buscar usuario por email
-    const user = await userStore.checkUserExists(newUserEmail.value.trim());
-    
+    const user = await userStore.checkUserExists(newUserEmail.value.trim())
+
     if (!user) {
-      errorMessage.value = 'Este usuario no está registrado en Wanda';
-      return;
+      errorMessage.value = 'Este usuario no está registrado en Wanda'
+      return
     }
 
-    console.log('✅ Usuario encontrado:', user);
+    console.log('✅ Usuario encontrado:', user)
 
     // ✅ PASO 2: Buscar cuentas del usuario usando apiService
-    const accounts = await apiService.getUserAccounts(user.user_id);
-    
-    console.log('📋 Cuentas del usuario:', accounts);
+    const accounts = await apiService.getUserAccounts(user.user_id)
+
+    console.log('📋 Cuentas del usuario:', accounts)
 
     // ✅ PASO 3: Filtrar cuenta personal
-    const personalAccount = accounts.find(acc => acc.account_type === 'personal') || null;
+    const personalAccount = accounts.find((acc) => acc.account_type === 'personal') || null
 
     if (personalAccount) {
-      console.log('✅ Cuenta personal encontrada:', personalAccount.account_id);
+      console.log('✅ Cuenta personal encontrada:', personalAccount.account_id)
     } else {
-      console.warn('⚠️ Usuario sin cuenta personal');
+      console.warn('⚠️ Usuario sin cuenta personal')
     }
 
     // ✅ PASO 4: Añadir usuario con su cuenta personal
     addedUsersWithAccounts.value.push({
       user,
-      account: personalAccount
-    });
-    
-    newUserEmail.value = '';
-    errorMessage.value = '';
-    
+      account: personalAccount,
+    })
+
+    newUserEmail.value = ''
+    errorMessage.value = ''
   } catch (error) {
-    console.error('❌ Error validando usuario:', error);
-    errorMessage.value = 'Error al validar el usuario. Intenta de nuevo.';
+    console.error('❌ Error validando usuario:', error)
+    errorMessage.value = 'Error al validar el usuario. Intenta de nuevo.'
   } finally {
-    isValidatingEmail.value = false;
+    isValidatingEmail.value = false
   }
-};
+}
 
 /**
  * Eliminar usuario de la lista
  */
 const handleRemoveUser = (email: string) => {
   addedUsersWithAccounts.value = addedUsersWithAccounts.value.filter(
-    item => item.user.email.toLowerCase() !== email.toLowerCase()
-  );
-  errorMessage.value = '';
-};
+    (item) => item.user.email.toLowerCase() !== email.toLowerCase(),
+  )
+  errorMessage.value = ''
+}
 
 /**
  * Crear cuenta conjunta
  */
 const handleCreateAccount = async () => {
-  if (!canCreateAccount.value) return;
+  if (!canCreateAccount.value) return
 
-  isCreating.value = true;
-  errorMessage.value = '';
+  isCreating.value = true
+  errorMessage.value = ''
 
   try {
     // ✅ CORRECCIÓN: Recoger los user_ids (números), NO emails
     const userIds = [
       props.currentUser.user_id, // ✅ user_id del usuario actual (número)
-      ...addedUsersWithAccounts.value.map(item => item.user.user_id) // ✅ user_ids de los añadidos (números)
-    ];
-    
-    console.log('1️⃣ CreateJointAccountModal emitiendo:');
-    console.log('   Nombre:', accountName.value.trim());
-    console.log('   User IDs:', userIds);
-    console.log('   Tipo de userIds:', typeof userIds, Array.isArray(userIds));
-    
+      ...addedUsersWithAccounts.value.map((item) => item.user.user_id), // ✅ user_ids de los añadidos (números)
+    ]
+
+    console.log('1️⃣ CreateJointAccountModal emitiendo:')
+    console.log('   Nombre:', accountName.value.trim())
+    console.log('   User IDs:', userIds)
+    console.log('   Tipo de userIds:', typeof userIds, Array.isArray(userIds))
+
     // ✅ Emitir evento al padre
-    emit('createAccount', accountName.value.trim(), userIds);
-    
+    emit('createAccount', accountName.value.trim(), userIds)
+
     // ✅ Cerrar modal
-    handleClose();
-    
+    handleClose()
   } catch (error) {
-    console.error('❌ Error creando cuenta:', error);
-    errorMessage.value = 'Error al crear la cuenta. Por favor, intenta de nuevo.';
+    console.error('❌ Error creando cuenta:', error)
+    errorMessage.value = 'Error al crear la cuenta. Por favor, intenta de nuevo.'
   } finally {
-    isCreating.value = false;
+    isCreating.value = false
   }
-};
+}
 
 /**
  * Cerrar modal y limpiar formulario
  */
 const handleClose = () => {
-  newUserEmail.value = '';
-  accountName.value = '';
-  addedUsersWithAccounts.value = [];
-  errorMessage.value = '';
-  isValidatingEmail.value = false;
-  isCreating.value = false;
-  
-  emit('close');
-};
+  newUserEmail.value = ''
+  accountName.value = ''
+  addedUsersWithAccounts.value = []
+  errorMessage.value = ''
+  isValidatingEmail.value = false
+  isCreating.value = false
+
+  emit('close')
+}
 
 /**
  * ✅ Obtener avatar de la cuenta
  */
 const getAccountAvatar = (account: Account | null): string => {
   if (!account) {
-    return getAvatarDataUrl('personal');
+    return getAvatarDataUrl('personal')
   }
-  
+
   if (account.account_picture_url) {
-    return account.account_picture_url;
+    return account.account_picture_url
   }
-  
-  return getAvatarDataUrl(account.account_type || 'personal');
-};
+
+  return getAvatarDataUrl(account.account_type || 'personal')
+}
 </script>
 <style scoped lang="scss">
 @import '@/styles/base/variables.scss';
@@ -405,10 +420,6 @@ const getAccountAvatar = (account: Account | null): string => {
 
 .modal-section {
   margin-bottom: 32px;
-
-  &:last-of-type {
-    margin-bottom: 24px;
-  }
 }
 
 .section-title {
@@ -484,7 +495,9 @@ const getAccountAvatar = (account: Account | null): string => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .error-message {

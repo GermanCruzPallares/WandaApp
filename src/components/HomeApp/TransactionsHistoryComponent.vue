@@ -1,85 +1,6 @@
-<template>
-  <!-- ✅ Solo renderizar cuando NO está cargando -->
-  <div v-if="!isLoading">
-    <SectionTitle title="| Historial" />
-
-    <section class="transactions-history">
-      <!-- Transacciones agrupadas por fecha -->
-      <div v-for="group in displayedTransactions" :key="group.date" class="transaction-group">
-        <div class="transaction-group__date">{{ group.formattedDate }}</div>
-
-        <div class="transaction-list">
-          <div
-            v-for="transaction in group.transactions"
-            :key="transaction.transaction_id"
-            class="transaction-item"
-            @click="handleTransactionClick(transaction.transaction_id)"
-          >
-            <!-- Icono de categoría -->
-            <div class="transaction-item__icon">
-              <component :is="getCategoryIcon(transaction.category)" />
-            </div>
-
-            <div class="transaction-item__info">
-              <h4 class="transaction-item__title">{{ transaction.category }}</h4>
-              <p class="transaction-item__description">{{ getDescription(transaction) }}</p>
-            </div>
-
-            <div class="transaction-item__right">
-              <span
-                class="transaction-item__amount"
-                :class="{
-                  'transaction-item__amount--negative': transaction.transaction_type === 'expense',
-                  'transaction-item__amount--positive': transaction.transaction_type === 'income',
-                }"
-              >
-                {{ formatAmount(transaction.amount, transaction.transaction_type) }}
-              </span>
-
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                class="transaction-item__arrow"
-              >
-                <path
-                  d="M9 18l6-6-6-6"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Mensaje si no hay transacciones -->
-      <div v-if="transactions.length === 0" class="empty-state">
-        <p>No hay transacciones registradas</p>
-      </div>
-
-      <!-- Botón Ver más -->
-      <button v-if="canLoadMore" class="load-more-btn" @click="loadMore">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M19 9l-7 7-7-7"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-        Ver más
-      </button>
-    </section>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useTransactionStore } from '@/stores/TransactionStore'
 import SectionTitle from '@/components/SectionTitle.vue'
 import { getCategoryIcon } from '@/components/icons/CategoryIcons'
@@ -107,8 +28,9 @@ const emit = defineEmits<{
   transactionsLoaded: [transactions: Transaction[]]
 }>()
 
-// ✅ Usar el store de Pinia
+// ✅ Usar el store de Pinia y Router
 const transactionStore = useTransactionStore()
+const router = useRouter()
 
 // Estado local
 const transactions = ref<Transaction[]>([])
@@ -157,7 +79,7 @@ const getDescription = (transaction: Transaction): string => {
     const frequencyLabels = {
       weekly: 'Semanal',
       monthly: 'Mensual',
-      yearly: 'Anual',
+      annual: 'Anual',
     }
 
     const frequencyLabel = frequencyLabels[transaction.frequency]
@@ -258,11 +180,91 @@ const loadMore = () => {
 
 const handleTransactionClick = (transactionId: number) => {
   emit('transactionClick', transactionId)
+  router.push(`/edit-transaction/${transactionId}`)
 }
 </script>
 
+<template>
+  <!-- ✅ Solo renderizar cuando NO está cargando -->
+  <div v-if="!isLoading">
+    <SectionTitle title="| Historial" />
+
+    <section class="transactions-history">
+      <!-- Transacciones agrupadas por fecha -->
+      <div v-for="group in displayedTransactions" :key="group.date" class="transaction-group">
+        <div class="transaction-group__date">{{ group.formattedDate }}</div>
+
+        <div class="transaction-list">
+          <div
+            v-for="transaction in group.transactions"
+            :key="transaction.transaction_id"
+            class="transaction-item"
+            @click="handleTransactionClick(transaction.transaction_id)"
+          >
+            <!-- Icono de categoría -->
+            <div class="transaction-item__icon">
+              <component :is="getCategoryIcon(transaction.category)" />
+            </div>
+
+            <div class="transaction-item__info">
+              <h4 class="transaction-item__title">{{ transaction.category }}</h4>
+              <p class="transaction-item__description">{{ getDescription(transaction) }}</p>
+            </div>
+
+            <div class="transaction-item__right">
+              <span
+                class="transaction-item__amount"
+                :class="{
+                  'transaction-item__amount--negative': transaction.transaction_type === 'expense',
+                  'transaction-item__amount--positive': transaction.transaction_type === 'income',
+                }"
+              >
+                {{ formatAmount(transaction.amount, transaction.transaction_type) }}
+              </span>
+
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                class="transaction-item__arrow"
+              >
+                <path
+                  d="M9 18l6-6-6-6"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensaje si no hay transacciones -->
+      <div v-if="transactions.length === 0" class="empty-state">
+        <p>No hay transacciones registradas</p>
+      </div>
+
+      <!-- Botón Ver más -->
+      <button v-if="canLoadMore" class="load-more-btn" @click="loadMore">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M19 9l-7 7-7-7"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        Ver más
+      </button>
+    </section>
+  </div>
+</template>
+
 <style scoped lang="scss">
-/* Estilos sin cambios */
 @import '@/styles/base/variables.scss';
 
 .transactions-history {

@@ -73,9 +73,9 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
 
 <template>
   <div class="header-nav">
-    <div class="header-nav__logo">
+    <router-link to="/home" class="header-nav__logo">
       <img src="../../images/OscuroReducido.png" alt="Logo" class="logo-image" />
-    </div>
+    </router-link>
 
     <!-- Avatar -->
     <div class="header-nav__avatar">
@@ -97,19 +97,25 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
 </template>
 
 <style scoped lang="scss">
+@import '@/styles/base/variables.scss';
+
 .header-nav {
-  position: fixed;
+  position: sticky; // Use sticky instead of fixed
   top: 0;
   left: 0;
   width: 100%;
+  height: $navbar-height;
+  flex-shrink: 0; // Prevent navbar from shrinking in flex container
   z-index: 1000;
   box-sizing: border-box;
   background-color: #e5e5e5;
-  padding: 20px 16px;
+  padding: 0 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
 
   &__logo {
     .logo-image {

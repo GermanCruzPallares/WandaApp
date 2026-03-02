@@ -1,20 +1,33 @@
 .add-movement {
   display: flex;
   flex-direction: column;
-  height: 100%;
   background-color: #ffffff;
-  overflow-y: auto;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  padding-bottom: env(safe-area-inset-bottom); // No extra padding by default
+  transition: padding-bottom 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+
+  &.spacer-active {
+    // Applying the 40px + extra space only when keypad is active
+    padding-bottom: calc(40px + env(safe-area-inset-bottom));
+  }
 }
 
 .form-container {
-  margin-top: 40px;
-  margin-bottom: 70px;
-  padding: 20px;
-  flex: 1;
+  padding: 10px 20px 0px 20px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  width: 100%;
+  max-width: 400px; // Narrower layout as requested
+  margin: 0 auto; // Center the form
+  justify-content: flex-start; // Stop spreading elements apart
+  gap: 20px; // Controlled, consistent spacing
+
+  @media (min-width: 768px) {
+    justify-content: flex-start;
+    padding-top: 0;
+    margin-top: 0;
+    gap: 1000; // Add clean spacing between form elements on desktop
+  }
 }
 
 .type-selector {
@@ -25,7 +38,7 @@
   button {
     background: #e0e0e0;
     border: none;
-    padding: 10px 30px;
+    padding: 12px 35px;
     border-radius: 20px;
     color: #8e8e93;
     font-weight: 500;
@@ -42,18 +55,27 @@
 .amount-display {
   text-align: center;
   cursor: pointer;
-
+  margin-top: 5px; // Reduced from 15px since container now has gap
   .currency-label {
-    font-size: 0.8rem;
+    font-size: 1.5rem;
     color: #666;
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 0px; // Minimal gap
   }
 
   .amount-value {
     display: flex;
     flex-direction: column;
     align-items: center;
+    transition: transform 0.2s ease;
+
+    &.is-active {
+      transform: scale(1.05);
+
+      .value {
+        color: #a698c4;
+      }
+    }
 
     .currency {
       font-size: 1.2rem;
@@ -63,10 +85,30 @@
 
     .value {
       font-size: 3.5rem;
-      font-weight: 400; // Thinner font weight
+      font-weight: 400;
       color: #000;
       line-height: 1;
+      display: flex;
+      align-items: center;
+      transition: color 0.2s ease;
+
+      .cursor {
+        font-weight: 300;
+        color: #a698c4;
+        animation: blink 1s step-end infinite;
+        margin-left: 2px;
+      }
     }
+  }
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
   }
 }
 
@@ -120,7 +162,7 @@
   justify-content: flex-start;
   overflow-x: auto;
   width: 100%;
-  padding: 10px 5px;
+  padding: 5px 5px;
   gap: 15px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
@@ -151,8 +193,10 @@
     &.selected {
       opacity: 1;
       .icon-circle {
-        background-color: #d1a6b0;
-        border: 2px solid #a36b77;
+        background-color: #a698c4; // Purple shade from desktop
+        border: 2px solid #ffffff;
+        box-shadow: 0 0 0 2px #a698c4; // External circle effect
+        color: white;
       }
     }
 
@@ -160,12 +204,19 @@
       width: 50px;
       height: 50px;
       border-radius: 50%;
-      background-color: #e5e5ea;
+      background-color: #f2f2f7;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 1.2rem;
       color: #333;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+
+      .category-icon {
+        width: 24px;
+        height: 24px;
+      }
     }
 
     .cat-name {
@@ -179,39 +230,13 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-
-  .concept-toggle {
-    background: white;
-    border: none;
-    padding: 15px;
-    border-radius: 12px;
-    color: #8e8e93;
-    font-size: 0.9rem;
-    text-align: left;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-    width: 100%;
-
-    .toggle-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-    }
-
-    .arrow-icon {
-      transition: transform 0.3s ease;
-
-      &.is-expanded {
-        transform: rotate(180deg);
-      }
-    }
-  }
+  margin: 5px 0; // Reduced from 20px
 
   .concept-input-wrapper {
     background: white;
     padding: 5px 15px;
     border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 
     .concept-input {
       width: 100%;
@@ -219,16 +244,33 @@
       padding: 10px 0;
       outline: none;
       font-size: 1rem;
+      color: #333;
+
+      &::placeholder {
+        color: #8e8e93;
+      }
     }
   }
 }
 
 .recurring-section {
-  background: white;
+  background: transparent; // No background by default
   border-radius: 20px;
-  padding: 20px;
-  margin-bottom: 50px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  padding: 0; // No padding when collapsed
+  box-shadow: none; // No shadow when collapsed
+  margin: 5px 0; // Tighter vertical space
+  transition: all 0.3s ease;
+
+  &.is-active {
+    background: white;
+    padding: 0px 20px 50px 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    margin: 15px 0;
+
+    @media (max-width: 360px) {
+      padding: 15px 12px;
+    }
+  }
 
   .recurring-header {
     display: flex;
@@ -236,10 +278,11 @@
     align-items: center;
     font-weight: 500;
     color: #333;
+    padding-bottom: 5px;
   }
 
   .recurring-options {
-    margin-top: 20px;
+    margin-top: 25px;
     display: flex;
     flex-direction: column;
     gap: 15px;
@@ -249,6 +292,8 @@
       padding: 4px;
       border-radius: 20px;
       display: flex;
+      flex-wrap: wrap; // Allow wrapping if items are too wide
+      gap: 4px;
 
       button {
         flex: 1;
@@ -259,6 +304,18 @@
         font-size: 0.85rem;
         color: #666;
         cursor: pointer;
+        min-width: 0; // Allow shrinking
+        white-space: nowrap; // Don't wrap text inside buttons
+
+        @media (max-width: 375px) {
+          font-size: 0.7rem; // Even smaller
+          padding: 6px 2px;
+        }
+
+        @media (max-width: 320px) {
+          font-size: 0.6rem;
+          padding: 4px 0;
+        }
 
         &.active {
           background: #555;
@@ -278,6 +335,8 @@
       background: #eee;
       border-radius: 8px;
       display: flex;
+      flex-wrap: wrap;
+      gap: 2px;
       padding: 2px;
 
       button {
@@ -288,13 +347,25 @@
         font-size: 0.8rem;
         cursor: pointer;
         border-radius: 6px;
+        min-width: 0;
+        white-space: nowrap;
+
+        @media (max-width: 375px) {
+          font-size: 0.7rem; // Even smaller
+          padding: 6px 2px;
+        }
+
+        @media (max-width: 320px) {
+          font-size: 0.65rem;
+          padding: 4px 1px;
+        }
 
         &.active {
           color: #333;
           font-weight: 600;
           &::before {
             content: '• ';
-            color: #333;
+            color: #4cd964;
           }
         }
       }
@@ -370,7 +441,7 @@
   bottom: 0;
   left: 0;
   width: 100%;
-  background: #9e9ea5;
+  background: #a0a0a5; // More neutral gray
   z-index: 90;
   padding: 0 20px 80px 20px;
   border-radius: 25px 25px 0 0;
@@ -379,7 +450,7 @@
   flex-direction: column;
   align-items: center;
   transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-  transform: translateY(calc(100% - 110px));
+  transform: translateY(calc(100% - 105px));
 
   &.is-visible {
     transform: translateY(0);
@@ -388,7 +459,7 @@
 
 .handle-area {
   width: 100%;
-  height: 50px;
+  height: 40px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -407,28 +478,30 @@
 
 .numeric-grid {
   display: grid;
-  grid-template-columns: repeat(3, 0.1fr);
-  gap: 4px 4px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px 4px; // Aggressively reduced from 8px
   width: 100%;
-  max-width: 320px;
-  margin-bottom: 25px;
+  max-width: 240px; // Significantly narrower to bring buttons together
+  margin-bottom: 12px; // Even tighter
+  margin-top: 0;
   margin-left: auto;
   margin-right: auto;
+  justify-items: center;
   justify-content: center;
 
   button {
-    width: 50px;
-    height: 50px;
+    width: 54px; // Further reduced from 60px
+    height: 54px; // Further reduced from 60px
     border-radius: 50%;
-    background-color: #6b6b6b;
+    background-color: #5c5c64; // Darker purple-gray shade
     border: none;
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 
     &:active {
       background-color: #8e8e8e;
@@ -441,13 +514,13 @@
   color: white;
   border: none;
   height: 2.5rem;
-  width: 75%;
-  max-width: 320px;
+  width: 65%;
+  max-width: 240px;
   border-radius: 30px;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
   display: block;
   margin-left: auto;
   margin-right: auto;
@@ -460,21 +533,32 @@
 @media (min-width: 768px) {
   .add-movement {
     margin-left: 240px;
-    margin-right: 400px;
+    margin-right: 300px; // Reduce space allocated to keypad
     min-height: 100vh;
     height: auto;
     justify-content: center;
-    padding-bottom: 50px;
+    padding-bottom: 30px;
+    padding-top: 50px; // Added top padding so content is not glued to roof on PC
     background-color: #ececec;
+
+    &.spacer-active {
+      padding-bottom: 0px; // Don't apply mobile spacer for desktop
+    }
   }
 
   .form-container {
     margin-right: auto;
     margin-left: auto;
-    max-width: 900px;
-    margin-bottom: 20px;
+    max-width: 600px; // Very compact on desktop
+    gap: 30px; // Add static gap spacing
+    justify-content: flex-start; // Override mobile space-evenly so they group at top
     .type-selector {
       gap: 40px;
+      margin-top: 0; // The desktop header covers the spacing in Edit Transaction
+
+      &.is-add-view {
+        margin-top: 20px; // Add some specific spacing just for Add Transaction
+      }
 
       button {
         padding: 12px 50px;
@@ -492,14 +576,16 @@
 
     .amount-display {
       .currency-label {
-        font-size: 1rem;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 20px;
       }
       .amount-value {
         .currency {
-          font-size: 1.5rem;
+          font-size: 1.2rem;
         }
         .value {
-          font-size: 5rem;
+          font-size: 3.5rem;
         }
       }
     }
@@ -513,15 +599,16 @@
 
       &:hover {
         background: none;
-        transform: scale(1.2);
+        transform: scale(1.1);
         opacity: 1;
       }
     }
 
     .categories-slider {
+      gap: 25px;
       .category-item {
-        min-width: 90px;
-        gap: 12px;
+        min-width: 70px;
+        gap: 10px;
         opacity: 0.5;
 
         &.selected {
@@ -529,7 +616,8 @@
 
           .icon-circle {
             background-color: #a698c4;
-            border: 2px solid #fff;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 0 3px #a698c4;
             color: white;
           }
 
@@ -539,28 +627,33 @@
         }
 
         .icon-circle {
-          width: 70px;
-          height: 70px;
-          font-size: 1.8rem;
-          border-radius: 20px;
+          width: 55px;
+          height: 55px;
+          font-size: 1.4rem;
+          border-radius: 50%;
           background-color: rgba(255, 255, 255, 0.3);
-          border: none;
+          border: 1px solid rgba(255, 255, 255, 0.2);
           color: #333;
+
+          .category-icon {
+            width: 30px;
+            height: 30px;
+          }
         }
         .cat-name {
-          font-size: 0.9rem;
+          font-size: 0.8rem;
         }
       }
     }
 
     .concept-section {
       .concept-toggle {
-        padding: 20px;
-        font-size: 1.1rem;
+        padding: 15px;
+        font-size: 0.95rem;
       }
       .concept-input {
-        font-size: 1.2rem;
-        padding: 15px 0;
+        font-size: 1rem;
+        padding: 10px 0;
       }
     }
 
@@ -597,23 +690,24 @@
     left: auto;
     right: 0;
     top: 0;
-    width: 400px;
+    width: 300px; // Shrunk from 400px
     height: 100vh;
     transform: none !important;
     border-radius: 0;
-    padding-top: 100px;
+    padding-top: 80px; // Reduced padding
     justify-content: center;
-    background: #938c9c;
+    background: #a0a0a5;
     box-shadow: none;
 
     .numeric-grid {
-      gap: 10px;
+      gap: 15px; // Increased gap to match smaller buttons
+      margin-bottom: 20px;
 
       button {
-        width: 70px;
-        height: 70px;
+        width: 60px; // Shrunk from 70px
+        height: 60px;
         background-color: rgba(0, 0, 0, 0.2);
-        font-size: 2rem;
+        font-size: 1.5rem; // Shrunk from 2rem
 
         &:active {
           background-color: rgba(0, 0, 0, 0.4);
@@ -623,10 +717,10 @@
 
     .save-btn {
       background: #3c3c3c;
-      height: 3.5rem;
-      font-size: 1.2rem;
-      max-width: 280px;
-      padding: 20px;
+      height: 3rem; // Slightly shorter
+      font-size: 1.1rem;
+      max-width: 240px;
+      padding: 15px; // Reduced padding
     }
 
     .handle-area {

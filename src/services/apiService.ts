@@ -28,6 +28,9 @@ class ApiService {
   }
 
   private async postWithAuth<T>(url: string, body: any): Promise<T> {
+    console.log('🔵 POST Request:', url)
+    console.log('📦 Payload:', JSON.stringify(body, null, 2))
+
     const response = await fetch(url, {
       method: 'POST',
       headers: authService.getAuthHeaders(),
@@ -40,9 +43,22 @@ class ApiService {
     }
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Error desconocido' }))
-      throw new Error(error.message || `Error ${response.status}`)
+      let errorDetails = 'Error desconocido'
+      try {
+        const errorBody = await response.text()
+        console.error('❌ Response body:', errorBody)
+        try {
+          const errorJson = JSON.parse(errorBody)
+          errorDetails = errorJson.message || errorJson.title || JSON.stringify(errorJson)
+        } catch {
+          errorDetails = errorBody
+        }
+      } catch (e) {
+        console.error('❌ No se pudo leer el cuerpo de la respuesta:', e)
+      }
+      throw new Error(`Error ${response.status}: ${errorDetails}`)
     }
+
     if (response.status === 204) {
       console.log('✅ 204 No Content - Operación exitosa')
       return {} as T
@@ -192,11 +208,14 @@ class ApiService {
   // ==================== TRANSACTIONS ====================
 
   async getAccountTransactions(accountId: number): Promise<Transaction[]> {
-    return this.fetchWithAuth<Transaction[]>(`${API_BASE_URL}/Account/${accountId}/transactions`)
+    return this.fetchWithAuth<Transaction[]>(`${API_BASE_URL}/accounts/${accountId}/transactions`)
   }
 
   async createTransaction(accountId: number, data: Partial<Transaction>): Promise<Transaction> {
-    return this.postWithAuth<Transaction>(`${API_BASE_URL}/Account/${accountId}/transactions`, data)
+    return this.postWithAuth<Transaction>(
+      `${API_BASE_URL}/accounts/${accountId}/transactions`,
+      data,
+    )
   }
 
   async getTransaction(transactionId: number): Promise<Transaction> {
@@ -226,7 +245,7 @@ class ApiService {
   }
 
   async updateObjective(objectiveId: number, data: Partial<Objective>): Promise<void> {
-    return this.putWithAuth<void>(`${API_BASE_URL}/${objectiveId}`, data) // Note: Backend seems to use /{id} for objectives updates based on ObjectiveStore code
+    return this.putWithAuth<void>(`${API_BASE_URL}/${objectiveId}`, data)
   }
 
   async deleteObjective(objectiveId: number): Promise<void> {
