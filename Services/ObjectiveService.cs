@@ -47,12 +47,27 @@ namespace wandaAPI.Services
                 throw new ArgumentException("La fecha límite debe ser una fecha futura.");
         }
 
-        public async Task<List<Objective>> GetByAccountAsync(int accountId)
+        public async Task<List<Objective>> GetByAccountAsync(int accountId, bool? isCompleted = null, bool? isArchived = null)
         {
             if (accountId <= 0) throw new ArgumentException("El ID de cuenta no es válido.");
 
+
             var objectives = await _objectiveRepository.GetByAccountIdAsync(accountId);
-            return objectives;
+
+
+            var query = objectives.AsEnumerable();
+
+            if (isCompleted.HasValue)
+            {
+                query = query.Where(o => o.Is_completed == isCompleted.Value);
+            }
+
+            if (isArchived.HasValue)
+            {
+                query = query.Where(o => o.Is_archived == isArchived.Value);
+            }
+
+            return query.ToList();
         }
 
         public async Task<Objective> CreateAsync(int accountId, ObjectiveCreateDto dto)
@@ -68,6 +83,8 @@ namespace wandaAPI.Services
                 Target_amount = dto.Target_amount,
                 Current_save = 0,
                 Deadline = dto.Deadline,
+                Is_completed = false,
+                Is_archived = false
             };
 
             int id = await _objectiveRepository.AddAsync(objective);
@@ -90,7 +107,7 @@ namespace wandaAPI.Services
             var objective = await _objectiveRepository.GetByIdAsync(id);
             if (objective == null) throw new KeyNotFoundException("Objetivo no encontrado.");
 
-          
+
             if (objective.Current_save + amount > objective.Target_amount)
             {
                 double restante = objective.Target_amount - objective.Current_save;
@@ -101,11 +118,8 @@ namespace wandaAPI.Services
 
             objective.Current_save += amount;
 
-        
-            if (objective.Current_save >= objective.Target_amount)
-            {
-                objective.Is_completed = true;
-            }
+
+            objective.Is_completed = objective.Current_save >= objective.Target_amount;
 
             await _objectiveRepository.UpdateAsync(objective);
         }
@@ -113,18 +127,20 @@ namespace wandaAPI.Services
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
-            var account = await _objectiveRepository.GetByIdAsync(id);
-            if (account == null) throw new KeyNotFoundException("El objetivo no existe.");
-
+            var objective = await _objectiveRepository.GetByIdAsync(id);
+            if (objective == null) throw new KeyNotFoundException("El objetivo no existe.");
 
             ValidateObjectiveData(dto.Name, dto.Target_amount, dto.Current_save, dto.Deadline);
 
-            account.Name = dto.Name;
-            account.Target_amount = dto.Target_amount;
-            account.Current_save = dto.Current_save;
-            account.Deadline = dto.Deadline;
+            objective.Name = dto.Name;
+            objective.Target_amount = dto.Target_amount;
+            objective.Current_save = dto.Current_save;
+            objective.Deadline = dto.Deadline;
 
-            await _objectiveRepository.UpdateAsync(account);
+           
+            objective.Is_completed = objective.Current_save >= objective.Target_amount;
+
+            await _objectiveRepository.UpdateAsync(objective);
         }
 
         public async Task DeleteAsync(int id)

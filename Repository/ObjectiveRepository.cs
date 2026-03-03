@@ -19,8 +19,10 @@ namespace wandaAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-             
-                string query = "SELECT objective_id, account_id, name, target_amount, current_save, deadline, is_completed FROM OBJECTIVES WHERE account_id = @account_id";
+                
+                string query = @"SELECT objective_id, account_id, name, target_amount, current_save, deadline, is_completed, is_archived 
+                                 FROM OBJECTIVES 
+                                 WHERE account_id = @account_id";
 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -38,7 +40,8 @@ namespace wandaAPI.Repositories
                                 Target_amount = reader.IsDBNull(3) ? 0 : Convert.ToDouble(reader.GetDecimal(3)),
                                 Current_save = reader.IsDBNull(4) ? 0 : Convert.ToDouble(reader.GetDecimal(4)),
                                 Deadline = reader.GetDateTime(5),
-                                Is_completed = reader.GetBoolean(6) 
+                                Is_completed = reader.GetBoolean(6),
+                                Is_archived = reader.GetBoolean(7) 
                             });
                         }
                     }
@@ -52,8 +55,7 @@ namespace wandaAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-           
-                string query = "SELECT objective_id, account_id, name, target_amount, current_save, deadline, is_completed FROM OBJECTIVES WHERE objective_id = @objective_id";
+                string query = "SELECT objective_id, account_id, name, target_amount, current_save, deadline, is_completed, is_archived FROM OBJECTIVES WHERE objective_id = @objective_id";
 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -71,7 +73,8 @@ namespace wandaAPI.Repositories
                                 Target_amount = reader.IsDBNull(3) ? 0 : Convert.ToDouble(reader.GetDecimal(3)),
                                 Current_save = reader.IsDBNull(4) ? 0 : Convert.ToDouble(reader.GetDecimal(4)),
                                 Deadline = reader.GetDateTime(5),
-                                Is_completed = reader.GetBoolean(6) 
+                                Is_completed = reader.GetBoolean(6),
+                                Is_archived = reader.GetBoolean(7)
                             };
                         }
                     }
@@ -85,9 +88,9 @@ namespace wandaAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                // Se incluye is_completed en el INSERT
-                string query = @"INSERT INTO OBJECTIVES (account_id, name, target_amount, current_save, deadline, is_completed) 
-                                 VALUES (@account_id, @name, @target_amount, @current_save, @deadline, @is_completed);
+
+                string query = @"INSERT INTO OBJECTIVES (account_id, name, target_amount, current_save, deadline, is_completed, is_archived) 
+                                 VALUES (@account_id, @name, @target_amount, @current_save, @deadline, @is_completed, @is_archived);
                                  SELECT SCOPE_IDENTITY();";
 
                 using (var command = new SqlCommand(query, connection))
@@ -98,6 +101,7 @@ namespace wandaAPI.Repositories
                     command.Parameters.AddWithValue("@current_save", objective.Current_save);
                     command.Parameters.AddWithValue("@deadline", objective.Deadline);
                     command.Parameters.AddWithValue("@is_completed", objective.Is_completed);
+                    command.Parameters.AddWithValue("@is_archived", objective.Is_archived);
 
                     var result = await command.ExecuteScalarAsync();
                     return Convert.ToInt32(result);
@@ -110,9 +114,10 @@ namespace wandaAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                
+
                 string query = @"UPDATE OBJECTIVES SET name = @name, target_amount = @target_amount, current_save = @current_save, 
-                                 deadline = @deadline, is_completed = @is_completed WHERE objective_id = @objective_id";
+                                 deadline = @deadline, is_completed = @is_completed, is_archived = @is_archived 
+                                 WHERE objective_id = @objective_id";
 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -122,6 +127,7 @@ namespace wandaAPI.Repositories
                     command.Parameters.AddWithValue("@current_save", objective.Current_save);
                     command.Parameters.AddWithValue("@deadline", objective.Deadline);
                     command.Parameters.AddWithValue("@is_completed", objective.Is_completed);
+                    command.Parameters.AddWithValue("@is_archived", objective.Is_archived);
 
                     await command.ExecuteNonQueryAsync();
                 }
@@ -144,7 +150,7 @@ namespace wandaAPI.Repositories
                             await cmd1.ExecuteNonQueryAsync();
                         }
 
-                        string deleteObjective = "DELETE FROM OBJECTIVES WHERE objective_id = @objective_id"; 
+                        string deleteObjective = "DELETE FROM OBJECTIVES WHERE objective_id = @objective_id";
                         using (var cmd2 = new SqlCommand(deleteObjective, connection, transaction))
                         {
                             cmd2.Parameters.AddWithValue("@objective_id", id);

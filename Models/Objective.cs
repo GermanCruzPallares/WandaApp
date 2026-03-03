@@ -10,10 +10,11 @@ namespace Models
         public DateTime Deadline { get; set; }
 
         public bool Is_completed { get; set; }
+        public bool Is_archived { get; set; }
 
         public Objective() { }
 
-        public Objective(int account_id, string name, double target_amount, double current_save, DateTime deadline, bool is_completed)
+        public Objective(int account_id, string name, double target_amount, double current_save, DateTime deadline, bool is_completed, bool is_archived)
         {
             Account_id = account_id;
             Name = name;
@@ -21,6 +22,7 @@ namespace Models
             Current_save = current_save;
             Deadline = deadline;
             Is_completed= is_completed;
+            Is_archived = is_archived;
         }
     }
 }

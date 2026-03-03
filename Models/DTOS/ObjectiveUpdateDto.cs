@@ -8,5 +8,6 @@ public class ObjectiveUpdateDto
     public DateTime Deadline { get; set; }
 
     public bool Is_completed {get; set;}
+    public bool Is_archived { get; set; }
 
 }

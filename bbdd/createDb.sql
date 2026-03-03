@@ -58,6 +58,7 @@ CREATE TABLE OBJECTIVES (
     current_save DECIMAL(18, 2) DEFAULT 0.00,
     deadline DATE NULL,
     is_completed BIT DEFAULT 0,
+    is_archived BIT DEFAULT 0,
     CONSTRAINT FK_Objectives_Account FOREIGN KEY (account_id) REFERENCES ACCOUNTS(account_id) ON DELETE CASCADE
 );
 

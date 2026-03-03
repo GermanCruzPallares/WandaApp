@@ -19,12 +19,12 @@ namespace wandaAPI.Controllers
         }
 
         [HttpGet("accounts/{accountId}/objectives")]
-        public async Task<IActionResult> GetByAccount(int accountId)
+        public async Task<IActionResult> GetByAccount(int accountId,[FromQuery] bool? isCompleted, [FromQuery] bool? isArchived)
         {
             try
             {
-                var Objective = await _service.GetByAccountAsync(accountId);
-                return Ok(Objective);
+                var objectives = await _service.GetByAccountAsync(accountId, isCompleted, isArchived );
+                return Ok(objectives);
             }
             catch (KeyNotFoundException ex)
             {
