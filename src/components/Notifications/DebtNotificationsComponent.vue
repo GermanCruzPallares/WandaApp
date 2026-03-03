@@ -3,10 +3,12 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useTransactionSplitStore } from '@/stores/TransactionSplitStore';
 import { useTransactionStore } from '@/stores/TransactionStore';
 import { useAccountStore } from '@/stores/AccountStore';
-import { apiService } from '@/services/apiService';
+import { useUserStore } from '@/stores/UserStore';
 import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
 import type { TransactionSplit, Transaction, User, Account } from '@/types/models';
 
+
+const userStore = useUserStore();
 // ==================== PROPS ====================
 
 interface Props {
@@ -60,7 +62,7 @@ const loadNotifications = async () => {
 
         let creditor: User | null = null;
         try {
-          creditor = await apiService.getUser(transaction.user_id);
+          creditor = await userStore.fetchUser(transaction.user_id);
         } catch {
           creditor = null;
         }

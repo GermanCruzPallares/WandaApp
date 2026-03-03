@@ -145,7 +145,6 @@
 import { ref, computed } from 'vue';
 import { useUserStore } from '@/stores/UserStore';
 import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
-import { apiService } from '@/services/apiService';
 import type { User, Account } from '@/types/models';
 
 interface Props {
@@ -246,7 +245,7 @@ const handleAddUser = async () => {
       return;
     }
 
-    const accounts = await apiService.getUserAccounts(user.user_id);
+    const accounts = await userStore.fetchUserAccounts(user.user_id);
   
     const personalAccount = accounts.find(acc => acc.account_type === 'personal') || null;
 
