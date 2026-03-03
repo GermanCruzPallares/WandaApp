@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Models;
+using Models.DTOS;
 using wandaAPI.Repositories;
 using wandaAPI.Services;
 
@@ -113,21 +114,15 @@ namespace wandaAPI.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin")] 
+        [Authorize(Roles = "Admin")]
         [HttpGet("stats")]
-        public async Task<ActionResult> GetSystemStats()
+        public async Task<ActionResult<SystemStatsDto>> GetSystemStats()
         {
             try
             {
-                
-                var allUsers = await _userService.GetAllAsync();
 
-                return Ok(new
-                {
-                    TotalUsers = allUsers.Count,
-                    TotalAdmins = allUsers.Count(u => u.Role == "Admin"),
-                    TotalRegularUsers = allUsers.Count(u => u.Role == "User")
-                });
+                var stats = await _userService.GetSystemStatsAsync();
+                return Ok(stats);
             }
             catch (Exception ex)
             {

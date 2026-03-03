@@ -1,6 +1,7 @@
 using Models;
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration; // Asegúrate de tener esto para IConfiguration
+using Microsoft.Extensions.Configuration;
+using Models.DTOS; // Asegúrate de tener esto para IConfiguration
 
 namespace wandaAPI.Repositories
 {
@@ -140,7 +141,7 @@ namespace wandaAPI.Repositories
             using (var connection = new SqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                
+
                 // CORRECCIÓN: Añadido u.role al SELECT para que el GetString(4) no de error
                 string query = @"
             SELECT u.user_id, u.name, u.email, u.password, u.role 
@@ -168,6 +169,56 @@ namespace wandaAPI.Repositories
                 }
             }
             return users;
+        }
+
+
+        public async Task<SystemStatsDto> GetSystemStatsAsync()
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                string query = @"
+            SELECT 
+                (SELECT COUNT(*) FROM USERS) as TotalUsers,
+                (SELECT COUNT(*) FROM USERS WHERE role = 'Admin') as TotalAdmins,
+                (SELECT COUNT(*) FROM USERS WHERE role = 'User') as TotalRegular,
+                (SELECT COUNT(*) FROM ACCOUNTS) as TotalAccounts,
+                (SELECT COUNT(*) FROM ACCOUNTS WHERE account_type = 'personal') as TotalPersonal,
+                (SELECT COUNT(*) FROM ACCOUNTS WHERE account_type = 'joint') as TotalJoint,
+                (SELECT COUNT(*) FROM TRANSACTIONS) as TotalTransactions,
+                (SELECT SUM(amount) FROM ACCOUNTS WHERE account_type = 'personal') as TotalBalance";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            return new SystemStatsDto
+                            {
+                                Users = new UserStatsDto
+                                {
+                                    Total = reader.GetInt32(0),
+                                    Admins = reader.GetInt32(1),
+                                    RegularUsers = reader.GetInt32(2)
+                                },
+                                Accounts = new AccountStatsDto
+                                {
+                                    Total = reader.GetInt32(3),
+                                    Personal = reader.GetInt32(4),
+                                    Joint = reader.GetInt32(5)
+                                },
+                                Financials = new FinancialStatsDto
+                                {
+                                    TotalTransactions = reader.GetInt32(6),
+                                    TotalSystemBalance = reader.IsDBNull(7) ? 0 : Convert.ToDouble(reader.GetDecimal(7))
+                                }
+                            };
+                        }
+                    }
+                }
+            }
+            return new SystemStatsDto();
         }
     }
 }
