@@ -103,7 +103,7 @@ namespace wandaAPI.Repositories
             {
                 await connection.OpenAsync();
 
-                // CORRECCIÓN: Añadida la coma antes de role = @role
+        
                 string query = "UPDATE USERS SET name = @name, email = @email, password = @password, role = @role WHERE user_id = @user_id";
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -111,7 +111,7 @@ namespace wandaAPI.Repositories
                     command.Parameters.AddWithValue("@name", user1.Name);
                     command.Parameters.AddWithValue("@email", user1.Email);
                     command.Parameters.AddWithValue("@password", user1.Password);
-                    // CORRECCIÓN: Añadido el parámetro @role que faltaba
+          
                     command.Parameters.AddWithValue("@role", string.IsNullOrEmpty(user1.Role) ? "User" : user1.Role);
 
                     await command.ExecuteNonQueryAsync();
@@ -142,7 +142,7 @@ namespace wandaAPI.Repositories
             {
                 await connection.OpenAsync();
 
-                // CORRECCIÓN: Añadido u.role al SELECT para que el GetString(4) no de error
+              
                 string query = @"
             SELECT u.user_id, u.name, u.email, u.password, u.role 
             FROM USERS u 

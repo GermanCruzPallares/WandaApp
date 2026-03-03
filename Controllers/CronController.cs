@@ -21,7 +21,7 @@ namespace wandaAPI.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> ExecuteCron([FromHeader(Name = "X-Cron-Secret")] string secret)
         {
-            // 1. Validar seguridad: Comparamos la clave recibida con la guardada en configuración
+            
             var expectedSecret = _configuration["CronSettings:SecretKey"];
 
             if (string.IsNullOrEmpty(expectedSecret) || secret != expectedSecret)
@@ -33,14 +33,14 @@ namespace wandaAPI.Controllers
             {
                 Console.WriteLine($"[{DateTime.Now}] Ejecutando CRON de recurrencia...");
 
-                // 2. Llamamos a tu lógica existente
+               
                 await _transactionService.ProcessRecurringTransactionsAsync();
 
                 return Ok(new { message = "Recurrencia ejecutada con éxito.", date = DateTime.Now });
             }
             catch (Exception ex)
             {
-                // Logueamos el error real en la consola del servidor
+                
                 Console.Error.WriteLine($"Error en CRON: {ex.Message}");
                 return StatusCode(500, new { error = ex.Message });
             }

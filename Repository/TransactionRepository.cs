@@ -155,7 +155,7 @@ namespace wandaAPI.Repositories
             {
                 await connection.OpenAsync();
 
-                // Añadida la columna transaction_date para que se guarde la fecha del objeto
+        
                 string query = @"
                     INSERT INTO TRANSACTIONS (account_id, user_id, objective_id, category, amount, transaction_type, concept, isRecurring, frequency, transaction_date, end_date, split_type, last_execution_date ) 
                     VALUES (@account_id, @user_id, @objective_id, @category, @amount, @type, @concept, @isRecurring, @frequency, @date, @end_date, @split, @last_execution_date);

@@ -45,7 +45,6 @@ namespace wandaAPI.Controllers
             // Generar Token
             var tokenHandler = new JwtSecurityTokenHandler();
 
-            // IMPORTANTE: Usar UTF8 para coincidir con Program.cs
             var key = Encoding.UTF8.GetBytes(_configuration["JWT:SecretKey"]);
 
             var tokenDescriptor = new SecurityTokenDescriptor
