@@ -2,25 +2,38 @@
 import AdminAsidenav from '@/components/Admin/AdminAsidenav.vue';
 import AdminBottomnav from '@/components/Admin/AdminBottomnav.vue';
 import TopNav from '@/components/Navs/TopNav.vue';
-
+import AdminDashboard from '@/components/Admin/AdminDashboard.vue';
 </script>
 
 <template>
+  <AdminAsidenav />
+  <TopNav class="mobile-only" />
 
-<AdminAsidenav></AdminAsidenav>
-<TopNav 
-    class="mobile-only"
-/>
+  <main class="admin-content">
+    <AdminDashboard />
+  </main>
 
-<AdminBottomnav class="mobile-only"></AdminBottomnav>
-
+  <AdminBottomnav class="mobile-only" />
 </template>
 
 <style scoped lang="scss">
+@import '@/styles/base/variables.scss';
 
 .mobile-only {
   @media (min-width: 768px) {
     display: none;
+  }
+}
+
+.admin-content {
+  margin-left: $aside-nav-width;
+  min-height: 100vh;
+  background-color: $background-principal;
+
+  @media (max-width: $breakpoint-mobile) {
+    margin-left: 0;
+    padding-top: $navbar-height;
+    padding-bottom: 100px;
   }
 }
 </style>

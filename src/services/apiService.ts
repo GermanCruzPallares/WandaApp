@@ -3,9 +3,28 @@ import type { Account, User, Transaction, Objective } from '@/types/models';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:7777/api';
 
+// ==================== INTERFACES ====================
+
+export interface SystemStats {
+  users: {
+    total: number;
+    admins: number;
+    regularUsers: number;
+  };
+  accounts: {
+    total: number;
+    personal: number;
+    joint: number;
+  };
+  financials: {
+    totalTransactions: number;
+    totalSystemBalance: number;
+  };
+}
+
 class ApiService {
   // ==================== MÉTODOS PRIVADOS (HTTP) ====================
-  
+
   private async fetchWithAuth<T>(url: string): Promise<T> {
     const response = await fetch(url, {
       method: 'GET',
@@ -42,15 +61,15 @@ class ApiService {
       throw new Error(error.message || `Error ${response.status}`);
     }
     if (response.status === 204) {
-    console.log('204 No Content - Operación exitosa');
-    return {} as T;
-  }
-   const contentType = response.headers.get('content-type');
-  if (!contentType || !contentType.includes('application/json')) {
-    const textResponse = await response.text();
-    console.log('Respuesta de texto:', textResponse);
-    return {} as T; 
-  }
+      console.log('204 No Content - Operación exitosa');
+      return {} as T;
+    }
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const textResponse = await response.text();
+      console.log('Respuesta de texto:', textResponse);
+      return {} as T;
+    }
 
     return response.json();
   }
@@ -60,7 +79,7 @@ class ApiService {
     console.log('🔵 PUT Request:', url);
     console.log('📦 Payload:', JSON.stringify(body, null, 2));
     console.trace('🔍 ¿Quién llamó a putWithAuth?');
-    
+
     const response = await fetch(url, {
       method: 'PUT',
       headers: authService.getAuthHeaders(),
@@ -73,12 +92,12 @@ class ApiService {
     }
 
     if (!response.ok) {
-    
+
       let errorDetails = 'Error desconocido';
       try {
         const errorBody = await response.text();
         console.error('Response body:', errorBody);
-        
+
         try {
           const errorJson = JSON.parse(errorBody);
           errorDetails = errorJson.message || errorJson.title || JSON.stringify(errorJson);
@@ -88,7 +107,7 @@ class ApiService {
       } catch (e) {
         console.error('No se pudo leer el cuerpo de la respuesta:', e);
       }
-      
+
       throw new Error(`Error ${response.status}: ${errorDetails}`);
     }
 
@@ -146,9 +165,9 @@ class ApiService {
 
       const users = await response.json();
       return Array.isArray(users) && users.length > 0 ? users[0] : null;
-      
+
     } catch (error) {
-      console.error('❌ Error buscando usuario por email:', error);
+      console.error('Error buscando usuario por email:', error);
       return null;
     }
   }
@@ -170,7 +189,7 @@ class ApiService {
 
   async createJointAccount(data: {
     name: string;
-    member_Ids: number[]; 
+    member_Ids: number[];
   }): Promise<void> {
     console.log('📡 POST /api/Account');
     console.log('📦 Payload:', JSON.stringify(data, null, 2));
@@ -178,9 +197,9 @@ class ApiService {
   }
 
   async updateAccount(accountId: number, data: Partial<Account>): Promise<void> {
-  
+
     const currentAccount = await this.getAccount(accountId);
-    
+
     const updatePayload = {
       name: data.name !== undefined ? data.name : currentAccount.name,
       amount: data.amount !== undefined ? data.amount : currentAccount.amount,
@@ -188,14 +207,14 @@ class ApiService {
       monthly_budget: data.monthly_budget !== undefined ? data.monthly_budget : currentAccount.monthly_budget,
       account_picture_url: data.account_picture_url !== undefined ? data.account_picture_url : (currentAccount.account_picture_url ?? ''),
     };
-    
+
     console.log('🔵 updateAccount - merge con datos actuales:', updatePayload);
-    
+
     return this.putWithAuth<void>(`${API_BASE_URL}/Account/${accountId}`, updatePayload);
   }
 
   // ==================== TRANSACTIONS ====================
-  
+
   async getAccountTransactions(accountId: number): Promise<Transaction[]> {
     return this.fetchWithAuth<Transaction[]>(`${API_BASE_URL}/Account/${accountId}/transactions`);
   }
@@ -205,7 +224,7 @@ class ApiService {
   }
 
   // ==================== OBJECTIVES ====================
-  
+
   async getAccountObjectives(accountId: number): Promise<Objective[]> {
     return this.fetchWithAuth<Objective[]>(`${API_BASE_URL}/Account/${accountId}/objectives`);
   }
@@ -213,6 +232,13 @@ class ApiService {
   async createObjective(accountId: number, data: Partial<Objective>): Promise<Objective> {
     return this.postWithAuth<Objective>(`${API_BASE_URL}/Account/${accountId}/objectives`, data);
   }
+
+  // ==================== ADMIN STATS ====================
+
+  async getSystemStats(): Promise<SystemStats> {
+    return this.fetchWithAuth<SystemStats>(`${API_BASE_URL}/User/stats`);
+  }
+
 }
 
 export const apiService = new ApiService();
