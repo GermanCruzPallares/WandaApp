@@ -90,10 +90,25 @@ namespace wandaAPI.Services
             var objective = await _objectiveRepository.GetByIdAsync(id);
             if (objective == null) throw new KeyNotFoundException("Objetivo no encontrado.");
 
+          
+            if (objective.Current_save + amount > objective.Target_amount)
+            {
+                double restante = objective.Target_amount - objective.Current_save;
+                throw new InvalidOperationException(
+                    $"La aportación de {amount}€ excede el objetivo '{objective.Name}'. " +
+                    $"Solo faltan {restante}€ para completarlo.");
+            }
+
             objective.Current_save += amount;
+
+        
+            if (objective.Current_save >= objective.Target_amount)
+            {
+                objective.Is_completed = true;
+            }
+
             await _objectiveRepository.UpdateAsync(objective);
         }
-
         public async Task UpdateAsync(int id, ObjectiveUpdateDto dto)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));

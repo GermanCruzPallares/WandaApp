@@ -363,7 +363,6 @@ namespace wandaAPI.Services
                 var objective = await _objectiveRepository.GetByIdAsync(tx.Objective_id);
                 if (objective != null)
                 {
-
                     if (objective.Current_save + tx.Amount > objective.Target_amount)
                     {
                         double restante = objective.Target_amount - objective.Current_save;
@@ -372,7 +371,11 @@ namespace wandaAPI.Services
                             $"Solo faltan {restante}€ para completarlo."
                         );
                     }
+
                     objective.Current_save += tx.Amount;
+
+                    objective.Is_completed = objective.Current_save >= objective.Target_amount;
+
                     await _objectiveRepository.UpdateAsync(objective);
                 }
             }
@@ -493,14 +496,15 @@ namespace wandaAPI.Services
         // Deshace el movimiento de ahorro
         private async Task RevertObjectiveEffectAsync(Models.Transaction tx)
         {
-            if (tx.Transaction_type.ToLower() == "saving" && tx.Objective_id > 0)
+            if (tx.Transaction_type == "saving" && tx.Objective_id > 0)
             {
                 var objective = await _objectiveRepository.GetByIdAsync(tx.Objective_id);
                 if (objective != null)
                 {
                     objective.Current_save -= tx.Amount;
-
                     if (objective.Current_save < 0) objective.Current_save = 0;
+
+                    objective.Is_completed = objective.Current_save >= objective.Target_amount;
 
                     await _objectiveRepository.UpdateAsync(objective);
                 }
@@ -530,7 +534,16 @@ namespace wandaAPI.Services
                 var objective = await _objectiveRepository.GetByIdAsync(tx.Objective_id);
                 if (objective != null)
                 {
+
+                    if (objective.Current_save + difference > objective.Target_amount)
+                    {
+                        throw new InvalidOperationException("El nuevo monto excede la meta del objetivo.");
+                    }
+
                     objective.Current_save += difference;
+
+                    objective.Is_completed = objective.Current_save >= objective.Target_amount;
+
                     await _objectiveRepository.UpdateAsync(objective);
                 }
             }
