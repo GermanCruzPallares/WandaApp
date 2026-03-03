@@ -19,11 +19,11 @@ namespace wandaAPI.Controllers
         }
 
         [HttpGet("accounts/{accountId}/objectives")]
-        public async Task<IActionResult> GetByAccount(int accountId,[FromQuery] bool? isCompleted, [FromQuery] bool? isArchived)
+        public async Task<IActionResult> GetByAccount(int accountId, [FromQuery] bool? isCompleted, [FromQuery] bool? isArchived)
         {
             try
             {
-                var objectives = await _service.GetByAccountAsync(accountId, isCompleted, isArchived );
+                var objectives = await _service.GetByAccountAsync(accountId, isCompleted, isArchived);
                 return Ok(objectives);
             }
             catch (KeyNotFoundException ex)
@@ -33,19 +33,31 @@ namespace wandaAPI.Controllers
 
         }
 
+        [HttpPatch("/api/objectives/{id}/archive")]
+        public async Task<IActionResult> Archive(int id, [FromQuery] bool archive = true)
+        {
+            try
+            {
+                await _service.ArchiveAsync(id, archive);
+                return NoContent();
+            }
+            catch (KeyNotFoundException) { return NotFound(); }
+            catch (Exception ex) { return StatusCode(500, ex.Message); }
+        }
 
-   
+
+
         [HttpGet("objectives/{objectiveId}")]
         public async Task<ActionResult<Objective>> GetById(int objectiveId)
         {
-            
-            if (objectiveId <= 0) 
+
+            if (objectiveId <= 0)
                 return BadRequest("El ID del objetivo no es válido.");
 
             try
-            {            
+            {
                 var objective = await _service.GetByIdAsync(objectiveId);
-                
+
                 return Ok(objective);
             }
             catch (KeyNotFoundException ex)

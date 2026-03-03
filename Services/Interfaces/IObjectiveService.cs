@@ -10,5 +10,7 @@ namespace wandaAPI.Services
         Task UpdateAsync(int id, ObjectiveUpdateDto dto);
         Task DeleteAsync(int id);
         Task AddFundsAsync(int id, double amount);
+
+        Task ArchiveAsync(int id, bool archive);
     }
 }

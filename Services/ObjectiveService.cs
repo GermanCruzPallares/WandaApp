@@ -143,6 +143,15 @@ namespace wandaAPI.Services
             await _objectiveRepository.UpdateAsync(objective);
         }
 
+        public async Task ArchiveAsync(int id, bool archive)
+        {
+            var objective = await _objectiveRepository.GetByIdAsync(id);
+            if (objective == null) throw new KeyNotFoundException("El objetivo no existe.");
+
+            objective.Is_archived = archive;
+            await _objectiveRepository.UpdateAsync(objective);
+        }
+
         public async Task DeleteAsync(int id)
         {
             var objective = await _objectiveRepository.GetByIdAsync(id);
