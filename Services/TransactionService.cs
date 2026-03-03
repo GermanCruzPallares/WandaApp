@@ -363,6 +363,15 @@ namespace wandaAPI.Services
                 var objective = await _objectiveRepository.GetByIdAsync(tx.Objective_id);
                 if (objective != null)
                 {
+
+                    if (objective.Current_save + tx.Amount > objective.Target_amount)
+                    {
+                        double restante = objective.Target_amount - objective.Current_save;
+                        throw new InvalidOperationException(
+                            $"La aportación de {tx.Amount}€ excede el objetivo '{objective.Name}'. " +
+                            $"Solo faltan {restante}€ para completarlo."
+                        );
+                    }
                     objective.Current_save += tx.Amount;
                     await _objectiveRepository.UpdateAsync(objective);
                 }
