@@ -144,6 +144,39 @@ VALUES (3, 2, 'Hogar', 50.00, 'expense', 'Fibra Óptica', 'contribution');
 INSERT INTO TRANSACTIONS (account_id, user_id, category, amount, transaction_type, concept, split_type)
 VALUES (3, 1, 'Comida', 60.00, 'expense', 'Cena Viernes', 'divided'); 
 
+
+-- *** TODOS LOS EJEMPLOS DE GASTOS FRECUENTES (EXPENSE) ***
+INSERT INTO TRANSACTIONS (account_id, user_id, category, objective_id, amount, transaction_type, concept, split_type, isRecurring, frequency, end_date) VALUES 
+-- 1. Semanal e Indefinido (sin fecha fin)
+(1, 1, 'Otros', NULL, 25.00, 'expense', 'Clases particulares de guitarra', 'individual', 1, 'weekly', NULL),
+-- 2. Semanal y Definido (con fecha fin)
+(1, 1, 'Alimentación', NULL, 30.00, 'expense', 'Cesta de fruta local', 'individual', 1, 'weekly', '2026-06-30'),
+-- 3. Mensual e Indefinido (sin fecha fin)
+(1, 1, 'Suscripciones', NULL, 12.99, 'expense', 'Suscripción Netflix Premium', 'individual', 1, 'monthly', NULL),
+-- 4. Mensual y Definido (con fecha fin)
+(1, 1, 'Salud', NULL, 125.00, 'expense', 'Tratamiento de Ortodoncia', 'individual', 1, 'monthly', '2026-12-31'),
+-- 5. Anual e Indefinido (sin fecha fin)
+(1, 1, 'Facturas', NULL, 450.00, 'expense', 'Seguro del Hogar a todo riesgo', 'individual', 1, 'annual', NULL),
+-- 6. Anual y Definido (con fecha fin)
+(1, 1, 'Ocio', NULL, 180.00, 'expense', 'Abono Socio Club Deportivo', 'individual', 1, 'annual', '2028-06-01');
+-- *** TODOS LOS EJEMPLOS DE INGRESOS FRECUENTES (INCOME) ***
+INSERT INTO TRANSACTIONS (account_id, user_id, category, objective_id, amount, transaction_type, concept, split_type, isRecurring, frequency, end_date) VALUES 
+-- 7. Semanal e Indefinido (sin fecha fin)
+(1, 1, 'Freelance', NULL, 150.00, 'income', 'Mantenimiento web cliente', 'individual', 1, 'weekly', NULL),
+-- 8. Semanal y Definido (con fecha fin)
+(1, 1, 'Venta', NULL, 40.00, 'income', 'Pago a plazos portátil vendido', 'individual', 1, 'weekly', '2026-04-15'),
+-- 9. Mensual e Indefinido (sin fecha fin)
+(1, 1, 'Salario', NULL, 2500.00, 'income', 'Nómina principal', 'individual', 1, 'monthly', NULL),
+-- 10. Mensual y Definido (con fecha fin)
+(1, 1, 'Freelance', NULL, 800.00, 'income', 'Proyecto consultoría temporal', 'individual', 1, 'monthly', '2026-09-01'),
+-- 11. Anual e Indefinido (sin fecha fin)
+(1, 1, 'Inversión', NULL, 600.00, 'income', 'Rentabilidad Fondo Abierto', 'individual', 1, 'annual', NULL),
+-- 12. Anual y Definido (con fecha fin)
+(1, 1, 'Inversión', NULL, 1000.00, 'income', 'Letra del Tesoro / Bono', 'individual', 1, 'annual', '2028-01-01');
+
+
+
+
 -- Reparto de Gastos
 INSERT INTO TRANSACTION_SPLITS (user_id, transaction_id, amount_assigned, status)
 VALUES (1, 3, 30.00, 'settled');
