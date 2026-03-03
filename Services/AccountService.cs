@@ -1,18 +1,12 @@
 using Models;
 using wandaAPI.Repositories;
-using Microsoft.AspNetCore.Http.HttpResults;
-using System.Reflection.Metadata.Ecma335;
-using System.Runtime;
 
 namespace wandaAPI.Services
 {
-
     public class AccountService : IAccountService
     {
-
         private readonly IAccountRepository _accountRepository;
         private readonly IAccountUsersRepository _accountUsersRepository;
-
         private readonly IUserRepository _userRepository;
 
         public AccountService(IAccountRepository accountRepository, IAccountUsersRepository accountUsersRepository, IUserRepository userRepository)
@@ -22,82 +16,62 @@ namespace wandaAPI.Services
             _userRepository = userRepository;
         }
 
-        private async Task ValidateJointAccountDataAsync(JointAccountCreateDto dto, int ownerId)
+        private async Task ValidateJointAccountDataAsync(JointAccountCreateDto dto)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
             if (string.IsNullOrWhiteSpace(dto.Name))
                 throw new ArgumentException("El nombre de la cuenta es obligatorio.");
 
-            
             var allMemberIds = dto.Member_Ids ?? new List<int>();
-            var uniqueMembers = allMemberIds.Append(ownerId).Distinct().ToList();
+            var uniqueMembers = allMemberIds.Distinct().ToList();
 
             if (uniqueMembers.Count < 2)
                 throw new ArgumentException("Una cuenta conjunta debe tener al menos dos miembros diferentes.");
 
-            
-            var owner = await _userRepository.GetByIdAsync(ownerId);
-            if (owner == null) throw new KeyNotFoundException($"El usuario creador (ID: {ownerId}) no existe.");
-
-            
-            foreach (var id in allMemberIds)
+            foreach (var id in uniqueMembers)
             {
                 var user = await _userRepository.GetByIdAsync(id);
                 if (user == null)
-                    throw new KeyNotFoundException($"El usuario invitado con ID {id} no existe en el sistema.");
+                    throw new KeyNotFoundException($"El usuario con ID {id} no existe en el sistema.");
             }
         }
 
-        public async Task AddJointAccountAsync(JointAccountCreateDto dto, int ownerId)
+        public async Task AddJointAccountAsync(JointAccountCreateDto dto)
         {
-            await ValidateJointAccountDataAsync(dto, ownerId);
+            await ValidateJointAccountDataAsync(dto);
 
             var jointAccount = new Account
             {
                 Name = dto.Name,
-                Account_Type = Account.AccountType.joint,
+                Account_type = "joint",
                 Amount = 0,
                 Creation_date = DateTime.Now
             };
 
             int accountId = await _accountRepository.AddAsync(jointAccount);
 
-            await _accountUsersRepository.AddAsync(new AccountUsers
-            {
-                User_id = ownerId,
-                Account_id = accountId,
-                Role = AccountUsers.UserRole.admin,
-                Joined_at = DateTime.Now
-            });
-
-            var otherMembers = dto.Member_Ids.Where(id => id != ownerId).Distinct();
-
-            foreach (var memberId in otherMembers)
+            foreach (var userId in dto.Member_Ids.Distinct())
             {
                 await _accountUsersRepository.AddAsync(new AccountUsers
                 {
-                    User_id = memberId,
-                    Account_id = accountId,
-                    Role = AccountUsers.UserRole.member,
-                    Joined_at = DateTime.Now
+                    User_id = userId,
+                    Account_id = accountId
                 });
             }
         }
 
         public async Task<int> AddPersonalAccountAsync(string userName)
         {
-
             if (string.IsNullOrWhiteSpace(userName))
             {
                 throw new ArgumentException("El nombre de usuario no puede estar vacío.", nameof(userName));
             }
 
-
             var personalAccount = new Account
             {
                 Name = userName,
-                Account_Type = Account.AccountType.personal,
+                Account_type = "personal",
                 Amount = 0
             };
 
@@ -109,7 +83,6 @@ namespace wandaAPI.Services
             }
 
             return accountId;
-
         }
 
         public async Task DeleteAsync(int id)
@@ -125,57 +98,54 @@ namespace wandaAPI.Services
 
         public async Task<List<Account>> GetAllAsync()
         {
-            var accounts = await _accountRepository.GetAllAsync();
-            return accounts;
+            return await _accountRepository.GetAllAsync();
         }
 
         public async Task<Account?> GetByIdAsync(int id)
         {
             var account = await _accountRepository.GetByIdAsync(id);
-            if (account == null || account.Account_id < 0)
+            if (account == null)
             {
-                throw new KeyNotFoundException("El ID debe ser mayor que cero o no existe.");
+                throw new KeyNotFoundException("La cuenta no existe.");
             }
             return account;
         }
 
         public async Task UpdateAsync(int id, AccountUpdateDto accountDto)
         {
-            try
+            var existingAccount = await _accountRepository.GetByIdAsync(id);
+
+            if (existingAccount == null)
             {
-
-                var existingAccount = await _accountRepository.GetByIdAsync(id);
-
-                if (existingAccount == null)
-                {
-                    throw new KeyNotFoundException("La cuenta que se desea actualizar no existe.");
-                }
-
-                existingAccount.Name = accountDto.Name;
-                existingAccount.Weekly_budget = accountDto.Weekly_budget;
-                existingAccount.Monthly_budget = accountDto.Monthly_budget;
-                existingAccount.Account_picture_url = accountDto.Account_picture_url;
-
-                if (existingAccount.Account_Type == Account.AccountType.personal)
-                {
-                    existingAccount.Amount = accountDto.Amount;
-
-                }
-
-                await _accountRepository.UpdateAsync(existingAccount);
-
-            }
-            catch (ArgumentException ex)
-            {
-                throw new ArgumentException(ex.Message);
+                throw new KeyNotFoundException("La cuenta que se desea actualizar no existe.");
             }
 
-            catch (KeyNotFoundException ex)
-            {
+            existingAccount.Name = accountDto.Name;
+            existingAccount.Weekly_budget = accountDto.Weekly_budget;
+            existingAccount.Monthly_budget = accountDto.Monthly_budget;
+            existingAccount.Account_picture_url = accountDto.Account_picture_url;
 
-                throw new KeyNotFoundException(ex.Message);
+            if (existingAccount.Account_type == "personal")
+            {
+                existingAccount.Amount = accountDto.Amount;
             }
 
+            await _accountRepository.UpdateAsync(existingAccount);
+        }
+
+        public async Task<List<User>> GetMembersAsync(int accountId)
+        {
+
+            var account = await _accountRepository.GetByIdAsync(accountId);
+            if (account == null) throw new KeyNotFoundException("La cuenta no existe.");
+
+            return await _userRepository.GetByAccountIdAsync(accountId);
+        }
+
+        public async Task<List<Account>> GetAccountsByUserIdAsync(int userId)
+        {
+            if (userId <= 0) throw new ArgumentException("ID de usuario inválido");
+            return await _accountRepository.GetAllByUserIdAsync(userId);
         }
     }
 }

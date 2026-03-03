@@ -1,4 +1,5 @@
 using Models;
+using Models.DTOS;
 
 namespace wandaAPI.Repositories
 {
@@ -10,5 +11,7 @@ namespace wandaAPI.Repositories
         Task UpdateAsync(User user1);
         Task DeleteAsync(int id);
         
+        Task<List<User>> GetByAccountIdAsync(int accountId);
+        Task<SystemStatsDto> GetSystemStatsAsync();
     }
 }

@@ -3,6 +3,7 @@ using wandaAPI.Repositories;
 using Microsoft.AspNetCore.Http.HttpResults;
 using System.Reflection.Metadata.Ecma335;
 using System.Runtime;
+using Models.DTOS;
 
 namespace wandaAPI.Services
 {
@@ -20,14 +21,21 @@ namespace wandaAPI.Services
             _accountUsersRepository = accountUsersRepository;
         }
 
-        public async Task<List<User>> GetAllAsync()
+        public async Task<List<User>> GetAllAsync(string? email = null)
         {
 
-            var Users = await _userRepository.GetAllAsync();
-            return Users;
+            var users = await _userRepository.GetAllAsync();
 
+
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                return users
+                    .Where(u => u.Email.Contains(email, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            return users;
         }
-
         public async Task<User?> GetByIdAsync(int id)
         {
             var User = await _userRepository.GetByIdAsync(id);
@@ -41,8 +49,6 @@ namespace wandaAPI.Services
 
         public async Task AddAsync(UserCreateDTO user1)
         {
-
-            //Comprobaciones antes de añadir el user
 
             var users = await _userRepository.GetAllAsync();
             foreach (var us in users)
@@ -68,28 +74,29 @@ namespace wandaAPI.Services
                 throw new InvalidOperationException("La contraseña no contine al menos una mayuscula");
             }
 
+            string passwordHash = BCrypt.Net.BCrypt.HashPassword(user1.Password);
+
             var user = new User
             {
                 Name = user1.Name,
                 Email = user1.Email,
-                Password = user1.Password,
-
+                Password = passwordHash,
+                Role = "User"
             };
 
-            //Añade el nuevo User a la tabla de USERS
+
             int userId = await _userRepository.AddAsync(user);
 
-            //Añade la nueva Account a partir de User a la tabla de ACCOUNTS
+
             int accountId = await _accountService.AddPersonalAccountAsync(user.Name);
 
             var accountUser = new AccountUsers
             {
                 User_id = userId,
-                Account_id = accountId,
-                Role = AccountUsers.UserRole.admin
+                Account_id = accountId
             };
 
-            //Añade en la tabla ACCOUNT_USERS el nuevo usuario y su nueva cuenta
+
             await _accountUsersRepository.AddAsync(accountUser);
 
         }
@@ -126,7 +133,7 @@ namespace wandaAPI.Services
             {
                 throw new ArgumentException(ex.Message);
             }
-            // Si el servicio no encontró el User para actualizar
+
             catch (KeyNotFoundException ex)
             {
 
@@ -135,32 +142,85 @@ namespace wandaAPI.Services
 
         }
 
+
+
         public async Task DeleteAsync(int id)
         {
-            // 1. Verificar si el usuario existe
+
             var user = await _userRepository.GetByIdAsync(id);
             if (user == null)
             {
                 throw new KeyNotFoundException("El User no existe");
             }
 
-            // 2. Buscar y borrar la cuenta PERSONAL del usuario
-            // Necesitarás un método en el repositorio para encontrar la cuenta personal asociada al user_id
-            var accounts = await _accountService.GetAllAsync(); // O un método especializado
+
+            var accounts = await _accountService.GetAllAsync();
+
             var personalAccount = accounts.FirstOrDefault(a =>
-                a.Account_Type == Account.AccountType.personal &&
-                a.Name == user.Name); // O mediante una consulta a ACCOUNT_USERS para mayor precisión
+                a.Account_type == "personal" &&
+                a.Name == user.Name);
 
             if (personalAccount != null)
             {
-                // Al borrar la cuenta, el ON DELETE CASCADE del SQL limpiará ACCOUNT_USERS para esta cuenta
+
                 await _accountService.DeleteAsync(personalAccount.Account_id);
             }
 
-            // 3. Borrar el usuario
-            // El ON DELETE CASCADE que configuramos en SQL limpiará su participación en cuentas compartidas
             await _userRepository.DeleteAsync(id);
+        }
 
+
+        public async Task<List<Account>> GetUserAccountsAsync(int userId)
+        {
+
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) throw new KeyNotFoundException("El usuario no existe.");
+
+            return await _accountService.GetAccountsByUserIdAsync(userId);
+        }
+
+        public async Task AddAdminAsync(UserCreateDTO adminDto)
+        {
+
+            var users = await _userRepository.GetAllAsync();
+            if (users.Any(u => u.Email.Equals(adminDto.Email)))
+            {
+                throw new InvalidOperationException($"El usuario con email '{adminDto.Email}' ya existe.");
+            }
+
+
+            if (adminDto.Password.Length < 5)
+                throw new InvalidOperationException("La contraseña no puede tener menos de 5 carácteres");
+
+            if (!adminDto.Password.Any(char.IsUpper))
+                throw new InvalidOperationException("La contraseña debe contener al menos una mayúscula");
+
+
+            string passwordHash = BCrypt.Net.BCrypt.HashPassword(adminDto.Password);
+
+
+            var adminUser = new User
+            {
+                Name = adminDto.Name,
+                Email = adminDto.Email,
+                Password = passwordHash,
+                Role = "Admin"
+            };
+
+            await _userRepository.AddAsync(adminUser);
+        }
+
+
+        public async Task<SystemStatsDto> GetSystemStatsAsync()
+        {
+            try
+            {
+                return await _userRepository.GetSystemStatsAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al procesar las estadísticas en el servicio: " + ex.Message);
+            }
         }
 
     }

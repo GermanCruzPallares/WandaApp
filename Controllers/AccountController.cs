@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Models;
 using wandaAPI.Repositories;
@@ -5,13 +6,14 @@ using wandaAPI.Services;
 
 namespace wandaAPI.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class AccountController : ControllerBase
     {
         private readonly IAccountService _accountService;
 
-        public AccountController(IAccountService accountRepository) //error de nombre, public AccountController(IAccountService accountService) 
+        public AccountController(IAccountService accountRepository) 
         {
             _accountService = accountRepository;
         }
@@ -31,17 +33,34 @@ namespace wandaAPI.Controllers
             return Ok(account);
         }
 
-        [HttpPost]
         
-        public async Task<ActionResult> CreateAccount([FromBody] JointAccountCreateDto account, int ownerId)
+        [HttpGet("{accountId}/users")]
+        public async Task<ActionResult<List<User>>> GetAccountMembers(int accountId)
+        {
+            if (accountId <= 0) return BadRequest("ID de cuenta inválido.");
+
+            try
+            {
+                var members = await _accountService.GetMembersAsync(accountId);
+                return Ok(members);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
+
+        [HttpPost]
+
+        public async Task<ActionResult> CreateAccount([FromBody] JointAccountCreateDto account)
         {
 
-            await _accountService.AddJointAccountAsync(account, ownerId);
+            await _accountService.AddJointAccountAsync(account);
             return Ok("Joint Account creada exitosamente");
         }
 
         [HttpPut("{accountId}")]
-        public async Task<IActionResult> UpdateAccount(int accountId, [FromBody]  AccountUpdateDto accountDto)
+        public async Task<IActionResult> UpdateAccount(int accountId, [FromBody] AccountUpdateDto accountDto)
         {
             try
             {
@@ -63,7 +82,7 @@ namespace wandaAPI.Controllers
             {
                 return NotFound(ex.Message);
             }
-             catch (InvalidOperationException ex)
+            catch (InvalidOperationException ex)
             {
                 return BadRequest(ex.Message);
             }

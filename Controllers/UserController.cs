@@ -1,11 +1,14 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Models;
+using Models.DTOS;
 using wandaAPI.Repositories;
 using wandaAPI.Services;
 
 
 namespace wandaAPI.Controllers
 {
+
     [Route("api/[controller]")]
     [ApiController]
     public class UserController : ControllerBase
@@ -19,16 +22,16 @@ namespace wandaAPI.Controllers
             _configuration = configuration;
         }
 
+        [Authorize]
         [HttpGet]
-        public async Task<ActionResult<List<User>>> GetUsers()
-
+        public async Task<ActionResult<List<User>>> GetUsers([FromQuery] string? email)
         {
 
-            var Users = await _userService.GetAllAsync();
+            var Users = await _userService.GetAllAsync(email);
             return Ok(Users);
-
         }
 
+        [Authorize]
         [HttpGet("{userId}")]
         public async Task<ActionResult<User>> GetUserById(int userId)
         {
@@ -44,20 +47,25 @@ namespace wandaAPI.Controllers
             }
         }
 
-        [HttpPost]
-        public async Task<ActionResult<User>> CreateUser([FromBody] UserCreateDTO user1)
+
+        [Authorize]
+        [HttpGet("{userId}/accounts")]
+        public async Task<ActionResult<List<Account>>> GetUserAccounts(int userId)
         {
+            if (userId <= 0) return BadRequest("ID de usuario inválido.");
+
             try
             {
-                await _userService.AddAsync(user1);
-                return Ok("User creado exitosamente");
+                var accounts = await _userService.GetUserAccountsAsync(userId);
+                return Ok(accounts);
             }
-            catch (InvalidOperationException ex)
+            catch (KeyNotFoundException ex)
             {
-                return BadRequest(ex.Message);
+                return NotFound(ex.Message);
             }
         }
 
+        [Authorize]
         [HttpPut("{userId}")]
         public async Task<IActionResult> UpdateUser(int userId, [FromBody] UserUpdateDTO updatedUser)
         {
@@ -85,12 +93,17 @@ namespace wandaAPI.Controllers
             }
         }
 
+        [Authorize]
         [HttpDelete("{userId}")]
         public async Task<IActionResult> DeleteUser(int userId)
         {
 
             try
             {
+                if (userId <= 0)
+                {
+                    return BadRequest("El ID no es válido");
+                }
                 await _userService.DeleteAsync(userId);
                 return NoContent();
             }
@@ -98,6 +111,22 @@ namespace wandaAPI.Controllers
             {
 
                 return NotFound(ex.Message);
+            }
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("stats")]
+        public async Task<ActionResult<SystemStatsDto>> GetSystemStats()
+        {
+            try
+            {
+
+                var stats = await _userService.GetSystemStatsAsync();
+                return Ok(stats);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
             }
         }
 

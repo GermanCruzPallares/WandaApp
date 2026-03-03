@@ -9,6 +9,9 @@ namespace wandaAPI.Repositories
         Task<int> AddAsync(Account account);
         Task UpdateAsync(Account account);
         Task DeleteAsync(int id);
+
+        Task<Account?> GetPersonalAccountByUserIdAsync(int userId);
         
+        Task<List<Account>> GetAllByUserIdAsync(int userId);
     }
 }
