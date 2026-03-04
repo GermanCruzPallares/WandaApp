@@ -1,15 +1,11 @@
 <template>
-  <div
-    class="transaction-card"
-    @click="$emit('click', transaction.transaction_id)"
-  >
+  <div class="transaction-card" @click="$emit('click', transaction)">
     <div class="transaction-card__icon-wrap">
       <div class="transaction-card__icon">
         <component :is="getCategoryIcon(transaction.category)" />
       </div>
 
       <div v-if="isJoint" class="transaction-card__user-avatars">
-
         <template v-if="transaction.split_type === 'divided'">
           <img
             v-for="split in splits"
@@ -25,7 +21,7 @@
             class="transaction-card__user-avatar"
           />
         </template>
-      
+
         <img
           v-else
           :src="getMemberAvatar(transaction.user_id)"
@@ -39,7 +35,6 @@
       <h4 class="transaction-card__title">{{ transaction.category }}</h4>
       <p class="transaction-card__description">{{ description }}</p>
 
-  
       <p v-if="isJoint" class="transaction-card__user-name">
         <template v-if="transaction.split_type === 'divided'">
           {{ dividedParticipantNames }}
@@ -54,71 +49,85 @@
       <span
         class="transaction-card__amount"
         :class="{
-          'transaction-card__amount--negative': transaction.transaction_type === 'expense' || transaction.transaction_type === 'saving',
-          'transaction-card__amount--positive': transaction.transaction_type === 'income'
+          'transaction-card__amount--negative':
+            transaction.transaction_type === 'expense' || transaction.transaction_type === 'saving',
+          'transaction-card__amount--positive': transaction.transaction_type === 'income',
         }"
       >
         {{ formattedAmount }}
       </span>
 
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="transaction-card__arrow">
-        <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path
+          d="M9 18l6-6-6-6"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
       </svg>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { getCategoryIcon } from '@/components/icons/CategoryIcons';
-import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
-import type { Transaction, TransactionSplit, User } from '@/types/models';
+import { computed } from 'vue'
+import { getCategoryIcon } from '@/components/icons/CategoryIcons'
+import { getAvatarDataUrl } from '@/components/icons/AvatarIcons'
+import type { Transaction, TransactionSplit, User } from '@/types/models'
 
 interface Props {
-  transaction: Transaction;
-  isJoint?: boolean;
-  members?: User[];
-  splits?: TransactionSplit[];
+  transaction: Transaction
+  isJoint?: boolean
+  members?: User[]
+  splits?: TransactionSplit[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isJoint: false,
   members: () => [],
-  splits: () => []
-});
+  splits: () => [],
+})
 
 defineEmits<{
-  click: [transactionId: number];
-}>();
+  click: [transaction: Transaction]
+}>()
 
 // ==================== HELPERS ====================
 
-const getMemberAvatar = (_userId: number): string => getAvatarDataUrl('personal');
+const getMemberAvatar = (_userId: number): string => getAvatarDataUrl('personal')
 
 const getMemberName = (userId: number): string => {
-  return props.members.find(m => m.user_id === userId)?.name ?? '';
-};
+  return props.members.find((m) => m.user_id === userId)?.name ?? ''
+}
 
 const dividedParticipantNames = computed(() => {
-  const debtorIds = props.splits.map(s => s.user_id);
-  const allIds = [...new Set([props.transaction.user_id, ...debtorIds])];
-  return allIds.map(id => getMemberName(id)).filter(Boolean).join(', ');
-});
+  const debtorIds = props.splits.map((s) => s.user_id)
+  const allIds = [...new Set([props.transaction.user_id, ...debtorIds])]
+  return allIds
+    .map((id) => getMemberName(id))
+    .filter(Boolean)
+    .join(', ')
+})
 
 const description = computed(() => {
-  let desc = props.transaction.concept || '';
+  let desc = props.transaction.concept || ''
   if (props.transaction.isRecurring && props.transaction.frequency) {
-    const labels: Record<string, string> = { weekly: 'Semanal', monthly: 'Mensual', yearly: 'Anual' };
-    const label = labels[props.transaction.frequency] ?? props.transaction.frequency;
-    desc += desc ? ` · ${label}` : label;
+    const labels: Record<string, string> = {
+      weekly: 'Semanal',
+      monthly: 'Mensual',
+      yearly: 'Anual',
+    }
+    const label = labels[props.transaction.frequency] ?? props.transaction.frequency
+    desc += desc ? ` · ${label}` : label
   }
-  return desc;
-});
+  return desc
+})
 
 const formattedAmount = computed(() => {
-  const f = props.transaction.amount.toFixed(2).replace('.', ',');
-  return props.transaction.transaction_type === 'income' ? `+${f} €` : `-${f} €`;
-});
+  const f = props.transaction.amount.toFixed(2).replace('.', ',')
+  return props.transaction.transaction_type === 'income' ? `+${f} €` : `-${f} €`
+})
 </script>
 
 <style scoped lang="scss">
@@ -132,14 +141,17 @@ const formattedAmount = computed(() => {
   border-radius: $card-border-radius;
   padding: 25px 16px;
   cursor: pointer;
-  transition: transform $transition-speed $transition-ease,
-              box-shadow $transition-speed $transition-ease;
+  transition:
+    transform $transition-speed $transition-ease,
+    box-shadow $transition-speed $transition-ease;
 
   &:hover {
     transform: translateX(2px);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
   }
-  &:active { transform: translateX(1px); }
+  &:active {
+    transform: translateX(1px);
+  }
 
   &__icon-wrap {
     position: relative;
@@ -175,7 +187,9 @@ const formattedAmount = computed(() => {
     border: 2px solid $section-bg-primary;
     margin-left: -5px;
 
-    &:last-child { margin-left: 0; }
+    &:last-child {
+      margin-left: 0;
+    }
   }
 
   &__info {
@@ -217,8 +231,12 @@ const formattedAmount = computed(() => {
     font-size: 14px;
     font-weight: 600;
     white-space: nowrap;
-    &--negative { color: $color-danger; }
-    &--positive { color: $color-success; }
+    &--negative {
+      color: $color-danger;
+    }
+    &--positive {
+      color: $color-success;
+    }
   }
 
   &__arrow {

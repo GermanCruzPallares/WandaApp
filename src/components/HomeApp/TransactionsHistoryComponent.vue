@@ -71,7 +71,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  transactionClick: [transactionId: number]
+  transactionClick: [transaction: Transaction]
   transactionsLoaded: [transactions: Transaction[]]
 }>()
 
@@ -213,7 +213,7 @@ const formatDate = (date: Date): string => {
 const loadMore = () => {
   displayLimit.value += props.loadMoreIncrement
 }
-const handleTransactionClick = (id: number) => emit('transactionClick', id)
+const handleTransactionClick = (transaction: Transaction) => emit('transactionClick', transaction)
 </script>
 
 <style scoped lang="scss">

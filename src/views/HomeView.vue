@@ -10,10 +10,16 @@ import ObjectivesComponent from '@/components/HomeApp/ObjectivesComponent.vue'
 import TransactionsHistoryComponent from '@/components/HomeApp/TransactionsHistoryComponent.vue'
 import TopNav from '@/components/Navs/TopNav.vue'
 import AsideNav from '@/components/Navs/AsideNav.vue'
+import SharedTransactionDeleteModal from '@/components/Modals/SharedTransactionDeleteModal.vue'
+import ConfirmationModal from '@/components/ConfirmationModal.vue'
+import { useTransactionStore } from '@/stores/TransactionStore'
+import { useToast } from '@/composables/useToast'
 import type { AccountUI, Transaction, Objective } from '@/types/models'
 
 const router = useRouter()
 const userStore = useUserStore()
+const transactionStore = useTransactionStore()
+const { showToast } = useToast()
 
 // ==================== COMPUTED ====================
 
@@ -36,6 +42,10 @@ const isJointAccount = computed(() => activeAccount.value?.account_type === 'joi
 const objectives = ref<Objective[]>([])
 const transactions = ref<Transaction[]>([])
 const activeMenuItem = ref('inicio')
+
+const showDeleteModal = ref(false)
+const transactionToDelete = ref<Transaction | null>(null)
+const isDeleting = ref(false)
 
 // ==================== LIFECYCLE ====================
 
@@ -73,8 +83,42 @@ const handleAddObjective = () => {
   console.log('Añadir objetivo')
 }
 
-const handleTransactionClick = (transactionId: number) => {
-  console.log('Transacción clickeada:', transactionId)
+const handleTransactionClick = (transaction: Transaction) => {
+  if (transaction.split_type === 'divided') {
+    transactionToDelete.value = transaction
+    showDeleteModal.value = true
+  } else {
+    router.push(`/edit-transaction/${transaction.transaction_id}`)
+  }
+}
+
+const confirmDeleteTransaction = async () => {
+  if (!transactionToDelete.value) return
+
+  isDeleting.value = true
+  try {
+    const success = await transactionStore.deleteTransaction(
+      transactionToDelete.value.transaction_id,
+    )
+    if (success) {
+      showToast('Transacción eliminada con éxito', 'success')
+      // Refresh transactions by account
+      if (activeAccount.value?.account_id) {
+        await transactionStore.fetchTransactions(activeAccount.value.account_id)
+        // Redirigir o simplemente dejar que el componente se actualice
+        // Como TransactionsHistory ya observa el accountId, solo necesitamos triggerear el store
+        window.location.reload() // Fuerza recarga simple o podrías emitir un evento
+      }
+    } else {
+      showToast('No se pudo eliminar la transacción', 'error')
+    }
+  } catch (error) {
+    showToast('Error al intentar eliminar', 'error')
+  } finally {
+    isDeleting.value = false
+    showDeleteModal.value = false
+    transactionToDelete.value = null
+  }
 }
 </script>
 
@@ -119,6 +163,14 @@ const handleTransactionClick = (transactionId: number) => {
       </div>
     </div>
   </main>
+
+  <SharedTransactionDeleteModal
+    :is-open="showDeleteModal"
+    :transaction="transactionToDelete"
+    :is-deleting="isDeleting"
+    @close="showDeleteModal = false"
+    @confirm="confirmDeleteTransaction"
+  />
 
   <BottomNav class="mobile-only" />
 </template>

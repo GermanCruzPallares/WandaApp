@@ -10,7 +10,7 @@
           class="objective-card"
           :class="{
             'objective-card--completed': calculateProgress(objective) >= 100,
-            'objective-card--expired': isExpired(objective)
+            'objective-card--expired': isExpired(objective),
           }"
         >
           <!-- Contenido navegable -->
@@ -22,15 +22,22 @@
               <div class="objective-card__icon-title">
                 <div class="objective-card__icon">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    <path
+                      d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                    />
                   </svg>
                 </div>
                 <h3 class="objective-card__name">{{ objective.name }}</h3>
               </div>
 
-              <div v-if="isExpired(objective)" class="objective-card__badge objective-card__badge--expired">
+              <div
+                v-if="isExpired(objective)"
+                class="objective-card__badge objective-card__badge--expired"
+              >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                  <path
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
+                  />
                 </svg>
                 Fecha superada
               </div>
@@ -47,19 +54,20 @@
             </div>
 
             <div class="objective-card__amounts">
-              <span class="objective-card__current">{{ formatCurrency(objective.current_save) }}</span>
-              <span class="objective-card__target">{{ formatCurrency(objective.target_amount) }}</span>
+              <span class="objective-card__current">{{
+                formatCurrency(objective.current_save)
+              }}</span>
+              <span class="objective-card__target">{{
+                formatCurrency(objective.target_amount)
+              }}</span>
             </div>
           </RouterLink>
 
           <!-- Fila completado + botón archivar (fuera del RouterLink) -->
-          <div
-            v-if="calculateProgress(objective) >= 100"
-            class="objective-card__completed-row"
-          >
+          <div v-if="calculateProgress(objective) >= 100" class="objective-card__completed-row">
             <div class="objective-card__badge objective-card__badge--completed">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
               </svg>
               Cumplido
             </div>
@@ -70,7 +78,9 @@
               title="Archivar este objetivo"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z"/>
+                <path
+                  d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z"
+                />
               </svg>
               {{ isArchiving === objective.objective_id ? 'Archivando...' : 'Archivar' }}
             </button>
@@ -87,69 +97,80 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
-import { RouterLink } from 'vue-router';
-import { useObjectiveStore } from '@/stores/ObjectiveStore';
-import SectionTitle from '@/components/SectionTitle.vue';
-import type { Objective } from '@/types/models';
+import { ref, watch, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
+import { useObjectiveStore } from '@/stores/ObjectiveStore'
+import SectionTitle from '@/components/SectionTitle.vue'
+import type { Objective } from '@/types/models'
 
-interface Props { accountId: number; }
-const props = defineProps<Props>();
+interface Props {
+  accountId: number
+}
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  addObjective: [];
-  objectivesLoaded: [objectives: Objective[]];
-}>();
+  addObjective: []
+  objectivesLoaded: [objectives: Objective[]]
+}>()
 
-const objectiveStore = useObjectiveStore();
-const objectives = ref<Objective[]>([]);
-const isLoading = ref(false);
-const isArchiving = ref<number | null>(null);
+const objectiveStore = useObjectiveStore()
+const objectives = ref<Objective[]>([])
+const isLoading = ref(false)
+const isArchiving = ref<number | null>(null)
 
 // ── Archivar ──────────────────────────────────────────────────────────────
 const handleArchiveObjective = async (objectiveId: number) => {
-  isArchiving.value = objectiveId;
+  isArchiving.value = objectiveId
   try {
-    await objectiveStore.archiveObjective(objectiveId, props.accountId);
+    await objectiveStore.archiveObjective(objectiveId, props.accountId)
     // Recargar activos tras archivar
-    await loadObjectives(props.accountId);
+    await loadObjectives(props.accountId)
   } catch (error) {
-    console.error('Error archivando objetivo', error);
+    console.error('Error archivando objetivo', error)
   }
-  isArchiving.value = null;
-};
+  isArchiving.value = null
+}
 
 // ── Carga ─────────────────────────────────────────────────────────────────
 const loadObjectives = async (accountId: number) => {
-  isLoading.value = true;
+  isLoading.value = true
   try {
-    objectives.value = await objectiveStore.fetchObjectives(accountId, { isArchived: false });
-    emit('objectivesLoaded', objectives.value);
+    objectives.value = await objectiveStore.fetchObjectives(accountId, { isArchived: false })
+    emit('objectivesLoaded', objectives.value)
   } catch (error) {
-    objectives.value = [];
+    objectives.value = []
   }
-  isLoading.value = false;
-};
+  isLoading.value = false
+}
 
-onMounted(() => { if (props.accountId) loadObjectives(props.accountId); });
-watch(() => props.accountId, (id) => { if (id) loadObjectives(id); });
+onMounted(() => {
+  if (props.accountId) loadObjectives(props.accountId)
+})
+watch(
+  () => props.accountId,
+  (id) => {
+    if (id) loadObjectives(id)
+  },
+)
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 const calculateProgress = (objective: Objective): number => {
-  if (objective.target_amount === 0) return 0;
-  return Math.round((objective.current_save / objective.target_amount) * 100);
-};
+  if (objective.target_amount === 0) return 0
+  return Math.round((objective.current_save / objective.target_amount) * 100)
+}
 
 const isExpired = (objective: Objective): boolean => {
-  if (calculateProgress(objective) >= 100) return false;
-  return new Date(objective.deadline) < new Date();
-};
+  if (calculateProgress(objective) >= 100) return false
+  return new Date(objective.deadline) < new Date()
+}
 
 const formatCurrency = (amount: number): string =>
   new Intl.NumberFormat('es-ES', {
-    style: 'currency', currency: 'EUR',
-    minimumFractionDigits: 0, maximumFractionDigits: 0,
-  }).format(amount);
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount)
 </script>
 
 <style scoped lang="scss">
@@ -160,7 +181,6 @@ const formatCurrency = (amount: number): string =>
 
   @media (min-width: 768px) {
     padding: 0 0 1.5rem 0;
-    margin: 0 16px;
   }
 
   &__list {
@@ -200,8 +220,9 @@ const formatCurrency = (amount: number): string =>
     font-size: 11px;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color $transition-speed $transition-ease,
-                color $transition-speed $transition-ease;
+    transition:
+      background-color $transition-speed $transition-ease,
+      color $transition-speed $transition-ease;
     flex-shrink: 0;
 
     &:hover:not(:disabled) {
@@ -219,21 +240,35 @@ const formatCurrency = (amount: number): string =>
     text-decoration: none;
     display: block;
     transition: transform $transition-speed $transition-ease;
-    &:hover { transform: translateX(2px); }
+    &:hover {
+      transform: translateX(2px);
+    }
   }
 
   &--completed {
     border-color: $color-success;
-    .objective-card__icon { background-color: $color-success; }
-    .objective-card__progress-fill { background-color: $color-success; }
-    .objective-card__percentage { color: $color-success; }
+    .objective-card__icon {
+      background-color: $color-success;
+    }
+    .objective-card__progress-fill {
+      background-color: $color-success;
+    }
+    .objective-card__percentage {
+      color: $color-success;
+    }
   }
 
   &--expired {
     border-color: $color-danger;
-    .objective-card__icon { background-color: $color-danger; }
-    .objective-card__progress-fill { background-color: $color-danger; }
-    .objective-card__percentage { color: $color-danger; }
+    .objective-card__icon {
+      background-color: $color-danger;
+    }
+    .objective-card__progress-fill {
+      background-color: $color-danger;
+    }
+    .objective-card__percentage {
+      color: $color-danger;
+    }
   }
 
   &__header {
@@ -328,8 +363,13 @@ const formatCurrency = (amount: number): string =>
     color: $color-text-gray;
   }
 
-  &__current { font-weight: 600; color: $color-text; }
-  &__target { font-weight: 500; }
+  &__current {
+    font-weight: 600;
+    color: $color-text;
+  }
+  &__target {
+    font-weight: 500;
+  }
 }
 
 .empty-state {
@@ -340,6 +380,9 @@ const formatCurrency = (amount: number): string =>
   padding: 60px 20px;
   color: $color-text-gray;
   text-align: center;
-  p { font-size: 14px; margin: 0; }
+  p {
+    font-size: 14px;
+    margin: 0;
+  }
 }
 </style>

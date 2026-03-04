@@ -207,7 +207,7 @@ const handleDelete = async () => {
     display: flex;
     position: fixed;
     top: 30px;
-    right: 330px;
+    right: 530px;
     background: rgba(255, 59, 48, 0.1);
     color: $color-danger;
     border: none;

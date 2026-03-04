@@ -1,15 +1,12 @@
 <template>
   <div class="transaction-table">
-   
     <div v-if="isLoading" class="table-skeleton">
       <div class="table-skeleton__header"></div>
       <div v-for="i in 6" :key="i" class="table-skeleton__row"></div>
     </div>
 
-  
     <template v-else>
       <div class="table-wrapper">
-    
         <div class="table-header">
           <span class="col-cat">Cat.</span>
           <span class="col-concept">Concepto</span>
@@ -17,15 +14,13 @@
           <span class="col-amount">Importe</span>
         </div>
 
-   
         <TransitionGroup name="row" tag="div" class="table-body">
           <div
             v-for="transaction in filteredTransactions"
             :key="transaction.transaction_id"
             class="table-row"
-            @click="$emit('rowClick', transaction.transaction_id)"
+            @click="$emit('rowClick', transaction)"
           >
-        
             <div class="col-cat">
               <div class="icon-wrap">
                 <div class="category-icon">
@@ -33,7 +28,6 @@
                 </div>
 
                 <div v-if="isJoint" class="user-avatars">
-          
                   <template v-if="transaction.split_type === 'divided'">
                     <img
                       v-for="split in getSplits(transaction.transaction_id)"
@@ -48,7 +42,7 @@
                       class="user-avatar"
                     />
                   </template>
-                 
+
                   <img
                     v-else
                     :src="getMemberAvatar(transaction.user_id)"
@@ -59,7 +53,6 @@
               </div>
             </div>
 
- 
             <div class="col-concept">
               <div class="concept-stack">
                 <div class="concept-top">
@@ -68,11 +61,17 @@
                   </span>
                   <span v-if="transaction.isRecurring" class="recurring-badge">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-                      <path d="M17 1l4 4-4 4M3 11V9a4 4 0 014-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 01-4 4H3" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path
+                        d="M17 1l4 4-4 4M3 11V9a4 4 0 014-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 01-4 4H3"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
                     </svg>
                   </span>
                 </div>
-               
+
                 <span v-if="isJoint" class="concept-author">
                   <template v-if="transaction.split_type === 'divided'">
                     {{ getDividedParticipantNames(transaction) }}
@@ -94,7 +93,9 @@
               <span
                 class="amount-text"
                 :class="{
-                  'amount-text--expense': transaction.transaction_type === 'expense' || transaction.transaction_type === 'saving',
+                  'amount-text--expense':
+                    transaction.transaction_type === 'expense' ||
+                    transaction.transaction_type === 'saving',
                   'amount-text--income': transaction.transaction_type === 'income',
                 }"
               >
@@ -104,11 +105,25 @@
           </div>
         </TransitionGroup>
 
-
         <div v-if="filteredTransactions.length === 0" class="empty-state">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-            <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
-            <path d="M8 9h8M8 13h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+            <rect
+              x="3"
+              y="4"
+              width="18"
+              height="16"
+              rx="2"
+              stroke="currentColor"
+              stroke-width="1.5"
+              opacity="0.4"
+            />
+            <path
+              d="M8 9h8M8 13h5"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              opacity="0.4"
+            />
           </svg>
           <p v-if="hasFilters">No hay transacciones con los filtros aplicados</p>
           <p v-else>No hay transacciones en este mes</p>
@@ -119,125 +134,115 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { getCategoryIcon } from '@/components/icons/CategoryIcons';
-import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
-import type { Transaction, TransactionSplit, User } from '@/types/models';
-import type { TransactionFilters } from './TransactionFilterComponent.vue';
+import { computed } from 'vue'
+import { getCategoryIcon } from '@/components/icons/CategoryIcons'
+import { getAvatarDataUrl } from '@/components/icons/AvatarIcons'
+import type { Transaction, TransactionSplit, User } from '@/types/models'
+import type { TransactionFilters } from './TransactionFilterComponent.vue'
 
 const props = defineProps<{
-  transactions: Transaction[];
-  filters: TransactionFilters;
-  isLoading?: boolean;
-  isJoint?: boolean;
-  members?: User[];
-  splits?: TransactionSplit[];  
-}>();
+  transactions: Transaction[]
+  filters: TransactionFilters
+  isLoading?: boolean
+  isJoint?: boolean
+  members?: User[]
+  splits?: TransactionSplit[]
+}>()
 
 defineEmits<{
-  rowClick: [transactionId: number];
-}>();
+  rowClick: [transaction: Transaction]
+}>()
 
 // ==================== HELPERS ====================
 
 const getMemberAvatar = (_userId: number): string => {
-  return getAvatarDataUrl('personal');
-};
+  return getAvatarDataUrl('personal')
+}
 
 const getMemberName = (userId: number): string => {
-  return props.members?.find(m => m.user_id === userId)?.name ?? '';
-};
-
+  return props.members?.find((m) => m.user_id === userId)?.name ?? ''
+}
 
 const getSplits = (transactionId: number): TransactionSplit[] => {
-  return props.splits?.filter(s => s.transaction_id === transactionId) ?? [];
-};
-
+  return props.splits?.filter((s) => s.transaction_id === transactionId) ?? []
+}
 
 const getDividedParticipantNames = (transaction: Transaction): string => {
-  const debtorIds = getSplits(transaction.transaction_id).map(s => s.user_id);
-  const allIds = [...new Set([transaction.user_id, ...debtorIds])];
-  return allIds.map(id => getMemberName(id)).filter(Boolean).join(', ');
-};
+  const debtorIds = getSplits(transaction.transaction_id).map((s) => s.user_id)
+  const allIds = [...new Set([transaction.user_id, ...debtorIds])]
+  return allIds
+    .map((id) => getMemberName(id))
+    .filter(Boolean)
+    .join(', ')
+}
 
 const filteredTransactions = computed(() => {
-  let result = [...props.transactions];
-
+  let result = [...props.transactions]
 
   if (props.filters.search.trim()) {
-    const q = props.filters.search.toLowerCase().trim();
+    const q = props.filters.search.toLowerCase().trim()
     result = result.filter(
-      t =>
-        t.concept?.toLowerCase().includes(q) ||
-        t.category?.toLowerCase().includes(q)
-    );
+      (t) => t.concept?.toLowerCase().includes(q) || t.category?.toLowerCase().includes(q),
+    )
   }
 
- 
   if (props.filters.types.length > 0) {
-    result = result.filter(t => props.filters.types.includes(t.transaction_type));
+    result = result.filter((t) => props.filters.types.includes(t.transaction_type))
   }
-
 
   if (props.filters.categories.length > 0) {
-    result = result.filter(t =>
-      props.filters.categories.includes(t.category?.toLowerCase())
-    );
+    result = result.filter((t) => props.filters.categories.includes(t.category?.toLowerCase()))
   }
 
- 
   if (props.filters.minAmount !== null) {
-    result = result.filter(t => t.amount >= (props.filters.minAmount ?? 0));
+    result = result.filter((t) => t.amount >= (props.filters.minAmount ?? 0))
   }
 
   if (props.filters.maxAmount !== null) {
-    result = result.filter(t => t.amount <= (props.filters.maxAmount ?? Infinity));
+    result = result.filter((t) => t.amount <= (props.filters.maxAmount ?? Infinity))
   }
 
-  
   return result.sort(
-    (a, b) =>
-      new Date(b.transaction_date).getTime() -
-      new Date(a.transaction_date).getTime()
-  );
-});
+    (a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime(),
+  )
+})
 
 const hasFilters = computed(() => {
-  const f = props.filters;
+  const f = props.filters
   return (
     f.search.length > 0 ||
     f.types.length > 0 ||
     f.categories.length > 0 ||
     f.minAmount !== null ||
     f.maxAmount !== null
-  );
-});
+  )
+})
 
 const totalNet = computed(() => {
   return filteredTransactions.value.reduce((acc, t) => {
-    if (t.transaction_type === 'income') return acc + t.amount;
-    if (t.transaction_type === 'expense') return acc - t.amount;
-    return acc;
-  }, 0);
-});
+    if (t.transaction_type === 'income') return acc + t.amount
+    if (t.transaction_type === 'expense') return acc - t.amount
+    return acc
+  }, 0)
+})
 
 const formatDate = (date: Date | string): string => {
-  const d = new Date(date);
-  const day = d.getDate().toString().padStart(2, '0');
-  const month = (d.getMonth() + 1).toString().padStart(2, '0');
-  return `${day}/${month}`;
-};
+  const d = new Date(date)
+  const day = d.getDate().toString().padStart(2, '0')
+  const month = (d.getMonth() + 1).toString().padStart(2, '0')
+  return `${day}/${month}`
+}
 
 const formatAmount = (amount: number, type: string): string => {
   const formatted = new Intl.NumberFormat('es-ES', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amount);
+  }).format(amount)
 
-  if (type === 'expense' || type === 'saving') return `-${formatted} €`;
-  if (type === 'income') return `+${formatted} €`;
-  return `${formatted} €`;
-};
+  if (type === 'expense' || type === 'saving') return `-${formatted} €`
+  if (type === 'income') return `+${formatted} €`
+  return `${formatted} €`
+}
 </script>
 
 <style scoped lang="scss">
@@ -255,7 +260,6 @@ const formatAmount = (amount: number, type: string): string => {
   overflow: hidden;
 }
 
-
 .table-header {
   display: grid;
   grid-template-columns: 56px 1fr 70px 100px;
@@ -272,9 +276,10 @@ const formatAmount = (amount: number, type: string): string => {
     color: $color-text-gray;
   }
 
-  .col-amount { text-align: right; }
+  .col-amount {
+    text-align: right;
+  }
 }
-
 
 .table-body {
   display: flex;
@@ -290,7 +295,9 @@ const formatAmount = (amount: number, type: string): string => {
   cursor: pointer;
   transition: background-color $transition-speed $transition-ease;
 
-  &:last-child { border-bottom: none; }
+  &:last-child {
+    border-bottom: none;
+  }
 
   &:hover {
     background-color: rgba(0, 0, 0, 0.03);
@@ -300,7 +307,6 @@ const formatAmount = (amount: number, type: string): string => {
     background-color: rgba(0, 0, 0, 0.03);
   }
 }
-
 
 .col-cat {
   display: flex;
@@ -347,7 +353,9 @@ const formatAmount = (amount: number, type: string): string => {
   border: 2px solid $color-white;
   margin-left: -5px;
 
-  &:last-child { margin-left: 0; }
+  &:last-child {
+    margin-left: 0;
+  }
 }
 
 .col-concept {
@@ -417,10 +425,13 @@ const formatAmount = (amount: number, type: string): string => {
   font-weight: 700;
   white-space: nowrap;
 
-  &--expense { color: $color-danger; }
-  &--income { color: $color-success; }
+  &--expense {
+    color: $color-danger;
+  }
+  &--income {
+    color: $color-success;
+  }
 }
-
 
 .table-footer {
   display: flex;
@@ -443,9 +454,10 @@ const formatAmount = (amount: number, type: string): string => {
   font-weight: 700;
   color: $color-success;
 
-  &.negative { color: $color-danger; }
+  &.negative {
+    color: $color-danger;
+  }
 }
-
 
 .empty-state {
   display: flex;
@@ -483,17 +495,25 @@ const formatAmount = (amount: number, type: string): string => {
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
 
-    &:last-child { border-bottom: none; }
+    &:last-child {
+      border-bottom: none;
+    }
   }
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .row-enter-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 .row-leave-active {
   transition: opacity 0.15s ease;
