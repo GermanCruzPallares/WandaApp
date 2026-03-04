@@ -104,8 +104,8 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
   z-index: 1000;
   box-sizing: border-box;
   background-color: #e5e5e5;
-  padding: 12px 20px;
-  min-height: $navbar-height;
+  padding: 16px 20px;
+  min-height: 80px;
   display: flex;
   justify-content: space-between;
   align-items: center;

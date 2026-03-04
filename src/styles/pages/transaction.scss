@@ -6,7 +6,7 @@
   background-color: #ffffff;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-  padding-top: 60px; // More space for the euro mark when content expands
+  padding-top: 100px; // Increased to accommodate taller header (80px) plus breathing room
 
   &.spacer-active {
     padding-bottom: 220px; // Space for the keyboard
