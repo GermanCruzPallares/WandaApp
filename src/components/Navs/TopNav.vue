@@ -6,6 +6,7 @@ import { useAccountStore } from '@/stores/AccountStore';
 import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
 import AccountSwitcherModal from '@/components/Modals/AccountSwitcherModal.vue';
 import WandaMenuModal from '@/components/Modals/WandaMenuModal.vue';
+import { authService } from '@/services/authService';
 
 interface Props {
   accountId?: number
@@ -28,7 +29,15 @@ const avatarSrc = computed(() => {
   return getAvatarDataUrl(account.account_type || 'personal');
 });
 
-const openAccountSwitcher = () => { isAccountSwitcherOpen.value = true; };
+const openAccountSwitcher = () => {
+  if (!authService.isAdmin()) {
+    isAccountSwitcherOpen.value = true;
+  }
+};
+
+const isAdmin = computed(() => authService.isAdmin());
+
+
 const closeAccountSwitcher = () => { isAccountSwitcherOpen.value = false; };
 
 const handleSelectAccount = (accountId: number) => {
@@ -43,8 +52,8 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
     closeAccountSwitcher();
     router.push('/home');
   } catch (error) {
-    console.error('❌ Error creando cuenta conjunta:', error)
-    alert('Error al crear la cuenta. Por favor, intenta de nuevo.')
+    console.error('Error creando cuenta conjunta:', error);
+    alert('Error al crear la cuenta. Por favor, intenta de nuevo.');
   }
 }
 </script>
@@ -52,39 +61,18 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
 <template>
   <div class="header-nav">
     <div class="header-nav__logo">
-      <img
-        ref="logoRef"
-        src="../../images/OscuroReducido.png"
-        alt="Logo"
-        class="logo-image"
-        @click="isWandaMenuOpen = true"
-      />
-      <WandaMenuModal
-        :is-open="isWandaMenuOpen"
-        :anchor-el="logoRef"
-        @close="isWandaMenuOpen = false"
-      />
+      <img ref="logoRef" src="../../images/OscuroReducido.png" alt="Logo" class="logo-image"
+        @click="isWandaMenuOpen = true" />
+      <WandaMenuModal :is-open="isWandaMenuOpen" :anchor-el="logoRef" @close="isWandaMenuOpen = false" />
     </div>
 
-    <div class="header-nav__avatar">
-      <img
-        :src="avatarSrc"
-        alt="User avatar"
-        class="avatar-image"
-        @click="openAccountSwitcher"
-      />
+    <div class="header-nav__avatar" :class="{ 'header-nav__avatar--no-action': isAdmin }">
+      <img :src="avatarSrc" alt="User avatar" class="avatar-image" @click="openAccountSwitcher" />
     </div>
 
-    <AccountSwitcherModal
-      v-if="userStore.currentUser"
-      :is-open="isAccountSwitcherOpen"
-      :user-id="userStore.userId"
-      :active-account-id="userStore.activeAccountId"
-      :current-user="userStore.currentUser"
-      @close="closeAccountSwitcher"
-      @select-account="handleSelectAccount"
-      @create-account="handleCreateJointAccount"
-    />
+    <AccountSwitcherModal v-if="userStore.currentUser && !isAdmin" :is-open="isAccountSwitcherOpen"
+      :user-id="userStore.userId" :active-account-id="userStore.activeAccountId" :current-user="userStore.currentUser"
+      @close="closeAccountSwitcher" @select-account="handleSelectAccount" @create-account="handleCreateJointAccount" />
 
   </div>
 </template>
@@ -116,7 +104,7 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
       border-radius: 8px;
       cursor: pointer;
       transition: opacity 0.2s ease;
-      
+
     }
   }
 
@@ -124,8 +112,13 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
     cursor: pointer;
     transition: transform 0.2s ease;
 
-    &:hover { transform: scale(1.05); }
-    &:active { transform: scale(0.95); }
+    &:hover {
+      transform: scale(1.05);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
 
     .avatar-image {
       width: 40px;
@@ -134,6 +127,18 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
       object-fit: cover;
       display: block;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    &--no-action {
+      cursor: default;
+
+      &:hover {
+        transform: none;
+      }
+
+      &:active {
+        transform: none;
+      }
     }
   }
 }

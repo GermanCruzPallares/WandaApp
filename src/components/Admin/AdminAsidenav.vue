@@ -34,7 +34,7 @@
     </nav>
 
     <div class="aside-nav__footer">
-      <button class="user-button" @click="openAccountSwitcher">
+      <button class="user-button" >
         <img
           :src="avatarSrc"
           alt="User avatar"
@@ -44,17 +44,6 @@
       </button>
     </div>
 
-    <AccountSwitcherModal
-      v-if="userStore.currentUser"
-      :is-open="isAccountSwitcherOpen"
-      :user-id="userStore.userId"
-      :active-account-id="userStore.activeAccountId"
-      :current-user="userStore.currentUser"
-      @close="closeAccountSwitcher"
-      @select-account="handleSelectAccount"
-      @create-account="handleCreateJointAccount"
-    />
-
   </aside>
 </template>
 
@@ -62,24 +51,20 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/UserStore';
-import { useAccountStore } from '@/stores/AccountStore';
 import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
-import AccountSwitcherModal from '@/components/Modals/AccountSwitcherModal.vue';
 import WandaMenuModal from '@/components/Modals/WandaMenuModal.vue';
-import HomeIcon from '../icons/HomeIcon.vue';
-import PlusIcon from '../icons/PlusIcon.vue';
-import CalculatorIcon from '../icons/CalculatorIcon.vue';
+import DashboardIcon from '../icons/DashboardIcon.vue';
 import UserIcon from '../icons/UserIcon.vue';
 
+
 interface MenuItem {
-  id: string
-  label: string
-  icon: any
-  path: string
+  id: string;
+  label: string;
+  icon: any;
+  path: string;
 }
 
 const userStore = useUserStore();
-const accountStore = useAccountStore();
 const router = useRouter();
 
 const isAccountSwitcherOpen = ref(false);
@@ -96,39 +81,15 @@ const avatarSrc = computed(() => {
 });
 
 const activeAccountDisplayName = computed(() => {
-  const account = userStore.activeAccount;
-  if (!account) return 'Cuenta';
-  if (account.account_type === 'personal' && !account.name) {
-    return userStore.currentUser?.name || 'Cuenta';
-  }
-  return account.name || 'Cuenta';
+  return userStore.currentUser?.name || 'Admin';
 });
 
 const menuItems: MenuItem[] = [
-  { id: 'inicio', label: 'Inicio', icon: HomeIcon, path: '/home' },
-  { id: 'add', label: 'Añadir movimiento', icon: PlusIcon, path: '/transaction' },
-  { id: 'libro', label: 'Libro Cuentas', icon: CalculatorIcon, path: '/book' },
-  { id: 'perfil', label: 'Perfil', icon: UserIcon, path: '/profile' },
+  { id: 'dashboard', label: 'Panel de control', icon: DashboardIcon, path: '/admin' },
+  { id: 'users', label: 'Administración Usuarios', icon: UserIcon, path: '/admin/users' },
 ];
 
-const openAccountSwitcher = () => { isAccountSwitcherOpen.value = true; };
-const closeAccountSwitcher = () => { isAccountSwitcherOpen.value = false; };
 
-const handleSelectAccount = (accountId: number) => {
-  userStore.setActiveAccount(accountId);
-  closeAccountSwitcher();
-};
-
-const handleCreateJointAccount = async (accountName: string, userIds: number[]) => {
-  try {
-    await accountStore.createJointAccount({ name: accountName, userIds });
-    await userStore.refreshAccounts();
-    closeAccountSwitcher();
-  } catch (error) {
-    console.error('Error creando cuenta conjunta:', error);
-    alert('Error al crear la cuenta. Por favor, intenta de nuevo.');
-  }
-}
 </script>
 
 <style scoped lang="scss">
@@ -228,8 +189,6 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
   border-radius: $card-border-radius;
   cursor: pointer;
   transition: transform $transition-speed $transition-ease;
-
-  &:hover { transform: translateX(2px); }
 
   &__avatar {
     width: 40px;

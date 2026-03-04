@@ -1,8 +1,9 @@
 export interface User {
-  user_id: number
-  name: string
-  email: string
-  password?: string
+  user_id: number;
+  name: string;
+  email: string;
+  password?: string;
+  role: string;
 }
 
 export interface Account {
@@ -57,6 +58,8 @@ export interface Objective {
   target_amount: number;
   current_save: number;
   deadline: Date | string;
+  is_completed: boolean;
+  is_archived: boolean;
 }
 
 export interface TransactionSplit {

@@ -108,7 +108,7 @@ export const useTransactionSplitStore = defineStore('transactionSplit', () => {
    */
   const acceptDebt = async (splitId: number): Promise<boolean> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/transactionSplits/${splitId}/`, {
+      const response = await fetch(`${API_BASE_URL}/transactionSplits/${splitId}`, {
         method: 'POST',
         headers: getAuthHeaders()
       });

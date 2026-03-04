@@ -1,10 +1,10 @@
-// src/stores/UserStore.ts
-
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import type { Account, User } from '@/types/models';
 import { authService } from '@/services/authService';
-import { apiService } from '@/services/apiService';
+import { useAccountStore } from '@/stores/AccountStore';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:7085/api';
 
 export const useUserStore = defineStore('user', () => {
 
@@ -21,15 +21,94 @@ export const useUserStore = defineStore('user', () => {
   const userId = computed(() => authService.getUserId());
 
   const activeAccount = computed(() => {
-    if (activeAccountId.value === 0) return null
-    return accounts.value.find((acc) => acc.account_id === activeAccountId.value) || null
-  })
+    if (activeAccountId.value === 0) return null;
+    return accounts.value.find(acc => acc.account_id === activeAccountId.value) || null;
+  });
+
+  // ==================== HELPERS ====================
+
+  const getAuthHeaders = (): HeadersInit => {
+    const token = localStorage.getItem('wanda_auth_token');
+    return {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` })
+    };
+  };
+
+  const handleUnauthorized = () => {
+    localStorage.removeItem('wanda_auth_token');
+    localStorage.removeItem('wanda_user_id');
+    window.location.href = '/login';
+  };
+
+  // ==================== API CALLS ====================
+
+  /**
+   * GET /api/User/{userId}
+   */
+  const fetchUser = async (userId: number): Promise<User | null> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/User/${userId}`, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+      if (response.status === 401) { handleUnauthorized(); return null; }
+      if (!response.ok) return null;
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetchUser:', error);
+      return null;
+    }
+  };
+
+  /**
+   * GET /api/User/{userId}/accounts
+   */
+  const fetchUserAccounts = async (userId: number): Promise<Account[]> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/User/${userId}/accounts`, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+      if (response.status === 401) { handleUnauthorized(); return []; }
+      if (!response.ok) return [];
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetchUserAccounts:', error);
+      return [];
+    }
+  };
+
+  /**
+   * GET /api/User?email={email}
+   */
+  const fetchUserByEmail = async (email: string): Promise<User | null> => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/User?email=${encodeURIComponent(email)}`,
+        { method: 'GET', headers: getAuthHeaders() }
+      );
+      if (response.status === 401) { handleUnauthorized(); return null; }
+      if (!response.ok) return null;
+      const users = await response.json();
+      return Array.isArray(users) && users.length > 0 ? users[0] : null;
+    } catch (error) {
+      console.error('Error fetchUserByEmail:', error);
+      return null;
+    }
+  };
 
   // ==================== ACTIONS ====================
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       const userId = await authService.login({ email, password });
+      if (authService.isAdmin()) {
+        isLoadingUser.value = true;
+        currentUser.value = await fetchUser(userId);
+        isLoadingUser.value = false;
+        return true;
+      }
       await loadUserData(userId);
       return true;
     } catch (error) {
@@ -66,8 +145,8 @@ export const useUserStore = defineStore('user', () => {
       isLoadingUser.value = true
       isLoadingAccounts.value = true
 
-      currentUser.value = await apiService.getUser(userId);
-      accounts.value = await apiService.getUserAccounts(userId);
+      currentUser.value = await fetchUser(userId);
+      accounts.value = await fetchUserAccounts(userId);
 
       const savedAccountId = localStorage.getItem('active_account_id');
 
@@ -107,33 +186,24 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  /** Delega en AccountStore */
   const getAccountUsers = async (accountId: number): Promise<User[]> => {
-    try {
-      return await apiService.getAccountMembers(accountId)
-    } catch (error) {
-      console.error('Error obteniendo usuarios de la cuenta:', error);
-      return [];
-    }
-  }
-
-  const checkUserExists = async (email: string): Promise<User | null> => {
-    try {
-      return await apiService.getUserByEmail(email);
-    } catch (error) {
-      console.error('Error verificando usuario:', error);
-      return null;
-    }
+    return useAccountStore().fetchAccountMembers(accountId);
   };
 
+  /** Delega en AccountStore */
+  const checkUserExists = async (email: string): Promise<User | null> => {
+    return fetchUserByEmail(email);
+  };
+
+  /** Delega en AccountStore y sincroniza el array local */
   const updateAccount = async (accountId: number, data: Partial<Account>): Promise<void> => {
     try {
-      await apiService.updateAccount(accountId, data);
+      await useAccountStore().updateAccount(accountId, data);
       const index = accounts.value.findIndex(acc => acc.account_id === accountId);
       if (index !== -1) {
-        const currentAccount = accounts.value[index];
-        if (currentAccount) {
-          accounts.value[index] = { ...currentAccount, ...data };
-        }
+        const current = accounts.value[index];
+        if (current) accounts.value[index] = { ...current, ...data };
       }
     } catch (error) {
       console.error('Error actualizando cuenta:', error);
@@ -142,27 +212,20 @@ export const useUserStore = defineStore('user', () => {
   };
 
   const refreshAccounts = async (setNewestAsActive: boolean = false) => {
-    if (!userId.value) return
-
+    if (!userId.value) return;
     try {
       isLoadingAccounts.value = true;
-
       const previousAccountId = activeAccountId.value;
-      accounts.value = await apiService.getUserAccounts(userId.value);
+      accounts.value = await fetchUserAccounts(userId.value);
 
       if (setNewestAsActive && accounts.value.length > 0) {
         const newestAccount = accounts.value[accounts.value.length - 1];
-        if (newestAccount) {
-          setActiveAccount(newestAccount.account_id);
-          return;
-        }
+        if (newestAccount) { setActiveAccount(newestAccount.account_id); return; }
       }
 
       if (!accounts.value.some(acc => acc.account_id === previousAccountId)) {
         const firstAccount = accounts.value[0];
-        if (firstAccount) {
-          setActiveAccount(firstAccount.account_id);
-        }
+        if (firstAccount) setActiveAccount(firstAccount.account_id);
       }
     } catch (error) {
       console.error('Error refrescando cuentas:', error);
@@ -175,7 +238,13 @@ export const useUserStore = defineStore('user', () => {
     const userId = authService.getUserId();
     if (userId && authService.isAuthenticated()) {
       try {
-        await loadUserData(userId, false);
+        if (authService.isAdmin()) {
+          isLoadingUser.value = true;
+          currentUser.value = await fetchUser(userId);
+          isLoadingUser.value = false;
+        } else {
+          await loadUserData(userId, false);
+        }
       } catch (error) {
         console.error('Error restaurando sesión:', error);
         logout();
@@ -204,5 +273,7 @@ export const useUserStore = defineStore('user', () => {
     checkUserExists,
     refreshAccounts,
     initialize,
-  }
-})
+    fetchUser,
+    fetchUserAccounts,
+  };
+});
