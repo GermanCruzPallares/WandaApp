@@ -15,6 +15,7 @@
   }
 }
 
+
 .form-container {
   padding: 10px 20px 100px 20px; // Bottom padding ensures content clears the navbar and keypad peek
   display: flex;
@@ -125,7 +126,7 @@
 }
 
 .slider-arrow {
-  display: none;
+  display: flex;
   background: white;
   border: none;
   border-radius: 50%;
@@ -164,7 +165,7 @@
 
 .categories-slider {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   overflow-x: auto;
   width: 100%;
   padding: 5px 5px;
@@ -722,32 +723,33 @@
 
 @media (min-width: 768px) {
   .add-movement {
-    margin-left: 240px;
-    margin-right: 300px; // Reduce space allocated to keypad
+    margin-left: 0;
+    margin-right: 300px; 
     min-height: 100vh;
     height: auto;
     justify-content: center;
     padding-bottom: 30px;
-    padding-top: 50px; // Added top padding so content is not glued to roof on PC
+    padding-top: 50px;
     background-color: #ececec;
 
     &.spacer-active {
-      padding-bottom: 0px; // Don't apply mobile spacer for desktop
+      padding-bottom: 0px;
     }
   }
 
   .form-container {
     margin-right: auto;
     margin-left: auto;
-    max-width: 600px; // Very compact on desktop
-    gap: 30px; // Add static gap spacing
-    justify-content: flex-start; // Override mobile space-evenly so they group at top
+    max-width: 560px;
+    gap: 30px;
+    justify-content: flex-start;
+
     .type-selector {
       gap: 40px;
-      margin-top: 0; // The desktop header covers the spacing in Edit Transaction
+      margin-top: 0;
 
       &.is-add-view {
-        margin-top: 20px; // Add some specific spacing just for Add Transaction
+        margin-top: 20px;
       }
 
       button {
@@ -771,12 +773,8 @@
         margin-bottom: 20px;
       }
       .amount-value {
-        .currency {
-          font-size: 1.2rem;
-        }
-        .value {
-          font-size: 3.5rem;
-        }
+        .currency { font-size: 1.2rem; }
+        .value { font-size: 3.5rem; }
       }
     }
 
@@ -797,6 +795,7 @@
     .categories-slider {
       justify-content: center;
       gap: 25px;
+
       .category-item {
         min-width: 70px;
         gap: 10px;
@@ -804,17 +803,13 @@
 
         &.selected {
           opacity: 1;
-
           .icon-circle {
             background-color: #a698c4;
             border: 2px solid #ffffff;
             box-shadow: 0 0 0 3px #a698c4;
             color: white;
           }
-
-          .cat-name {
-            font-weight: 600;
-          }
+          .cat-name { font-weight: 600; }
         }
 
         .icon-circle {
@@ -831,21 +826,13 @@
             height: 30px;
           }
         }
-        .cat-name {
-          font-size: 0.8rem;
-        }
+        .cat-name { font-size: 0.8rem; }
       }
     }
 
     .concept-section {
-      .concept-toggle {
-        padding: 15px;
-        font-size: 0.95rem;
-      }
-      .concept-input {
-        font-size: 1rem;
-        padding: 10px 0;
-      }
+      .concept-toggle { padding: 15px; font-size: 0.95rem; }
+      .concept-input { font-size: 1rem; padding: 10px 0; }
     }
 
     .recurring-section {
@@ -881,24 +868,25 @@
     left: auto;
     right: 0;
     top: 0;
-    max-width: 450px; // Shrunk from 400px
+    width: 300px; // Ancho fijo que coincide con el margin-right del formulario
+    max-width: 300px;
     height: 100vh;
     transform: none !important;
     border-radius: 0;
-    padding-top: 80px; // Reduced padding
+    padding-top: 80px;
     justify-content: center;
     background: #a0a0a5;
     box-shadow: none;
 
     .numeric-grid {
-      gap: 15px; // Increased gap to match smaller buttons
+      gap: 12px;
       margin-bottom: 20px;
 
       button {
-        width: 60px; // Shrunk from 70px
-        height: 60px;
+        width: 58px;
+        height: 58px;
         background-color: rgba(0, 0, 0, 0.2);
-        font-size: 1.5rem; // Shrunk from 2rem
+        font-size: 1.4rem;
 
         &:active {
           background-color: rgba(0, 0, 0, 0.4);
@@ -908,10 +896,10 @@
 
     .save-btn {
       background: #3c3c3c;
-      height: 3rem; // Slightly shorter
+      height: 3rem;
       font-size: 1.1rem;
-      max-width: 240px;
-      padding: 15px; // Reduced padding
+      max-width: 220px;
+      padding: 15px;
     }
 
     .handle-area {
@@ -923,3 +911,4 @@
     display: none;
   }
 }
+
