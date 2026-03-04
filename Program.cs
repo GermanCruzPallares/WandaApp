@@ -40,6 +40,7 @@ builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IObjectiveService, ObjectiveService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<ITransactionSplitService, TransactionSplitService>();
+builder.Services.AddScoped<IUploadDocService, CloudinaryUploadDocService>();
 
 builder.Services.AddHostedService<RecurringTransactionWorker>();
 

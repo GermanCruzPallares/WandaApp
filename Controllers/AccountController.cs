@@ -12,10 +12,12 @@ namespace wandaAPI.Controllers
     public class AccountController : ControllerBase
     {
         private readonly IAccountService _accountService;
+        private readonly IUploadDocService _uploadService;
 
-        public AccountController(IAccountService accountRepository) 
+        public AccountController(IAccountService accountRepository, IUploadDocService uploadService)
         {
             _accountService = accountRepository;
+            _uploadService = uploadService;
         }
 
         [HttpGet]
@@ -33,7 +35,7 @@ namespace wandaAPI.Controllers
             return Ok(account);
         }
 
-        
+
         [HttpGet("{accountId}/users")]
         public async Task<ActionResult<List<User>>> GetAccountMembers(int accountId)
         {
@@ -60,7 +62,8 @@ namespace wandaAPI.Controllers
         }
 
         [HttpPut("{accountId}")]
-        public async Task<IActionResult> UpdateAccount(int accountId, [FromBody] AccountUpdateDto accountDto)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UpdateAccount(int accountId, [FromForm] AccountUpdateDto accountDto)
         {
             try
             {
@@ -100,6 +103,36 @@ namespace wandaAPI.Controllers
             {
                 return NotFound(ex.Message);
             }
+        }
+
+        [HttpPost("uploadImage")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadImage(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("El archivo está vacío");
+
+            // Siguiendo tu ejemplo que llama a UploadImageAsync o UploadPDFAsync
+            var imageUrl = await _uploadService.UploadImageAsync(file);
+
+            if (string.IsNullOrEmpty(imageUrl))
+            {
+                return BadRequest("Error al cargar la imagen en Cloudinary.");
+            }
+
+            // Devuelve la URL para que el frontend la use luego en el PUT
+            return Ok(new { Url = imageUrl });
+        }
+
+        // ENDPOINT PARA ELIMINAR IMAGEN (Copiando el estilo de tu ejemplo)
+        [HttpDelete("deleteImage")]
+        public async Task<IActionResult> Delete(string publicId)
+        {
+            if (string.IsNullOrWhiteSpace(publicId))
+                return BadRequest("El identificador (publicId) no puede estar vacío.");
+
+            await _uploadService.DeleteImageAsync(publicId);
+            return NoContent();
         }
 
     }

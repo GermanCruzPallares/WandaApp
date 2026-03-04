@@ -9,11 +9,14 @@ namespace wandaAPI.Services
         private readonly IAccountUsersRepository _accountUsersRepository;
         private readonly IUserRepository _userRepository;
 
-        public AccountService(IAccountRepository accountRepository, IAccountUsersRepository accountUsersRepository, IUserRepository userRepository)
+        private readonly IUploadDocService _uploadService;
+
+        public AccountService(IAccountRepository accountRepository, IAccountUsersRepository accountUsersRepository, IUserRepository userRepository, IUploadDocService uploadService)
         {
             _accountRepository = accountRepository;
             _accountUsersRepository = accountUsersRepository;
             _userRepository = userRepository;
+            _uploadService = uploadService;
         }
 
         private async Task ValidateJointAccountDataAsync(JointAccountCreateDto dto)
@@ -120,10 +123,27 @@ namespace wandaAPI.Services
                 throw new KeyNotFoundException("La cuenta que se desea actualizar no existe.");
             }
 
+            if (accountDto.ImageFile != null && accountDto.ImageFile.Length > 0)
+            {
+ 
+                var imageUrl = await _uploadService.UploadImageAsync(accountDto.ImageFile);
+
+                if (!string.IsNullOrEmpty(imageUrl))
+                {
+                    existingAccount.Account_picture_url = imageUrl;
+                }
+            }
+            else if (!string.IsNullOrEmpty(accountDto.Account_picture_url))
+            {
+        
+                existingAccount.Account_picture_url = accountDto.Account_picture_url;
+            }
+
+
             existingAccount.Name = accountDto.Name;
             existingAccount.Weekly_budget = accountDto.Weekly_budget;
             existingAccount.Monthly_budget = accountDto.Monthly_budget;
-            existingAccount.Account_picture_url = accountDto.Account_picture_url;
+     
 
             if (existingAccount.Account_type == "personal")
             {

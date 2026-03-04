@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 namespace Models;
 
 public class AccountUpdateDto
@@ -9,6 +10,8 @@ public class AccountUpdateDto
     public double Weekly_budget { get; set; }
 
     public double Monthly_budget { get; set; }
+
+    public IFormFile? ImageFile { get; set; }
     public string Account_picture_url { get; set; }
 
 
