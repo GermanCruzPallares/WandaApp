@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { useUserStore } from '@/stores/UserStore';
-import { useAccountStore } from '@/stores/AccountStore';
-import { getAvatarDataUrl } from '@/components/icons/AvatarIcons';
-import AccountSwitcherModal from '@/components/Modals/AccountSwitcherModal.vue';
-import WandaMenuModal from '@/components/Modals/WandaMenuModal.vue';
-import { authService } from '@/services/authService';
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/UserStore'
+import { useAccountStore } from '@/stores/AccountStore'
+import { getAvatarDataUrl } from '@/components/icons/AvatarIcons'
+import AccountSwitcherModal from '@/components/Modals/AccountSwitcherModal.vue'
+import WandaMenuModal from '@/components/Modals/WandaMenuModal.vue'
+import { authService } from '@/services/authService'
 
 interface Props {
   accountId?: number
@@ -14,46 +14,47 @@ interface Props {
 
 defineProps<Props>()
 
-const userStore = useUserStore();
-const accountStore = useAccountStore();
-const router = useRouter();
+const userStore = useUserStore()
+const accountStore = useAccountStore()
+const router = useRouter()
 
-const isAccountSwitcherOpen = ref(false);
-const isWandaMenuOpen = ref(false);
-const logoRef = ref<HTMLElement | null>(null);
+const isAccountSwitcherOpen = ref(false)
+const isWandaMenuOpen = ref(false)
+const logoRef = ref<HTMLElement | null>(null)
 
 const avatarSrc = computed(() => {
-  const account = userStore.activeAccount;
-  if (!account) return getAvatarDataUrl('personal');
-  if (account.account_picture_url) return account.account_picture_url;
-  return getAvatarDataUrl(account.account_type || 'personal');
-});
+  const account = userStore.activeAccount
+  if (!account) return getAvatarDataUrl('personal')
+  if (account.account_picture_url) return account.account_picture_url
+  return getAvatarDataUrl(account.account_type || 'personal')
+})
 
 const openAccountSwitcher = () => {
   if (!authService.isAdmin()) {
-    isAccountSwitcherOpen.value = true;
+    isAccountSwitcherOpen.value = true
   }
-};
+}
 
-const isAdmin = computed(() => authService.isAdmin());
+const isAdmin = computed(() => authService.isAdmin())
 
-
-const closeAccountSwitcher = () => { isAccountSwitcherOpen.value = false; };
+const closeAccountSwitcher = () => {
+  isAccountSwitcherOpen.value = false
+}
 
 const handleSelectAccount = (accountId: number) => {
-  userStore.setActiveAccount(accountId);
-  closeAccountSwitcher();
-};
+  userStore.setActiveAccount(accountId)
+  closeAccountSwitcher()
+}
 
 const handleCreateJointAccount = async (accountName: string, userIds: number[]) => {
   try {
-    await accountStore.createJointAccount({ name: accountName, userIds });
-    await userStore.refreshAccounts(true);
-    closeAccountSwitcher();
-    router.push('/home');
+    await accountStore.createJointAccount({ name: accountName, userIds })
+    await userStore.refreshAccounts(true)
+    closeAccountSwitcher()
+    router.push('/home')
   } catch (error) {
-    console.error('Error creando cuenta conjunta:', error);
-    alert('Error al crear la cuenta. Por favor, intenta de nuevo.');
+    console.error('Error creando cuenta conjunta:', error)
+    alert('Error al crear la cuenta. Por favor, intenta de nuevo.')
   }
 }
 </script>
@@ -61,19 +62,34 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
 <template>
   <div class="header-nav">
     <div class="header-nav__logo">
-      <img ref="logoRef" src="../../images/OscuroReducido.png" alt="Logo" class="logo-image"
-        @click="isWandaMenuOpen = true" />
-      <WandaMenuModal :is-open="isWandaMenuOpen" :anchor-el="logoRef" @close="isWandaMenuOpen = false" />
+      <img
+        ref="logoRef"
+        src="../../images/OscuroReducido.png"
+        alt="Logo"
+        class="logo-image"
+        @click="isWandaMenuOpen = true"
+      />
+      <WandaMenuModal
+        :is-open="isWandaMenuOpen"
+        :anchor-el="logoRef"
+        @close="isWandaMenuOpen = false"
+      />
     </div>
 
     <div class="header-nav__avatar" :class="{ 'header-nav__avatar--no-action': isAdmin }">
       <img :src="avatarSrc" alt="User avatar" class="avatar-image" @click="openAccountSwitcher" />
     </div>
 
-    <AccountSwitcherModal v-if="userStore.currentUser && !isAdmin" :is-open="isAccountSwitcherOpen"
-      :user-id="userStore.userId" :active-account-id="userStore.activeAccountId" :current-user="userStore.currentUser"
-      @close="closeAccountSwitcher" @select-account="handleSelectAccount" @create-account="handleCreateJointAccount" />
-
+    <AccountSwitcherModal
+      v-if="userStore.currentUser && !isAdmin"
+      :is-open="isAccountSwitcherOpen"
+      :user-id="userStore.userId"
+      :active-account-id="userStore.activeAccountId"
+      :current-user="userStore.currentUser"
+      @close="closeAccountSwitcher"
+      @select-account="handleSelectAccount"
+      @create-account="handleCreateJointAccount"
+    />
   </div>
 </template>
 
@@ -88,7 +104,8 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
   z-index: 1000;
   box-sizing: border-box;
   background-color: #e5e5e5;
-  padding: 0 20px;
+  padding: 12px 20px;
+  min-height: $navbar-height;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -104,7 +121,6 @@ const handleCreateJointAccount = async (accountName: string, userIds: number[]) 
       border-radius: 8px;
       cursor: pointer;
       transition: opacity 0.2s ease;
-
     }
   }
 
