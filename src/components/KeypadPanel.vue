@@ -5,6 +5,7 @@ const props = defineProps<{
   amount: string
   open: boolean
   transactionId?: number
+  hasSidebar?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -35,7 +36,7 @@ const saveLabel = props.transactionId ? 'Guardar cambios' : 'Guardar'
 <template>
   <div
     class="keypad-panel"
-    :class="{ 'is-open': open }"
+    :class="{ 'is-open': open, 'has-sidebar': hasSidebar }"
   >
     <!-- Mobile handle -->
     <div
@@ -77,36 +78,40 @@ const saveLabel = props.transactionId ? 'Guardar cambios' : 'Guardar'
   position: fixed;
   bottom: 0;
   left: 0;
-  width: 100%;
+  right: 0;
   background: #a0a0a5;
-  z-index: 10000;
+  z-index: 200;
   border-radius: 22px 22px 0 0;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.18);
-  // Extend padding to cover the bottom nav (64px) + safe area
   max-height: 60vh;
   padding: 0 20px calc(72px + env(safe-area-inset-bottom)) 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   transition: transform 0.32s cubic-bezier(0.25, 1, 0.5, 1);
-
-  // Collapsed: show just the handle as peek
-  transform: translateY(calc(100% - 44px));
+  transform: translateY(calc(100% - 10px));
 
   &.is-open {
     transform: translateY(0);
   }
 
+  &.has-sidebar {
+    // On tablet the sidebar is visible (240px), offset keypad so it doesn't cover it
+    @media (max-width: 1023px) {
+      left: 240px;
+    }
+  }
+
   // ─── Desktop: right column, always visible ────────────────────────────────
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     position: relative;
-    width: 320px;
-    min-width: 320px;
+    width: 420px;
+    min-width: 420px;
     max-height: none;
     height: 100vh;
     border-radius: 0;
     box-shadow: none;
-    padding: 0 24px;
+    padding: 0 40px;
     transform: none !important;
     justify-content: center;
     align-items: center;
@@ -127,7 +132,7 @@ const saveLabel = props.transactionId ? 'Guardar cambios' : 'Guardar'
   touch-action: none;
   flex-shrink: 0;
 
-  @media (min-width: 768px) { display: none; }
+  @media (min-width: 1024px) { display: none; }
 }
 
 .handle-bar {
@@ -164,7 +169,7 @@ const saveLabel = props.transactionId ? 'Guardar cambios' : 'Guardar'
     &:active { background: #8e8e8e; }
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     gap: 14px;
     max-width: 220px;
     margin-bottom: 20px;
@@ -195,10 +200,11 @@ const saveLabel = props.transactionId ? 'Guardar cambios' : 'Guardar'
 
   &:active { transform: scale(0.97); }
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     height: 52px;
-    font-size: 1.05rem;
+    font-size: 1.1rem;
     background: #3c3c3c;
+    max-width: 240px;
   }
 }
 </style>

@@ -234,14 +234,7 @@ const save = async () => {
     if (success) {
       showToast(props.transactionId ? 'Transacción actualizada' : 'Transacción guardada con éxito', 'success')
       keypadOpen.value = false
-      if (props.transactionId) {
-        setTimeout(() => router.push('/home'), 500)
-      } else {
-        amount.value = '0'
-        selectedCategory.value = null
-        conceptText.value = ''
-        isRecurring.value = false
-      }
+      setTimeout(() => router.push('/home'), 500)
     } else {
       showToast('Error al guardar la transacción', 'error')
     }
@@ -269,7 +262,7 @@ watch(() => props.transactionId, (newId) => { if (newId) loadTransactionData(new
 
 <template>
   <div class="app-shell">
-    <AsideNav />
+    <AsideNav class="desktop-only" />
     <TopNav class="mobile-only" />
 
     <div class="transaction-layout">
@@ -347,7 +340,7 @@ watch(() => props.transactionId, (newId) => { if (newId) loadTransactionData(new
   // On mobile, leave room at bottom for the fixed BottomNav (64px)
   padding-bottom: 64px;
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     flex-direction: row;
     margin-left: 240px;
     height: 100vh;
@@ -357,8 +350,15 @@ watch(() => props.transactionId, (newId) => { if (newId) loadTransactionData(new
 }
 
 .mobile-only {
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     display: none;
+  }
+}
+
+.desktop-only {
+  display: none;
+  @media (min-width: 1024px) {
+    display: block;
   }
 }
 </style>

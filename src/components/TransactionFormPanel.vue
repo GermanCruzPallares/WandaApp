@@ -257,7 +257,7 @@ const frequencyLabel = (f: string) =>
     padding-bottom: 280px; // room when keypad fully open
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     background: #ececec;
     padding-top: 0;
     padding-bottom: 0;
@@ -272,13 +272,13 @@ const frequencyLabel = (f: string) =>
 .form-inner {
   width: 100%;
   max-width: 440px;
-  margin: 1.2em 0;
+  margin: 0 auto;
   padding: 24px 20px 0;
   display: flex;
   flex-direction: column;
   gap: 14px;
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     max-width: 520px;
     gap: 22px;
     padding: 0 32px;
@@ -309,7 +309,7 @@ const frequencyLabel = (f: string) =>
       color: #fff;
     }
 
-    @media (min-width: 768px) {
+    @media (min-width: 1024px) {
       padding: 12px 52px;
       font-size: 1rem;
       background: rgba(0, 0, 0, 0.13);
@@ -337,7 +337,7 @@ const frequencyLabel = (f: string) =>
     color: #888;
     margin-bottom: 4px;
 
-    @media (min-width: 768px) {
+    @media (min-width: 1024px) {
       font-size: 1.4rem;
       font-weight: 600;
       margin-bottom: 12px;
@@ -414,7 +414,7 @@ const frequencyLabel = (f: string) =>
   .arrow-icon-left { transform: rotate(90deg); }
   .arrow-icon-right { transform: rotate(-90deg); }
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     width: 36px;
     height: 36px;
     svg { width: 18px; height: 18px; }
@@ -435,7 +435,7 @@ const frequencyLabel = (f: string) =>
 
   &::-webkit-scrollbar { display: none; }
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     justify-content: center;
     gap: 20px;
   }
@@ -479,7 +479,7 @@ const frequencyLabel = (f: string) =>
 
     .category-icon { width: 24px; height: 24px; }
 
-    @media (min-width: 768px) {
+    @media (min-width: 1024px) {
       width: 55px;
       height: 55px;
       background: rgba(255,255,255,0.35);
@@ -527,7 +527,7 @@ const frequencyLabel = (f: string) =>
     box-shadow: 0 4px 16px rgba(0,0,0,0.06);
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     background: rgba(255,255,255,0.4);
     &.is-active { background: rgba(255,255,255,0.6); }
   }
