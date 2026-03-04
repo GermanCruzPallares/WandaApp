@@ -147,6 +147,7 @@ const props = defineProps<{
   isJoint?: boolean
   members?: User[]
   splits?: TransactionSplit[]
+  memberAvatars?: Map<number, string>
 }>()
 
 defineEmits<{
@@ -155,8 +156,8 @@ defineEmits<{
 
 // ==================== HELPERS ====================
 
-const getMemberAvatar = (_userId: number): string => {
-  return getAvatarDataUrl('personal')
+const getMemberAvatar = (userId: number): string => {
+  return props.memberAvatars?.get(userId) || getAvatarDataUrl('personal')
 }
 
 const getMemberName = (userId: number): string => {

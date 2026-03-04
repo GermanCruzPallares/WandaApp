@@ -10,11 +10,7 @@
       </div>
 
       <div class="book-content__section">
-        <MonthlySummaryComponent
-          :income="monthlyIncome"
-          :expense="monthlyExpense"
-          :is-loading="isLoading"
-        />
+        <MonthlySummaryComponent :income="monthlyIncome" :expense="monthlyExpense" :is-loading="isLoading" />
       </div>
 
       <div class="book-content__section">
@@ -22,25 +18,14 @@
       </div>
 
       <div class="book-content__section">
-        <TransactionTableComponent
-          :transactions="monthTransactions"
-          :filters="activeFilters"
-          :is-loading="isLoading"
-          :is-joint="activeAccount?.account_type === 'joint'"
-          :members="accountMembers"
-          :splits="monthSplits"
-          @row-click="handleRowClick"
-        />
+        <TransactionTableComponent :transactions="monthTransactions" :filters="activeFilters" :is-loading="isLoading"
+          :is-joint="activeAccount?.account_type === 'joint'" :members="accountMembers" :splits="monthSplits"
+          :member-avatars="memberAvatars" @row-click="handleRowClick" />
       </div>
     </main>
 
-    <SharedTransactionDeleteModal
-      :is-open="showDeleteModal"
-      :transaction="transactionToDelete"
-      :is-deleting="isDeleting"
-      @close="showDeleteModal = false"
-      @confirm="confirmDeleteTransaction"
-    />
+    <SharedTransactionDeleteModal :is-open="showDeleteModal" :transaction="transactionToDelete"
+      :is-deleting="isDeleting" @close="showDeleteModal = false" @confirm="confirmDeleteTransaction" />
 
     <BottomNav class="mobile-only" />
   </div>
@@ -64,6 +49,11 @@ import type { TransactionFilters } from '@/components/BookView/TransactionFilter
 import TransactionTableComponent from '@/components/BookView/TransactionTableComponent.vue'
 import { useToast } from '@/composables/useToast'
 import type { Transaction, TransactionSplit, AccountUI, User } from '@/types/models'
+
+import { getAvatarDataUrl } from '@/components/icons/AvatarIcons'
+
+
+const memberAvatars = ref<Map<number, string>>(new Map())
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -134,21 +124,37 @@ const monthlyExpense = computed(() =>
 // ==================== MÉTODOS ====================
 
 const loadTransactions = async (accountId: number) => {
-  isLoading.value = true
+  isLoading.value = true;
   try {
-    allTransactions.value = await transactionStore.fetchTransactions(accountId)
-    // Cargar splits solo si la cuenta es conjunta
+    allTransactions.value = await transactionStore.fetchTransactions(accountId);
+
     if (activeAccount.value?.account_type === 'joint') {
-      allSplits.value = await splitStore.fetchAccountSplits(accountId)
+      allSplits.value = await splitStore.fetchAccountSplits(accountId);
+      accountMembers.value = await accountStore.fetchAccountMembers(accountId);
+
+      // Cargar avatares
+      const avatarMap = new Map<number, string>();
+      await Promise.all(
+        accountMembers.value.map(async (member) => {
+          const userAccounts = await userStore.fetchUserAccounts(member.user_id);
+          const personalAccount = userAccounts.find(a => a.account_type === 'personal');
+          avatarMap.set(
+            member.user_id,
+            personalAccount?.account_picture_url || getAvatarDataUrl('personal')
+          );
+        })
+      );
+      memberAvatars.value = avatarMap;
     } else {
-      allSplits.value = []
+      allSplits.value = [];
+      memberAvatars.value = new Map();
     }
   } catch (error) {
-    console.error('❌ Error cargando transacciones:', error)
+    console.error('❌ Error cargando transacciones:', error);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 const onPeriodChange = () => {
   // Resetear filtros al cambiar de mes
