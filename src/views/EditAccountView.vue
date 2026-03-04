@@ -51,9 +51,7 @@ onMounted(async () => {
 const handleBack = () => router.push('/home');
 
 const handleSaved = (account: Account) => {
-  console.log('Cuenta guardada:', account);
-  // Redirigir a home después de guardar
-  router.push('/home');
+  router.push({ path: '/home', query: { refresh: Date.now().toString() } });
 };
 
 const handleCancelled = () => {

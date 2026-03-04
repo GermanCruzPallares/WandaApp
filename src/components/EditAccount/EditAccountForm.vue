@@ -3,14 +3,12 @@
     <!-- Avatar Section -->
     <div class="avatar-section">
       <div class="avatar-container" @click="handleAvatarClick">
-        <img 
-          :src="formData.account_picture_url || defaultAvatar" 
-          :alt="formData.name"
-          class="avatar-image"
-        />
+        <img :src="formData.account_picture_url || defaultAvatar" :alt="formData.name" class="avatar-image" />
         <div class="avatar-overlay">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="white"/>
+            <path
+              d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
+              fill="white" />
           </svg>
         </div>
       </div>
@@ -24,46 +22,26 @@
 
       <div class="form-field">
         <label class="field-label">Nombre</label>
-        <input
-          v-model="formData.name"
-          type="text"
-          class="field-input"
-          :class="{ 'field-input--error': errors.name }"
-          placeholder="Nombre de la cuenta"
-          maxlength="50"
-        />
+        <input v-model="formData.name" type="text" class="field-input" :class="{ 'field-input--error': errors.name }"
+          placeholder="Nombre de la cuenta" maxlength="50" />
         <p v-if="errors.name" class="field-error">{{ errors.name }}</p>
       </div>
 
-    <div v-if="formData.account_type === 'personal'" class="form-field">
-      <label class="field-label">Saldo</label>
-      <div class="field-input-wrapper">
-        <input
-          v-model.number="formData.amount"
-          type="number"
-          class="field-input"
-          :class="{ 'field-input--error': errors.amount }"
-          placeholder="0,00"
-          step="0.01"
-          min="0"
-        />
-        <span class="field-currency">€</span>
+      <div v-if="formData.account_type === 'personal'" class="form-field">
+        <label class="field-label">Saldo</label>
+        <div class="field-input-wrapper">
+          <input v-model.number="formData.amount" type="number" class="field-input"
+            :class="{ 'field-input--error': errors.amount }" placeholder="0,00" step="0.01" min="0" />
+          <span class="field-currency">€</span>
+        </div>
+        <p v-if="errors.amount" class="field-error">{{ errors.amount }}</p>
       </div>
-      <p v-if="errors.amount" class="field-error">{{ errors.amount }}</p>
-    </div>
 
       <div class="form-field">
         <label class="field-label">Presupuesto mensual</label>
         <div class="field-input-wrapper">
-          <input
-            v-model.number="formData.monthly_budget"
-            type="number"
-            class="field-input"
-            :class="{ 'field-input--error': errors.monthly_budget }"
-            placeholder="0,00"
-            step="0.01"
-            min="0"
-          />
+          <input v-model.number="formData.monthly_budget" type="number" class="field-input"
+            :class="{ 'field-input--error': errors.monthly_budget }" placeholder="0,00" step="0.01" min="0" />
           <span class="field-currency">€</span>
         </div>
         <p v-if="errors.monthly_budget" class="field-error">{{ errors.monthly_budget }}</p>
@@ -72,35 +50,19 @@
       <div class="form-field">
         <label class="field-label">Presupuesto semanal</label>
         <div class="field-input-wrapper">
-          <input
-            v-model.number="formData.weekly_budget"
-            type="number"
-            class="field-input"
-            :class="{ 'field-input--error': errors.weekly_budget }"
-            placeholder="0,00"
-            step="0.01"
-            min="0"
-          />
+          <input v-model.number="formData.weekly_budget" type="number" class="field-input"
+            :class="{ 'field-input--error': errors.weekly_budget }" placeholder="0,00" step="0.01" min="0" />
           <span class="field-currency">€</span>
         </div>
         <p v-if="errors.weekly_budget" class="field-error">{{ errors.weekly_budget }}</p>
       </div>
 
       <div class="form-actions">
-        <button 
-          type="button" 
-          class="btn-cancel"
-          @click="handleCancel"
-          :disabled="isSaving"
-        >
+        <button type="button" class="btn-cancel" @click="handleCancel" :disabled="isSaving">
           Cancelar
         </button>
-        
-        <button 
-          type="submit" 
-          class="btn-save"
-          :disabled="!hasChanges || isSaving"
-        >
+
+        <button type="submit" class="btn-save" :disabled="!hasChanges || isSaving">
           <span v-if="isSaving">Guardando...</span>
           <span v-else>Guardar cambios</span>
         </button>
@@ -108,16 +70,16 @@
 
       <div v-if="showSuccessMessage" class="success-message">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="10" fill="#4CAF50"/>
-          <path d="M7 12l3 3 7-7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="12" cy="12" r="10" fill="#4CAF50" />
+          <path d="M7 12l3 3 7-7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
         <span>Cambios guardados correctamente</span>
       </div>
 
       <div v-if="saveError" class="error-message">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="10" fill="#f44336"/>
-          <path d="M15 9l-6 6M9 9l6 6" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="12" cy="12" r="10" fill="#f44336" />
+          <path d="M15 9l-6 6M9 9l6 6" stroke="white" stroke-width="2" stroke-linecap="round" />
         </svg>
         <span>{{ saveError }}</span>
       </div>
@@ -129,31 +91,27 @@
           <div class="photo-modal" @click.stop>
             <button class="modal-close" @click="closePhotoModal">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
               </svg>
             </button>
-            
+
             <h2 class="modal-title">Cambiar foto de perfil</h2>
-            
+
             <div class="photo-options">
-              <input
-                ref="fileInput"
-                type="file"
-                accept="image/*"
-                style="display: none"
-                @change="handleFileSelect"
-              />
-              
+              <input ref="fileInput" type="file" accept="image/*" style="display: none" @change="handleFileSelect" />
+
               <button class="photo-option" @click="triggerFileInput">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
                 <span>Subir imagen</span>
               </button>
-              
+
               <button class="photo-option" @click="removePhoto" :disabled="!formData.account_picture_url">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
                 <span>Eliminar foto</span>
               </button>
@@ -187,7 +145,7 @@ const emit = defineEmits<{
 const accountStore = useAccountStore();
 
 // ==================== ESTADO LOCAL ====================
-
+const selectedFile = ref<File | null>(null);
 const formData = ref({
   name: '',
   account_picture_url: '',
@@ -242,7 +200,7 @@ const hasChanges = computed(() => {
 const loadAccountData = async () => {
   try {
     const account = await accountStore.fetchAccount(props.accountId);
-    
+
     if (account) {
       formData.value = {
         name: account.name,
@@ -252,7 +210,7 @@ const loadAccountData = async () => {
         amount: account.amount,
         account_type: account.account_type
       };
-      
+
       originalData.value = { ...formData.value };
     }
   } catch (error) {
@@ -320,13 +278,15 @@ const handleSubmit = async () => {
       amount: formData.value.account_type === 'personal' ? Number(formData.value.amount) : 0,
       monthly_budget: Number(formData.value.monthly_budget),
       weekly_budget: Number(formData.value.weekly_budget),
-      account_picture_url: formData.value.account_picture_url || ''
+      account_picture_url: formData.value.account_picture_url || '',
+      imageFile: selectedFile.value  
     };
-    
+
     console.log('📤 Datos a enviar:', updateData);
 
 
     await accountStore.updateAccount(props.accountId, updateData);
+    selectedFile.value = null;
 
     originalData.value = { ...formData.value };
 
@@ -379,21 +339,19 @@ const triggerFileInput = () => {
 const handleFileSelect = (event: Event) => {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
-  
+
   if (file) {
-    // Validar tipo de archivo
     if (!file.type.startsWith('image/')) {
       saveError.value = 'Por favor, selecciona una imagen válida';
       return;
     }
-
-    // Validar tamaño (máximo 5MB)
     if (file.size > 5 * 1024 * 1024) {
       saveError.value = 'La imagen no puede superar los 5MB';
       return;
     }
 
-    // Convertir a base64 y guardar
+    selectedFile.value = file;
+    // Preview local
     const reader = new FileReader();
     reader.onload = (e) => {
       formData.value.account_picture_url = e.target?.result as string;
@@ -405,6 +363,7 @@ const handleFileSelect = (event: Event) => {
 
 const removePhoto = () => {
   formData.value.account_picture_url = '';
+  selectedFile.value = null;
   closePhotoModal();
 };
 
@@ -553,7 +512,7 @@ watch(() => props.accountId, () => {
 
 .field-input-wrapper {
   position: relative;
-  
+
   .field-input {
     padding-right: 50px; // Espacio para el símbolo €
   }
@@ -647,6 +606,7 @@ watch(() => props.accountId, () => {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

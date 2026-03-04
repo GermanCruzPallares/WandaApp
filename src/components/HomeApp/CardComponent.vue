@@ -45,7 +45,7 @@ watch(() => props.accountId, (id) => {
 });
 
 const greeting = computed(() => {
-  const name = userStore.currentUser?.name;
+  const name = account.value?.name;
   return name ? `Hola ${name} !` : 'Hola !';
 });
 

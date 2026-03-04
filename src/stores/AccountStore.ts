@@ -7,14 +7,12 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:7085/api
 
 export const useAccountStore = defineStore('account', () => {
 
-  const accountCache = ref<Map<number, Account>>(new Map());
   const isCreatingAccount = ref(false);
 
   const getAuthHeaders = (): HeadersInit => {
     const token = localStorage.getItem('wanda_auth_token');
     return {
-      'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` })
+      'Authorization': `Bearer ${token}`
     };
   };
 
@@ -26,15 +24,13 @@ export const useAccountStore = defineStore('account', () => {
 
   const fetchAccount = async (accountId: number): Promise<Account | null> => {
     try {
-      headers: authService.getAuthHeaders()
       const response = await fetch(`${API_BASE_URL}/Account/${accountId}`, {
-        method: 'GET', headers: getAuthHeaders()
+        method: 'GET',
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' }
       });
       if (response.status === 401) { authService.logout(); return null; }
       if (!response.ok) return null;
-      const account: Account = await response.json();
-      accountCache.value.set(accountId, account);
-      return account;
+      return await response.json();
     } catch (error) {
       console.error('Error fetchAccount:', error);
       return null;
@@ -44,7 +40,8 @@ export const useAccountStore = defineStore('account', () => {
   const fetchAccountMembers = async (accountId: number): Promise<User[]> => {
     try {
       const response = await fetch(`${API_BASE_URL}/Account/${accountId}/users`, {
-        method: 'GET', headers: getAuthHeaders()
+        method: 'GET',
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' }
       });
       if (response.status === 401) { handleUnauthorized(); return []; }
       if (!response.ok) return [];
@@ -60,7 +57,7 @@ export const useAccountStore = defineStore('account', () => {
     try {
       const response = await fetch(`${API_BASE_URL}/Account`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: data.name, member_Ids: data.userIds })
       });
       if (response.status === 401) { handleUnauthorized(); return; }
@@ -76,36 +73,43 @@ export const useAccountStore = defineStore('account', () => {
     }
   };
 
-  /**
-   * Hace GET previo para mergear campos no enviados con los actuales,
-   * evitando sobreescribir datos que no se quieren cambiar.
-   */
   const updateAccount = async (
     accountId: number,
-    data: { name?: string; amount?: number;weekly_budget?: number; monthly_budget?: number; account_picture_url?: string; }
-  ): Promise<void> => {
+    data: { name?: string; amount?: number; weekly_budget?: number; monthly_budget?: number; account_picture_url?: string; imageFile?: File | null; }
+  ): Promise<Account | null> => {
     try {
-      const current = accountCache.value.get(accountId) ?? await fetchAccount(accountId);
+      const current = await fetchAccount(accountId);
       if (!current) throw new Error('Cuenta no encontrada');
 
-      const payload = {
-        name: data.name ?? current.name,
-        amount: data.amount ?? current.amount,
-        weekly_budget: data.weekly_budget ?? current.weekly_budget,
-        monthly_budget: data.monthly_budget ?? current.monthly_budget,
-        account_picture_url: data.account_picture_url ?? current.account_picture_url ?? '',
-      };
+      const formData = new FormData();
+      formData.append('Name', data.name ?? current.name);
+      formData.append('Amount', String(data.amount ?? current.amount));
+      formData.append('Weekly_budget', String(data.weekly_budget ?? current.weekly_budget));
+      formData.append('Monthly_budget', String(data.monthly_budget ?? current.monthly_budget));
+      formData.append('Account_picture_url', data.account_picture_url ?? current.account_picture_url ?? '');
+
+      if (data.imageFile) {
+        formData.append('ImageFile', data.imageFile);
+      }
+
+      const token = localStorage.getItem('wanda_auth_token');
+      const headers: HeadersInit = token ? { 'Authorization': `Bearer ${token}` } : {};
 
       const response = await fetch(`${API_BASE_URL}/Account/${accountId}`, {
-        method: 'PUT', headers: getAuthHeaders(), body: JSON.stringify(payload)
+        method: 'PUT',
+        headers,
+        body: formData
       });
-      if (response.status === 401) { handleUnauthorized(); return; }
+
+      if (response.status === 401) { handleUnauthorized(); return null; }
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(errorText || `Error ${response.status}`);
       }
 
-      accountCache.value.set(accountId, { ...current, ...data });
+      // Devuelve los datos frescos del servidor
+      return await fetchAccount(accountId);
+
     } catch (error) {
       console.error('Error updateAccount:', error);
       throw error;
@@ -113,7 +117,6 @@ export const useAccountStore = defineStore('account', () => {
   };
 
   return {
-    accountCache,
     isCreatingAccount,
     fetchAccount,
     fetchAccountMembers,

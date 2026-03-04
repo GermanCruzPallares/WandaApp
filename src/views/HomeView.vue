@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/UserStore';
 import BottomNav from '@/components/Navs/BottomNav.vue';
@@ -14,6 +14,8 @@ import type { AccountUI, Transaction, Objective } from '@/types/models';
 
 const router = useRouter();
 const userStore = useUserStore();
+const cardKey = ref(0);
+
 
 // ==================== COMPUTED ====================
 
