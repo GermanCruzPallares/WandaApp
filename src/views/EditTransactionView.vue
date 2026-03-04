@@ -298,7 +298,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
     </header>
 
     <div class="transaction-layout">
-      <AsideNav class="desktop-only" />
+      <AsideNav />
 
       <!-- Desktop delete button -->
       <button class="desktop-delete desktop-only" @click="showDeleteModal = true" title="Eliminar transacción">
@@ -437,7 +437,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
   flex-direction: column;
   padding-bottom: 64px; // space for BottomNav on mobile
 
-  @media (min-width: 1024px) {
+  @media (min-width: 768px) {
     flex-direction: row;
     margin-left: 240px;
     height: 100vh;
@@ -472,11 +472,11 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 
 // ─── Visibility helpers ───────────────────────────────────────────────────────
 .mobile-only {
-  @media (min-width: 1024px) { display: none; }
+  @media (min-width: 768px) { display: none; }
 }
 
 .desktop-only {
   display: none;
-  @media (min-width: 1024px) { display: flex; }
+  @media (min-width: 768px) { display: flex; }
 }
 </style>

@@ -80,7 +80,7 @@ const saveLabel = props.transactionId ? 'Guardar cambios' : 'Guardar'
   left: 0;
   right: 0;
   background: #a0a0a5;
-  z-index: 200;
+  z-index: 1200;
   border-radius: 22px 22px 0 0;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.18);
   max-height: 60vh;
@@ -89,7 +89,7 @@ const saveLabel = props.transactionId ? 'Guardar cambios' : 'Guardar'
   flex-direction: column;
   align-items: center;
   transition: transform 0.32s cubic-bezier(0.25, 1, 0.5, 1);
-  transform: translateY(calc(100% - 10px));
+  transform: translateY(calc(100% - 1px));
 
   &.is-open {
     transform: translateY(0);
@@ -103,7 +103,7 @@ const saveLabel = props.transactionId ? 'Guardar cambios' : 'Guardar'
   }
 
   // ─── Desktop: right column, always visible ────────────────────────────────
-  @media (min-width: 1024px) {
+  @media (min-width: 768px) {
     position: relative;
     width: 420px;
     min-width: 420px;
@@ -132,7 +132,7 @@ const saveLabel = props.transactionId ? 'Guardar cambios' : 'Guardar'
   touch-action: none;
   flex-shrink: 0;
 
-  @media (min-width: 1024px) { display: none; }
+  @media (min-width: 768px) { display: none; }
 }
 
 .handle-bar {
@@ -169,7 +169,7 @@ const saveLabel = props.transactionId ? 'Guardar cambios' : 'Guardar'
     &:active { background: #8e8e8e; }
   }
 
-  @media (min-width: 1024px) {
+  @media (min-width: 768px) {
     gap: 14px;
     max-width: 220px;
     margin-bottom: 20px;
@@ -200,7 +200,7 @@ const saveLabel = props.transactionId ? 'Guardar cambios' : 'Guardar'
 
   &:active { transform: scale(0.97); }
 
-  @media (min-width: 1024px) {
+  @media (min-width: 768px) {
     height: 52px;
     font-size: 1.1rem;
     background: #3c3c3c;

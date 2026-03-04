@@ -262,7 +262,7 @@ watch(() => props.transactionId, (newId) => { if (newId) loadTransactionData(new
 
 <template>
   <div class="app-shell">
-    <AsideNav class="desktop-only" />
+    <AsideNav />
     <TopNav class="mobile-only" />
 
     <div class="transaction-layout">
@@ -340,7 +340,7 @@ watch(() => props.transactionId, (newId) => { if (newId) loadTransactionData(new
   // On mobile, leave room at bottom for the fixed BottomNav (64px)
   padding-bottom: 64px;
 
-  @media (min-width: 1024px) {
+  @media (min-width: 768px) {
     flex-direction: row;
     margin-left: 240px;
     height: 100vh;
@@ -350,14 +350,14 @@ watch(() => props.transactionId, (newId) => { if (newId) loadTransactionData(new
 }
 
 .mobile-only {
-  @media (min-width: 1024px) {
+  @media (min-width: 768px) {
     display: none;
   }
 }
 
 .desktop-only {
   display: none;
-  @media (min-width: 1024px) {
+  @media (min-width: 768px) {
     display: block;
   }
 }
