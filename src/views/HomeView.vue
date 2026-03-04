@@ -82,29 +82,41 @@ const handleTransactionClick = (transactionId: number) => {
   <AsideNav :active-item="activeMenuItem" :account-id="activeAccount?.account_id" />
 
   <TopNav :account-id="activeAccount?.account_id" class="mobile-only" />
-  <TopNav :account-id="activeAccount?.account_id" class="mobile-only" />
 
   <main class="home-content">
     <div class="home-content__header">
-      <CardComponent :account-id="activeAccount?.account_id" />
-
-      <ObjectivesComponent
-        v-if="activeAccount?.account_id"
-        :account-id="activeAccount?.account_id"
-        @add-objective="handleAddObjective"
-        @objectives-loaded="handleObjectivesLoaded"
+      <!-- Card conjunta -->
+      <JointCardComponent
+        v-if="isJointAccount && activeAccount?.account_id"
+        :account-id="activeAccount.account_id"
       />
+
+      <!-- Card personal -->
+      <CardComponent v-else :account-id="activeAccount?.account_id" @edit="handleEditCard" />
     </div>
 
-    <div class="home-content__right">
-      <TransactionsHistoryComponent
-        :account-id="activeAccount?.account_id"
-        :account-type="activeAccount?.account_type"
-        :initial-limit="5"
-        :load-more-increment="10"
-        @transaction-click="handleTransactionClick"
-        @transactions-loaded="handleTransactionsLoaded"
-      />
+    <div class="home-content__grid">
+      <div class="home-content__left">
+        <BalanceComponent :account-id="activeAccount?.account_id" />
+
+        <ObjectivesComponent
+          v-if="activeAccount?.account_id"
+          :account-id="activeAccount?.account_id"
+          @add-objective="handleAddObjective"
+          @objectives-loaded="handleObjectivesLoaded"
+        />
+      </div>
+
+      <div class="home-content__right">
+        <TransactionsHistoryComponent
+          :account-id="activeAccount?.account_id"
+          :account-type="activeAccount?.account_type"
+          :initial-limit="5"
+          :load-more-increment="10"
+          @transaction-click="handleTransactionClick"
+          @transactions-loaded="handleTransactionsLoaded"
+        />
+      </div>
     </div>
   </main>
 
@@ -112,22 +124,10 @@ const handleTransactionClick = (transactionId: number) => {
 </template>
 
 <style scoped lang="scss">
-@import '@/styles/base/variables.scss';
-
-.app-shell {
-  display: flex;
-  flex-direction: column;
-  height: 100dvh;
-  width: 100%;
-  overflow: hidden;
-  background-color: $background-principal;
-}
-
 .home-content {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 20px 16px; // Standard internal spacing
+  min-height: 100vh;
+  padding-top: 100px;
+  padding-bottom: 80px;
 
   @media (min-width: 768px) {
     margin-left: 240px;
