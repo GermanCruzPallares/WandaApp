@@ -178,8 +178,8 @@ const confirmDeleteTransaction = async () => {
 <style scoped lang="scss">
 .home-content {
   min-height: 100vh;
-  padding-top: 100px;
-  padding-bottom: 80px;
+  padding-top: calc(115px + env(safe-area-inset-top));
+  padding-bottom: 100px;
 
   @media (min-width: 768px) {
     margin-left: 240px;

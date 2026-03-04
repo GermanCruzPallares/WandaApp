@@ -43,11 +43,15 @@ const navItems: NavItem[] = [
 @import '@/styles/base/variables.scss';
 
 .navbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   width: 100%;
   background-color: $section-bg-primary;
   border-top: 1px solid #e0e0e0;
-  flex-shrink: 0; // Prevent footer from shrinking
-  z-index: 100;
+  flex-shrink: 0;
+  z-index: 1000;
 
   &__container {
     display: flex;
@@ -55,7 +59,7 @@ const navItems: NavItem[] = [
     align-items: center;
     max-width: 600px;
     margin: 0 auto;
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom)) 1rem;
   }
 
   &__item {

@@ -6,7 +6,9 @@
   background-color: #ffffff;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-  padding-top: 100px; // Increased to accommodate taller header (80px) plus breathing room
+  padding-top: calc(
+    95px + env(safe-area-inset-top)
+  ); // Balanced padding for both Add and Edit views
 
   &.spacer-active {
     padding-bottom: 220px; // Space for the keyboard
@@ -19,8 +21,8 @@
   flex-direction: column;
   width: 100%;
   max-width: 400px;
-  margin: auto auto 0 auto;
-  gap: 20px;
+  margin: 0 auto;
+  gap: 15px; // Thighter gap for mobile to avoid scrolling too much
 
   @media (min-width: 768px) {
     justify-content: flex-start;
@@ -35,6 +37,8 @@
   display: flex;
   justify-content: center;
   gap: 20px;
+  margin-top: 10px; // Extra air when buttons are present (Add mode)
+  margin-bottom: 5px;
 
   button {
     background: #e0e0e0;
@@ -56,7 +60,7 @@
 .amount-display {
   text-align: center;
   cursor: pointer;
-  margin-top: 5px; // Reduced from 15px since container now has gap
+  margin: 10px 0; // Increased spacing around the amount display
   .currency-label {
     font-size: 1.5rem;
     color: #666;

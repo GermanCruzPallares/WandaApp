@@ -233,8 +233,8 @@ watch(
 }
 
 .book-content {
-  padding-top: 90px;
-  padding-bottom: 90px;
+  padding-top: calc(115px + env(safe-area-inset-top));
+  padding-bottom: 110px;
   display: flex;
   flex-direction: column;
   gap: 14px;
