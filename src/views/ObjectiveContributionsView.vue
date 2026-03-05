@@ -30,8 +30,6 @@
         <p>Cargando datos de la cuenta...</p>
       </div>
     </main>
-
-  
   </div>
 </template>
 
@@ -41,7 +39,6 @@ import { useRouter, useRoute } from 'vue-router';
 import { useObjectiveStore } from '@/stores/ObjectiveStore';
 import { useUserStore } from '@/stores/UserStore';
 import HeaderNav from '@/components/Navs/HeaderNav.vue';
-import BottomNav from '@/components/Navs/BottomNav.vue';
 import AsideNav from '@/components/Navs/AsideNav.vue';
 import ContributionHistory from '@/components/HomeApp/ContributionHistory.vue';
 import type { Transaction, Objective, AccountUI } from '@/types/models';
@@ -65,23 +62,18 @@ const initialObjectiveId = computed(() => {
 
 const activeMenuItem = ref('libro');
 const objectives = ref<Objective[]>([]);
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const transactions = ref<Transaction[]>([]);
 
-// ==================== COMPUTED (User Store) ====================
+// ==================== COMPUTED ====================
 
-// Cuentas con formato AccountUI
-const accounts = computed<AccountUI[]>(() => {
-  return userStore.accounts.map(account => ({
+const accounts = computed<AccountUI[]>(() =>
+  userStore.accounts.map(account => ({
     ...account,
     isActive: account.account_id === userStore.activeAccountId
-  }));
-});
+  }))
+);
 
-// Cuenta activa
-const activeAccount = computed(() => {
-  return accounts.value.find(acc => acc.isActive);
-});
+const activeAccount = computed(() => accounts.value.find(acc => acc.isActive));
 
 // ==================== ACTIONS ====================
 
@@ -97,7 +89,6 @@ const handleTransactionsLoaded = (loadedTransactions: Transaction[]) => {
   transactions.value = loadedTransactions;
 };
 
-// Navegación
 const handleBack = () => router.push('/home');
 
 const handleNavigate = (itemId: string) => {
@@ -106,40 +97,29 @@ const handleNavigate = (itemId: string) => {
 };
 
 const handleSavingClick = (transactionId: number) => {
-  console.log('Aportación clickeada:', transactionId);
+  router.push(`/edit-transaction/${transactionId}`)
 };
 
 // ==================== LIFECYCLE ====================
 
 onMounted(async () => {
-  // 1. Verificar autenticación
-  if (!userStore.isAuthenticated) {
-    router.push('/login');
-    return;
-  }
+  if (!userStore.isAuthenticated) { router.push('/login'); return; }
 
-  // 2. Cargar datos del usuario si es necesario
   if (!userStore.currentUser && userStore.userId) {
     try {
       await userStore.loadUserData(userStore.userId);
-    } catch (error) {
-      console.error('Error cargando datos:', error);
+    } catch {
       router.push('/login');
     }
   }
 
-  // 3. Cargar objetivos si ya tenemos cuenta activa
   if (activeAccount.value?.account_id) {
     loadObjectives(activeAccount.value.account_id);
   }
 });
 
-// 4. Recargar objetivos cuando cambia la cuenta activa
 watch(() => activeAccount.value?.account_id, (newAccountId) => {
-  if (newAccountId) {
-    console.log('Cambio de cuenta detectado:', newAccountId);
-    loadObjectives(newAccountId);
-  }
+  if (newAccountId) loadObjectives(newAccountId);
 });
 </script>
 
@@ -184,15 +164,13 @@ watch(() => activeAccount.value?.account_id, (newAccountId) => {
   padding: 40px;
   text-align: center;
   color: $color-text-gray;
-  
+
   @media (min-width: 768px) {
     margin-left: 240px;
   }
 }
 
 .mobile-only {
-  @media (min-width: 768px) {
-    display: none;
-  }
+  @media (min-width: 768px) { display: none; }
 }
 </style>

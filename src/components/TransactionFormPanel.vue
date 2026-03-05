@@ -131,8 +131,8 @@ const frequencyLabel = (f: string) =>
         </div>
       </div>
 
-      <!-- Recurring toggle -->
-      <div class="section-card" :class="{ 'is-active': isRecurring }">
+      <!-- Recurring toggle (not for savings) -->
+      <div v-if="type !== 'saving'" class="section-card" :class="{ 'is-active': isRecurring }">
         <div class="section-header">
           <span>{{ recurringLabel(type) }}</span>
           <label class="switch">
@@ -806,12 +806,12 @@ const frequencyLabel = (f: string) =>
 .mobile-save-btn {
   display: block;
   width: 100%;
-  padding: 16px;
+  padding: 12px;
   margin-top: 8px;
   background: #333;
   color: #fff;
   border: none;
-  border-radius: 16px;
+  border-radius: 30px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;

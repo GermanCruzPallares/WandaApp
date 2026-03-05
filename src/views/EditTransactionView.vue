@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useTransactionStore } from '@/stores/TransactionStore'
 import { useUserStore } from '@/stores/UserStore'
@@ -205,10 +205,13 @@ const loadTransactionData = async (id: number) => {
     type.value = (trx.transaction_type as 'expense' | 'income' | 'saving') || 'expense'
     objectiveId.value = trx.objective_id || 0
     amount.value = trx.amount.toString().replace('.', ',')
+    // Wait for categories computed to update after type change
+    await nextTick()
     const foundCat = categories.value.find((c) =>
       c.name.localeCompare(trx.category ?? '', undefined, { sensitivity: 'base' }) === 0
     )
-    selectedCategory.value = foundCat ? foundCat.id : null
+    // For savings fall back to id 14 ('Ahorro'), for others null triggers validation toast
+    selectedCategory.value = foundCat ? foundCat.id : (type.value === 'saving' ? 14 : null)
     conceptText.value = trx.concept && trx.concept !== trx.category ? trx.concept : ''
     isSplit.value = trx.split_type === 'divided'
     isRecurring.value = !!trx.isRecurring
@@ -234,7 +237,7 @@ const save = async () => {
   if (isSplit.value && !validateSplits()) { showToast('Los importes introducidos no suman el 100% del importe', 'error'); return }
 
   const categoryName = categories.value.find((c) => c.id === selectedCategory.value)?.name || 'Varios'
-  const transactionData = {
+  const transactionData: Record<string, any> = {
     category: categoryName,
     amount: parsedAmount.value,
     transaction_type: type.value,
@@ -244,10 +247,22 @@ const save = async () => {
     frequency: isRecurring.value ? (frequency.value === 'annual' ? ('annual' as const) : (frequency.value as 'weekly' | 'monthly')) : null,
     end_date: isRecurring.value && duration.value === 'defined' && endDate.value ? endDate.value : null,
     split_type: isSplit.value ? ('divided' as const) : ('individual' as const),
-    customSplits: isSplit.value
-      ? Object.keys(splitValues.value).map((uid) => ({ user_id: parseInt(uid), amount: splitValues.value[parseInt(uid)]!.amount }))
-      : undefined,
   }
+
+  // Savings require objective_id
+  if (type.value === 'saving' && objectiveId.value) {
+    transactionData.objective_id = objectiveId.value
+  }
+
+  // Only include customSplits if split is active
+  if (isSplit.value) {
+    transactionData.customSplits = Object.keys(splitValues.value).map((uid) => ({
+      user_id: parseInt(uid),
+      amount: splitValues.value[parseInt(uid)]!.amount
+    }))
+  }
+
+  console.log('Update payload:', JSON.stringify(transactionData, null, 2))
 
   try {
     const success = await transactionStore.updateTransaction(transactionId, transactionData)
@@ -435,7 +450,6 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding-bottom: 64px; // space for BottomNav on mobile
 
   @media (min-width: 768px) {
     flex-direction: row;
