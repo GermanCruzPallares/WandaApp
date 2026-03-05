@@ -1,82 +1,82 @@
 <template>
-  <div class="notifications-page">
-    <AsideNav
-      :active-item="activeMenuItem"
-      :account-id="activeAccount?.account_id"
-      @navigate="handleNavigate"
-    />
+  <div class="app-shell">
 
-    <HeaderNav
-      title="Notificaciones"
-      @back="handleBack"
-      class="mobile-only"
-    />
+    <!-- Mobile top nav -->
+    <header class="top-nav mobile-only">
+      <button class="nav-btn" @click="handleBack" aria-label="Volver">
+        <IconArrow class="icon-back" />
+      </button>
+      <h1 class="nav-title">Notificaciones</h1>
+      <div style="width: 40px"></div>
+    </header>
 
-    <div class="desktop-header">
-      <h1 class="page-title">Notificaciones</h1>
-    </div>
-
-    <main class="notifications-content">
-      <DebtNotificationsComponent
-        v-if="userId"
-        :user-id="userId"
+    <div class="notifications-layout">
+      <AsideNav
+        :active-item="activeMenuItem"
+        :account-id="activeAccount?.account_id"
+        @navigate="handleNavigate"
       />
 
-      <div v-else class="loading-container">
-        <p>Cargando datos del usuario...</p>
-      </div>
-    </main>
+      <main class="notifications-content">
+        <DebtNotificationsComponent
+          v-if="userId"
+          :user-id="userId"
+        />
+        <div v-else class="loading-container">
+          <p>Cargando datos del usuario...</p>
+        </div>
+      </main>
+    </div>
+
+    <BottomNav class="mobile-only" />
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/UserStore';
-import HeaderNav from '@/components/Navs/HeaderNav.vue';
 import AsideNav from '@/components/Navs/AsideNav.vue';
+import BottomNav from '@/components/Navs/BottomNav.vue';
 import DebtNotificationsComponent from '@/components/Notifications/DebtNotificationsComponent.vue';
+import IconArrow from '@/components/icons/IconArrow.vue';
 import type { AccountUI } from '@/types/models';
 
 const router = useRouter();
 const userStore = useUserStore();
 
-// ==================== ESTADO UI LOCAL ====================
-
 const activeMenuItem = ref('notificaciones');
-
-// ==================== COMPUTED (User Store) ====================
 
 const userId = computed(() => userStore.userId);
 
-const accounts = computed<AccountUI[]>(() => {
-  return userStore.accounts.map(account => ({
+const accounts = computed<AccountUI[]>(() =>
+  userStore.accounts.map(account => ({
     ...account,
     isActive: account.account_id === userStore.activeAccountId
-  }));
-});
+  }))
+);
 
-const activeAccount = computed(() => {
-  return accounts.value.find(acc => acc.isActive);
-});
+const activeAccount = computed(() => accounts.value.find(acc => acc.isActive));
 
-// ==================== ACTIONS ====================
-
-const handleBack = () => router.back();
+const handleBack = () => {
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/home')
+  }
+};
 
 const handleNavigate = (itemId: string) => {
   activeMenuItem.value = itemId;
   if (itemId === 'inicio') router.push('/home');
 };
 
-// ==================== LIFECYCLE ====================
-
 onMounted(async () => {
   if (!userStore.isAuthenticated) {
     router.push('/login');
     return;
   }
-
   if (!userStore.currentUser && userStore.userId) {
     try {
       await userStore.loadUserData(userStore.userId);
@@ -91,41 +91,91 @@ onMounted(async () => {
 <style scoped lang="scss">
 @import '@/styles/base/variables.scss';
 
-.notifications-page {
-  min-height: 100vh;
-  background-color: $background-principal;
-}
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  min-height: 100svh;
+  width: 100%;
+  overflow: hidden;
 
-.desktop-header {
-  display: none;
-
-  @media (min-width: 768px) {
-    display: block;
-    margin-left: 240px;
-    padding: 32px 32px 0;
+  @supports not (height: 100svh) {
+    height: 100vh;
+    min-height: 100vh;
   }
 }
 
-.page-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: $color-text;
-  margin: 0 0 24px 0;
+// ─── Mobile top nav ───────────────────────────────────────────────────────────
+.top-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  min-height: calc(85px + env(safe-area-inset-top));
+  padding: calc(16px + env(safe-area-inset-top)) 20px 16px 20px;
+  background: #e5e5e5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
-.notifications-content {
-  padding-top: 80px;
-  padding-bottom: 80px;
-  padding-left: $section-margin-horizontal;   
-  padding-right: $section-margin-horizontal;  
-  min-height: 100vh;
+.nav-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  flex: 1;
+  text-align: center;
+  margin: 0;
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #333;
+  transition: background 0.2s;
+  min-width: 40px;
+
+  &:hover { background: rgba(0,0,0,0.06); }
+}
+
+.icon-back {
+  width: 22px;
+  height: 22px;
+  transform: rotate(90deg);
+}
+
+// ─── Layout ───────────────────────────────────────────────────────────────────
+.notifications-layout {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 
   @media (min-width: 768px) {
+    flex-direction: row;
     margin-left: 240px;
-    padding-top: 20px;
-    padding-bottom: 40px;
-    padding-left: 32px;   
-    padding-right: 32px;  
+    height: 100vh;
+    overflow: hidden;
+  }
+}
+
+// ─── Content ─────────────────────────────────────────────────────────────────
+.notifications-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px $section-margin-horizontal 80px;
+
+  @media (min-width: 768px) {
+    padding: 40px 32px;
   }
 }
 
@@ -135,9 +185,8 @@ onMounted(async () => {
   color: $color-text-gray;
 }
 
+// ─── Visibility helpers ───────────────────────────────────────────────────────
 .mobile-only {
-  @media (min-width: 768px) {
-    display: none;
-  }
+  @media (min-width: 768px) { display: none; }
 }
 </style>
