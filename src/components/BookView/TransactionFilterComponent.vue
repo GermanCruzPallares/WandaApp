@@ -34,10 +34,10 @@
       </button>
     </div>
 
-
     <Transition name="filter-panel">
       <div v-if="showFilterPanel" class="filter-panel">
 
+        <!-- Tipo -->
         <div class="filter-section">
           <p class="filter-section__title">Tipo</p>
           <div class="filter-chips">
@@ -53,7 +53,28 @@
           </div>
         </div>
 
- 
+        <!-- Frecuentes -->
+        <div class="filter-section">
+          <p class="filter-section__title">Recurrencia</p>
+          <div class="filter-chips">
+            <button
+              class="filter-chip"
+              :class="{ active: onlyRecurring === true }"
+              @click="toggleRecurring(true)"
+            >
+              Solo frecuentes
+            </button>
+            <button
+              class="filter-chip"
+              :class="{ active: onlyRecurring === false }"
+              @click="toggleRecurring(false)"
+            >
+              Solo puntuales
+            </button>
+          </div>
+        </div>
+
+        <!-- Categoría -->
         <div class="filter-section">
           <p class="filter-section__title">Categoría</p>
           <div class="filter-chips filter-chips--wrap">
@@ -69,7 +90,7 @@
           </div>
         </div>
 
-
+        <!-- Importe -->
         <div class="filter-section">
           <p class="filter-section__title">Importe</p>
           <div class="amount-range">
@@ -101,7 +122,6 @@
           </div>
         </div>
 
-   
         <div class="filter-actions">
           <button class="clear-filters-btn" @click="clearFilters" :disabled="!hasActiveFilters">
             Limpiar filtros
@@ -116,8 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { availableCategories as allCategories } from '@/components/icons/CategoryIcons';
+import { ref, computed } from 'vue';
 
 export interface TransactionFilters {
   search: string;
@@ -125,6 +144,7 @@ export interface TransactionFilters {
   categories: string[];
   minAmount: number | null;
   maxAmount: number | null;
+  onlyRecurring: boolean | null; // null = sin filtro, true = solo frecuentes, false = solo puntuales
 }
 
 const emit = defineEmits<{
@@ -137,6 +157,7 @@ const selectedTypes = ref<string[]>([]);
 const selectedCategories = ref<string[]>([]);
 const minAmount = ref<number | null>(null);
 const maxAmount = ref<number | null>(null);
+const onlyRecurring = ref<boolean | null>(null);
 
 const transactionTypes = [
   { value: 'expense', label: 'Gastos' },
@@ -144,15 +165,23 @@ const transactionTypes = [
   { value: 'saving', label: 'Aportaciones' },
 ];
 
-const availableCategories = allCategories.map(cat =>
-  cat.charAt(0).toUpperCase() + cat.slice(1)
-);
+// Categorías exactas tal como vienen del backend — coinciden con categoryIcons keys normalizados
+const availableCategories = [
+  'Alimentación', 'Transporte', 'Compras', 'Facturas',
+  'Suscripciones', 'Ocio', 'Salud', 'Hogar', 'Otros',
+  'Salario', 'Freelance', 'Inversión', 'Venta', 'Ahorro',
+]
+
+// Helper para normalizar igual que getCategoryIcon
+const normalizeCategory = (str: string) =>
+  str.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 
 const activeFilterCount = computed(() => {
   let count = 0;
   if (selectedTypes.value.length) count++;
   if (selectedCategories.value.length) count++;
   if (minAmount.value !== null || maxAmount.value !== null) count++;
+  if (onlyRecurring.value !== null) count++;
   return count;
 });
 
@@ -162,22 +191,21 @@ const hasActiveFilters = computed(() =>
 
 const toggleType = (type: string) => {
   const idx = selectedTypes.value.indexOf(type);
-  if (idx === -1) {
-    selectedTypes.value.push(type);
-  } else {
-    selectedTypes.value.splice(idx, 1);
-  }
+  if (idx === -1) selectedTypes.value.push(type);
+  else selectedTypes.value.splice(idx, 1);
   emitFilters();
 };
 
 const toggleCategory = (cat: string) => {
-  const lower = cat.toLowerCase();
-  const idx = selectedCategories.value.indexOf(lower);
-  if (idx === -1) {
-    selectedCategories.value.push(lower);
-  } else {
-    selectedCategories.value.splice(idx, 1);
-  }
+  const idx = selectedCategories.value.indexOf(cat);
+  if (idx === -1) selectedCategories.value.push(cat);
+  else selectedCategories.value.splice(idx, 1);
+  emitFilters();
+};
+
+const toggleRecurring = (value: boolean) => {
+  // Si ya está activo, lo desactiva
+  onlyRecurring.value = onlyRecurring.value === value ? null : value;
   emitFilters();
 };
 
@@ -195,6 +223,7 @@ const clearFilters = () => {
   selectedCategories.value = [];
   minAmount.value = null;
   maxAmount.value = null;
+  onlyRecurring.value = null;
   emitFilters();
 };
 
@@ -210,6 +239,7 @@ const emitFilters = () => {
     categories: selectedCategories.value,
     minAmount: minAmount.value,
     maxAmount: maxAmount.value,
+    onlyRecurring: onlyRecurring.value,
   });
 };
 </script>
@@ -254,7 +284,6 @@ const emitFilters = () => {
   transition: border-color $transition-speed $transition-ease;
 
   &::placeholder { color: $color-text-gray; }
-
   &:focus {
     outline: none;
     border-color: $color-border--dk;
@@ -273,7 +302,6 @@ const emitFilters = () => {
   justify-content: center;
   padding: 2px;
   border-radius: 50%;
-
   &:hover { color: $color-text; }
 }
 
@@ -338,10 +366,7 @@ const emitFilters = () => {
 .filter-chips {
   display: flex;
   gap: 8px;
-
-  &--wrap {
-    flex-wrap: wrap;
-  }
+  flex-wrap: wrap;
 }
 
 .filter-chip {
@@ -354,7 +379,6 @@ const emitFilters = () => {
   color: $color-text;
   cursor: pointer;
   transition: all $transition-speed $transition-ease;
-  text-transform: capitalize;
 
   &:hover {
     border-color: $color-border--dk;
@@ -390,9 +414,7 @@ const emitFilters = () => {
   padding: 8px 10px;
   transition: border-color $transition-speed $transition-ease;
 
-  &:focus-within {
-    border-color: $color-border--dk;
-  }
+  &:focus-within { border-color: $color-border--dk; }
 }
 
 .amount-prefix {
@@ -446,10 +468,7 @@ const emitFilters = () => {
     color: $color-text;
   }
 
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 
 .apply-filters-btn {
@@ -463,10 +482,8 @@ const emitFilters = () => {
   color: $color-white;
   cursor: pointer;
   transition: opacity $transition-speed $transition-ease;
-
   &:hover { opacity: 0.88; }
 }
-
 
 .filter-panel-enter-active,
 .filter-panel-leave-active {

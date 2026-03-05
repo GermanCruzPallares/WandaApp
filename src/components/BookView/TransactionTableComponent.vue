@@ -14,7 +14,7 @@
           <span class="col-amount">Importe</span>
         </div>
 
-        <TransitionGroup name="row" tag="div" class="table-body" :move-class="''"  >
+        <div class="table-body">
           <div
             v-for="transaction in filteredTransactions"
             :key="transaction.transaction_id"
@@ -83,12 +83,10 @@
               </div>
             </div>
 
-            <!-- Fecha -->
             <div class="col-date">
               <span class="date-text">{{ formatDate(transaction.transaction_date) }}</span>
             </div>
 
-            <!-- Importe -->
             <div class="col-amount">
               <span
                 class="amount-text"
@@ -103,27 +101,12 @@
               </span>
             </div>
           </div>
-        </TransitionGroup>
+        </div>
 
         <div v-if="filteredTransactions.length === 0" class="empty-state">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-            <rect
-              x="3"
-              y="4"
-              width="18"
-              height="16"
-              rx="2"
-              stroke="currentColor"
-              stroke-width="1.5"
-              opacity="0.4"
-            />
-            <path
-              d="M8 9h8M8 13h5"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              opacity="0.4"
-            />
+            <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.5" opacity="0.4" />
+            <path d="M8 9h8M8 13h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4" />
           </svg>
           <p v-if="hasFilters">No hay transacciones con los filtros aplicados</p>
           <p v-else>No hay transacciones en este mes</p>
@@ -154,32 +137,33 @@ defineEmits<{
   rowClick: [transaction: Transaction]
 }>()
 
+// ── Normaliza igual que getCategoryIcon (sin acentos, lowercase) ──────────────
+const normalize = (str: string) =>
+  str.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
 // ==================== HELPERS ====================
 
-const getMemberAvatar = (userId: number): string => {
-  return props.memberAvatars?.get(userId) || getAvatarDataUrl('personal')
-}
+const getMemberAvatar = (userId: number): string =>
+  props.memberAvatars?.get(userId) || getAvatarDataUrl('personal')
 
-const getMemberName = (userId: number): string => {
-  return props.members?.find((m) => m.user_id === userId)?.name ?? ''
-}
+const getMemberName = (userId: number): string =>
+  props.members?.find((m) => m.user_id === userId)?.name ?? ''
 
-const getSplits = (transactionId: number): TransactionSplit[] => {
-  return props.splits?.filter((s) => s.transaction_id === transactionId) ?? []
-}
+const getSplits = (transactionId: number): TransactionSplit[] =>
+  props.splits?.filter((s) => s.transaction_id === transactionId) ?? []
 
 const getDividedParticipantNames = (transaction: Transaction): string => {
   const debtorIds = getSplits(transaction.transaction_id).map((s) => s.user_id)
   const allIds = [...new Set([transaction.user_id, ...debtorIds])]
-  return allIds
-    .map((id) => getMemberName(id))
-    .filter(Boolean)
-    .join(', ')
+  return allIds.map((id) => getMemberName(id)).filter(Boolean).join(', ')
 }
+
+// ==================== FILTERING ====================
 
 const filteredTransactions = computed(() => {
   let result = [...props.transactions]
 
+  // Búsqueda texto
   if (props.filters.search.trim()) {
     const q = props.filters.search.toLowerCase().trim()
     result = result.filter(
@@ -187,20 +171,34 @@ const filteredTransactions = computed(() => {
     )
   }
 
+  // Tipo
   if (props.filters.types.length > 0) {
     result = result.filter((t) => props.filters.types.includes(t.transaction_type))
   }
 
+  // Categoría — normaliza ambos lados para ignorar acentos y mayúsculas
   if (props.filters.categories.length > 0) {
-    result = result.filter((t) => props.filters.categories.includes(t.category?.toLowerCase()))
+    const normalizedSelected = props.filters.categories.map(normalize)
+    result = result.filter((t) =>
+      normalizedSelected.includes(normalize(t.category ?? ''))
+    )
   }
 
+  // Importe mínimo
   if (props.filters.minAmount !== null) {
     result = result.filter((t) => t.amount >= (props.filters.minAmount ?? 0))
   }
 
+  // Importe máximo
   if (props.filters.maxAmount !== null) {
     result = result.filter((t) => t.amount <= (props.filters.maxAmount ?? Infinity))
+  }
+
+  // Recurrencia
+  if (props.filters.onlyRecurring === true) {
+    result = result.filter((t) => t.isRecurring)
+  } else if (props.filters.onlyRecurring === false) {
+    result = result.filter((t) => !t.isRecurring)
   }
 
   return result.sort(
@@ -215,23 +213,16 @@ const hasFilters = computed(() => {
     f.types.length > 0 ||
     f.categories.length > 0 ||
     f.minAmount !== null ||
-    f.maxAmount !== null
+    f.maxAmount !== null ||
+    f.onlyRecurring !== null
   )
 })
 
-const totalNet = computed(() => {
-  return filteredTransactions.value.reduce((acc, t) => {
-    if (t.transaction_type === 'income') return acc + t.amount
-    if (t.transaction_type === 'expense') return acc - t.amount
-    return acc
-  }, 0)
-})
+// ==================== FORMATTERS ====================
 
 const formatDate = (date: Date | string): string => {
   const d = new Date(date)
-  const day = d.getDate().toString().padStart(2, '0')
-  const month = (d.getMonth() + 1).toString().padStart(2, '0')
-  return `${day}/${month}`
+  return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`
 }
 
 const formatAmount = (amount: number, type: string): string => {
@@ -239,7 +230,6 @@ const formatAmount = (amount: number, type: string): string => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount)
-
   if (type === 'expense' || type === 'saving') return `-${formatted} €`
   if (type === 'income') return `+${formatted} €`
   return `${formatted} €`
@@ -277,9 +267,7 @@ const formatAmount = (amount: number, type: string): string => {
     color: $color-text-gray;
   }
 
-  .col-amount {
-    text-align: right;
-  }
+  .col-amount { text-align: right; }
 }
 
 .table-body {
@@ -291,28 +279,17 @@ const formatAmount = (amount: number, type: string): string => {
   display: grid;
   grid-template-columns: 56px 1fr 70px 100px;
   align-items: center;
-  padding: 20px 20px;
+  padding: 20px;
   border-bottom: 1px solid #f5f5f5;
   cursor: pointer;
   transition: background-color $transition-speed $transition-ease;
 
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.03);
-  }
-
-  &:active {
-    background-color: rgba(0, 0, 0, 0.03);
-  }
+  &:last-child { border-bottom: none; }
+  &:hover { background-color: rgba(0, 0, 0, 0.03); }
+  &:active { background-color: rgba(0, 0, 0, 0.03); }
 }
 
-.col-cat {
-  display: flex;
-  align-items: center;
-}
+.col-cat { display: flex; align-items: center; }
 
 .icon-wrap {
   position: relative;
@@ -331,13 +308,9 @@ const formatAmount = (amount: number, type: string): string => {
   justify-content: center;
   color: $color-text;
 
-  svg {
-    width: 16px;
-    height: 16px;
-  }
+  svg { width: 16px; height: 16px; }
 }
 
-// Avatares superpuestos en esquina inferior derecha (igual que TransactionCard)
 .user-avatars {
   position: absolute;
   bottom: -4px;
@@ -354,9 +327,7 @@ const formatAmount = (amount: number, type: string): string => {
   border: 2px solid $color-white;
   margin-left: -5px;
 
-  &:last-child {
-    margin-left: 0;
-  }
+  &:last-child { margin-left: 0; }
 }
 
 .col-concept {
@@ -404,10 +375,7 @@ const formatAmount = (amount: number, type: string): string => {
   flex-shrink: 0;
 }
 
-.col-date {
-  display: flex;
-  align-items: center;
-}
+.col-date { display: flex; align-items: center; }
 
 .date-text {
   font-size: 13px;
@@ -426,38 +394,8 @@ const formatAmount = (amount: number, type: string): string => {
   font-weight: 700;
   white-space: nowrap;
 
-  &--expense {
-    color: $color-danger;
-  }
-  &--income {
-    color: $color-success;
-  }
-}
-
-.table-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 11px 20px;
-  border-top: 1px solid #ececec;
-  background-color: $section-bg-primary;
-  border-radius: 0 0 $card-border-radius $card-border-radius;
-}
-
-.footer-count {
-  font-size: 12px;
-  color: $color-text-gray;
-  font-weight: 500;
-}
-
-.footer-total {
-  font-size: 13px;
-  font-weight: 700;
-  color: $color-success;
-
-  &.negative {
-    color: $color-danger;
-  }
+  &--expense { color: $color-danger; }
+  &--income { color: $color-success; }
 }
 
 .empty-state {
@@ -470,13 +408,9 @@ const formatAmount = (amount: number, type: string): string => {
   gap: 12px;
   text-align: center;
 
-  p {
-    font-size: 14px;
-    margin: 0;
-  }
+  p { font-size: 14px; margin: 0; }
 }
 
-// Skeleton
 .table-skeleton {
   background-color: $color-white;
   border: 1px solid #e8e8e8;
@@ -496,34 +430,12 @@ const formatAmount = (amount: number, type: string): string => {
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
 
-    &:last-child {
-      border-bottom: none;
-    }
+    &:last-child { border-bottom: none; }
   }
 }
 
 @keyframes shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
-.row-enter-active {
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
-}
-.row-leave-active {
-  transition: opacity 0.15s ease;
-}
-.row-enter-from {
-  opacity: 0;
-  transform: translateY(-4px);
-}
-.row-leave-to {
-  opacity: 0;
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 </style>
