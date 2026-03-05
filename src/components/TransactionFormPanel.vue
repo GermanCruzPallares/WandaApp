@@ -168,9 +168,9 @@ const frequencyLabel = (f: string) =>
         </div>
       </div>
 
-      <!-- Split section (joint accounts only) -->
+      <!-- Split section (joint accounts only, not for savings) -->
       <div
-        v-if="activeAccount?.account_type === 'joint'"
+        v-if="activeAccount?.account_type === 'joint' && type !== 'saving'"
         class="section-card split-section"
         :class="{ 'is-active': isSplit }"
       >

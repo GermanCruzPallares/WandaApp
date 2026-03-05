@@ -163,44 +163,25 @@ const formatDate = (date: Date | string): string => {
     </Transition>
 
     <!-- Modales -->
-    <EditObjectiveModal
-      v-if="props.accountId && selectedObjective"
-      :is-open="isEditModalOpen"
-      :account-id="props.accountId"
-      :objective="selectedObjective"
-      @close="isEditModalOpen = false"
-      @updated="handleObjectiveUpdated"
-      @deleted="handleObjectiveDeleted"
-    />
-    <ContributeObjectiveModal
-      v-if="props.accountId && selectedObjective"
-      :is-open="isContributeModalOpen"
-      :account-id="props.accountId"
-      :objective-id="selectedObjective.objective_id"
-      :objective-name="selectedObjective.name"
-      @close="isContributeModalOpen = false"
-      @contributed="handleContributed"
-    />
-    <CreateObjectiveModal
-      v-if="props.accountId"
-      :is-open="isCreateModalOpen"
-      :account-id="props.accountId"
-      @close="isCreateModalOpen = false"
-      @created="handleObjectiveCreated"
-    />
+    <EditObjectiveModal v-if="props.accountId && selectedObjective" :is-open="isEditModalOpen"
+      :account-id="props.accountId" :objective="selectedObjective" @close="isEditModalOpen = false"
+      @updated="handleObjectiveUpdated" @deleted="handleObjectiveDeleted" />
+    <ContributeObjectiveModal v-if="props.accountId && selectedObjective" :is-open="isContributeModalOpen"
+      :account-id="props.accountId" :objective-id="selectedObjective.objective_id"
+      :objective-name="selectedObjective.name" @close="isContributeModalOpen = false"
+      @contributed="handleContributed" />
+    <CreateObjectiveModal v-if="props.accountId" :is-open="isCreateModalOpen" :account-id="props.accountId"
+      @close="isCreateModalOpen = false" @created="handleObjectiveCreated" />
 
     <!-- Cabecera -->
     <div class="objectives__header">
       <SectionTitle :title="`| Objetivos (${objectives.length})`" />
       <div class="objectives__header-actions">
-        <button
-          v-if="archivedObjectives.length > 0 || showArchived"
-          class="objectives__archived-toggle"
-          :class="{ 'objectives__archived-toggle--active': showArchived }"
-          @click="toggleArchived"
-        >
+        <button v-if="archivedObjectives.length > 0 || showArchived" class="objectives__archived-toggle"
+          :class="{ 'objectives__archived-toggle--active': showArchived }" @click="toggleArchived">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z"/>
+            <path
+              d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z" />
           </svg>
           {{ showArchived ? 'Ocultar archivados' : `Archivados (${archivedObjectives.length || '...'})` }}
         </button>
@@ -210,20 +191,16 @@ const formatDate = (date: Date | string): string => {
 
     <!-- Lista de objetivos activos -->
     <div class="objectives__list">
-      <div
-        v-for="objective in objectives"
-        :key="objective.objective_id"
-        class="objective"
-        :class="{
-          'objective--completed': calculateProgress(objective) >= 100,
-          'objective--expired': isExpired(objective)
-        }"
-      >
+      <div v-for="objective in objectives" :key="objective.objective_id" class="objective" :class="{
+        'objective--completed': calculateProgress(objective) >= 100,
+        'objective--expired': isExpired(objective)
+      }">
         <div class="objective__header">
           <div class="objective__title-group">
             <div class="objective__icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                <path
+                  d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
               </svg>
             </div>
             <h3 class="objective__name">{{ objective.name }}</h3>
@@ -242,10 +219,8 @@ const formatDate = (date: Date | string): string => {
         </div>
 
         <div class="objective__progress-bar">
-          <div
-            class="objective__progress-fill"
-            :style="{ width: `${Math.min(calculateProgress(objective), 100)}%` }"
-          ></div>
+          <div class="objective__progress-fill" :style="{ width: `${Math.min(calculateProgress(objective), 100)}%` }">
+          </div>
         </div>
 
         <div class="objective__amounts">
@@ -257,14 +232,11 @@ const formatDate = (date: Date | string): string => {
         <template v-if="objective.is_completed">
           <div class="objective__completed-row">
             <div class="objective__badge objective__badge--completed">✓ Objetivo cumplido</div>
-            <button
-              class="objective__archive-btn"
-              :disabled="isArchiving === objective.objective_id"
-              @click="handleArchiveObjective(objective.objective_id)"
-              title="Archivar este objetivo"
-            >
+            <button class="objective__archive-btn" :disabled="isArchiving === objective.objective_id"
+              @click="handleArchiveObjective(objective.objective_id)" title="Archivar este objetivo">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l .94 1H5.12z"/>
+                <path
+                  d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l .94 1H5.12z" />
               </svg>
               {{ isArchiving === objective.objective_id ? 'Archivando...' : 'Archivar' }}
             </button>
@@ -277,11 +249,8 @@ const formatDate = (date: Date | string): string => {
         </div>
 
         <!-- Aportar -->
-        <button
-          v-if="calculateProgress(objective) < 100 && !isExpired(objective)"
-          class="objective__contribute-btn"
-          @click="handleContribute(objective.objective_id)"
-        >
+        <button v-if="calculateProgress(objective) < 100 && !isExpired(objective)" class="objective__contribute-btn"
+          @click="handleContribute(objective.objective_id)">
           Aportar +
         </button>
       </div>
@@ -305,16 +274,13 @@ const formatDate = (date: Date | string): string => {
           <p>No hay objetivos archivados</p>
         </div>
         <div v-else class="objectives__list objectives__list--archived">
-          <div
-            v-for="obj in archivedObjectives"
-            :key="obj.objective_id"
-            class="objective objective--archived"
-          >
+          <div v-for="obj in archivedObjectives" :key="obj.objective_id" class="objective objective--archived">
             <div class="objective__header">
               <div class="objective__title-group">
                 <div class="objective__icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    <path
+                      d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                   </svg>
                 </div>
                 <h3 class="objective__name">{{ obj.name }}</h3>
@@ -351,17 +317,34 @@ const formatDate = (date: Date | string): string => {
   white-space: nowrap;
 }
 
-.toast-enter-active, .toast-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
-.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateX(-50%) translateY(10px); }
+.toast-enter-active,
+.toast-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
 
-.slide-enter-active, .slide-leave-active { transition: all 0.3s ease; }
-.slide-enter-from, .slide-leave-to { opacity: 0; transform: translateY(-8px); }
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-enter-from,
+.slide-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
 
 .objectives {
   padding: 0 $section-margin-horizontal 1.5rem;
 
   @media (min-width: 768px) {
     padding: 0 0 1.5rem 0;
+
   }
 
   &__header {
@@ -369,6 +352,13 @@ const formatDate = (date: Date | string): string => {
     align-items: center;
     justify-content: space-between;
     margin-bottom: 1rem;
+    margin-left: -$section-margin-horizontal;
+    margin-right: -$section-margin-horizontal;
+
+    @media (min-width: 768px) {
+      margin-left: 0;
+      margin-right: 0;
+    }
   }
 
   &__header-actions {
@@ -386,7 +376,10 @@ const formatDate = (date: Date | string): string => {
     cursor: pointer;
     padding: 0.5rem;
     transition: color $transition-speed $transition-ease;
-    &:hover { color: $color-text; }
+
+    &:hover {
+      color: $color-text;
+    }
   }
 
   &__archived-toggle {
@@ -403,7 +396,8 @@ const formatDate = (date: Date | string): string => {
     cursor: pointer;
     transition: all $transition-speed $transition-ease;
 
-    &:hover, &--active {
+    &:hover,
+    &--active {
       border-color: $color-text;
       color: $color-text;
     }
@@ -414,6 +408,10 @@ const formatDate = (date: Date | string): string => {
     flex-direction: column;
     gap: $section-gap;
 
+    @media (min-width: 768px) {
+      margin: 0 16px;
+    }
+
     &--archived {
       margin-top: 0.5rem;
     }
@@ -423,13 +421,17 @@ const formatDate = (date: Date | string): string => {
     padding: 32px 20px;
     text-align: center;
     color: $color-text-gray;
-    p { margin: 0; font-size: 14px; }
+
+    p {
+      margin: 0;
+      font-size: 14px;
+    }
   }
 
   &__archived-panel {
     margin-top: 1.5rem;
     padding-top: 1rem;
-    border-top: 1px dashed rgba(0,0,0,0.12);
+    border-top: 1px dashed rgba(0, 0, 0, 0.12);
   }
 
   &__archived-header {
@@ -449,14 +451,15 @@ const formatDate = (date: Date | string): string => {
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
-  margin: 0 16px;
   gap: 0.75rem;
   border: 2px solid transparent;
 
   &__header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+
   }
 
   &__title-group {
@@ -483,6 +486,7 @@ const formatDate = (date: Date | string): string => {
     font-weight: 600;
     color: $color-text;
     margin: 0;
+
   }
 
   &__edit-btn {
@@ -497,7 +501,10 @@ const formatDate = (date: Date | string): string => {
     cursor: pointer;
     padding: 0.25rem 0.5rem;
     transition: color $transition-speed $transition-ease;
-    &:hover { color: $color-text; }
+
+    &:hover {
+      color: $color-text;
+    }
   }
 
   &__info-row {
@@ -512,8 +519,14 @@ const formatDate = (date: Date | string): string => {
     font-size: 14px;
   }
 
-  &__deadline-label { color: $color-text; font-weight: 500; }
-  &__deadline-value { color: $color-text-gray; }
+  &__deadline-label {
+    color: $color-text;
+    font-weight: 500;
+  }
+
+  &__deadline-value {
+    color: $color-text-gray;
+  }
 
   &__percentage {
     font-size: 14px;
@@ -543,8 +556,15 @@ const formatDate = (date: Date | string): string => {
     font-size: 15px;
   }
 
-  &__current { font-weight: 600; color: $color-text; }
-  &__target { font-weight: 500; color: $color-text-gray; }
+  &__current {
+    font-weight: 600;
+    color: $color-text;
+  }
+
+  &__target {
+    font-weight: 500;
+    color: $color-text-gray;
+  }
 
   &__contribute-btn {
     align-self: center;
@@ -557,8 +577,14 @@ const formatDate = (date: Date | string): string => {
     cursor: pointer;
     margin-top: 0.5rem;
     transition: opacity $transition-speed $transition-ease;
-    &:hover { opacity: 0.9; }
-    &:active { opacity: 0.8; }
+
+    &:hover {
+      opacity: 0.9;
+    }
+
+    &:active {
+      opacity: 0.8;
+    }
   }
 
   &__completed-row {
@@ -582,7 +608,7 @@ const formatDate = (date: Date | string): string => {
     cursor: pointer;
     flex-shrink: 0;
     transition: background-color $transition-speed $transition-ease,
-                color $transition-speed $transition-ease;
+      color $transition-speed $transition-ease;
 
     &:hover:not(:disabled) {
       background-color: $color-success;
@@ -604,32 +630,72 @@ const formatDate = (date: Date | string): string => {
     align-items: center;
     gap: 4px;
 
-    &--completed { color: $color-success; background-color: rgba(76, 175, 80, 0.1); }
-    &--expired { color: $color-danger; }
-    &--archived { color: $color-text-gray; background-color: rgba(0,0,0,0.06); font-size: 11px; }
+    &--completed {
+      color: $color-success;
+      background-color: rgba(76, 175, 80, 0.1);
+    }
+
+    &--expired {
+      color: $color-danger;
+    }
+
+    &--archived {
+      color: $color-text-gray;
+      background-color: rgba(0, 0, 0, 0.06);
+      font-size: 11px;
+    }
   }
 
   // Estados
   &--completed {
     border-color: $color-success;
-    .objective__icon { background-color: $color-success; }
-    .objective__progress-fill { background-color: $color-success; }
-    .objective__percentage { color: $color-success; }
-    .objective__deadline-value { color: $color-success; }
+
+    .objective__icon {
+      background-color: $color-success;
+    }
+
+    .objective__progress-fill {
+      background-color: $color-success;
+    }
+
+    .objective__percentage {
+      color: $color-success;
+    }
+
+    .objective__deadline-value {
+      color: $color-success;
+    }
   }
 
   &--expired {
     border-color: $color-danger;
-    .objective__icon { background-color: $color-danger; }
-    .objective__progress-fill { background-color: $color-danger; }
-    .objective__percentage { color: $color-danger; }
-    .objective__deadline-value { color: $color-danger; font-weight: 600; }
+
+    .objective__icon {
+      background-color: $color-danger;
+    }
+
+    .objective__progress-fill {
+      background-color: $color-danger;
+    }
+
+    .objective__percentage {
+      color: $color-danger;
+    }
+
+    .objective__deadline-value {
+      color: $color-danger;
+      font-weight: 600;
+    }
   }
 
   &--archived {
     opacity: 0.7;
     border-color: transparent;
-    .objective__icon { background-color: $color-text-gray; }
+
+    .objective__icon {
+      background-color: $color-text-gray;
+    }
+
     margin: 0 16px;
   }
 }
