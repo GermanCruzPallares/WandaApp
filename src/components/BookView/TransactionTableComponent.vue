@@ -14,7 +14,7 @@
           <span class="col-amount">Importe</span>
         </div>
 
-        <TransitionGroup name="row" tag="div" class="table-body">
+        <TransitionGroup name="row" tag="div" class="table-body" :move-class="''"  >
           <div
             v-for="transaction in filteredTransactions"
             :key="transaction.transaction_id"
@@ -24,7 +24,7 @@
             <div class="col-cat">
               <div class="icon-wrap">
                 <div class="category-icon">
-                  <component :is="getCategoryIcon(transaction.category)" />
+                  <component :is="getCategoryIcon(transaction.category) || getCategoryIcon('Otros')" />
                 </div>
 
                 <div v-if="isJoint" class="user-avatars">

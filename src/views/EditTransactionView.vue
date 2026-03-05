@@ -9,7 +9,7 @@ import AsideNav from '@/components/Navs/AsideNav.vue'
 import BottomNav from '@/components/Navs/BottomNav.vue'
 import TransactionFormPanel from '@/components/TransactionFormPanel.vue'
 import KeypadPanel from '@/components/KeypadPanel.vue'
-import ConfirmationModal from '@/components/ConfirmationModal.vue'
+import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
 import IconArrow from '@/components/icons/IconArrow.vue'
 
 // ─── Route / Router / Stores ──────────────────────────────────────────────────

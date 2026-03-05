@@ -86,11 +86,9 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to) => {
   if (to.meta.requiresAdmin && !authService.isAdmin()) {
-    next('/home')
-  } else {
-    next()
+    return '/home'
   }
 })
 

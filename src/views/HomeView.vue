@@ -11,7 +11,7 @@ import TransactionsHistoryComponent from '@/components/HomeApp/TransactionsHisto
 import TopNav from '@/components/Navs/TopNav.vue'
 import AsideNav from '@/components/Navs/AsideNav.vue'
 import SharedTransactionDeleteModal from '@/components/Modals/SharedTransactionDeleteModal.vue'
-import ConfirmationModal from '@/components/ConfirmationModal.vue'
+import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
 import { useTransactionStore } from '@/stores/TransactionStore'
 import { useToast } from '@/composables/useToast'
 import type { AccountUI, Transaction, Objective } from '@/types/models'
