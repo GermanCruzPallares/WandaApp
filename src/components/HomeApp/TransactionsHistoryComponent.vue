@@ -69,6 +69,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   transactionClick: [transaction: Transaction]
   transactionsLoaded: [transactions: Transaction[]]
+  settledTransactionClick: [transaction: Transaction]
 }>()
 
 // ==================== STORES ====================
@@ -223,7 +224,16 @@ const formatDate = (date: Date): string => {
 const loadMore = () => {
   displayLimit.value += props.loadMoreIncrement
 }
-const handleTransactionClick = (transaction: Transaction) => emit('transactionClick', transaction)
+const handleTransactionClick = (transaction: Transaction) => {
+  if (transaction.split_type === 'divided') {
+    const txSplits = getSplitsForTransaction(transaction.transaction_id)
+    if (txSplits.some(s => s.status === 'settled')) {
+      emit('settledTransactionClick', transaction)
+      return
+    }
+  }
+  emit('transactionClick', transaction)
+}
 </script>
 
 <style scoped lang="scss">

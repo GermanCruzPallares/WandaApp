@@ -23,6 +23,9 @@
           :member-avatars="memberAvatars" @row-click="handleRowClick" />
       </div>
     </main>
+    <InfoModal :is-open="showInfoModal" title="Transacción no editable"
+      content="Esta transacción no puede editarse ni eliminarse porque es un reflejo automático de un gasto conjunto, o porque la deuda asociada ya ha sido saldada."
+      @close="showInfoModal = false" />
 
     <SharedTransactionDeleteModal :is-open="showDeleteModal" :transaction="transactionToDelete"
       :is-deleting="isDeleting" @close="showDeleteModal = false" @confirm="confirmDeleteTransaction" />
@@ -49,6 +52,14 @@ import type { TransactionFilters } from '@/components/BookView/TransactionFilter
 import TransactionTableComponent from '@/components/BookView/TransactionTableComponent.vue'
 import { useToast } from '@/composables/useToast'
 import type { Transaction, TransactionSplit, AccountUI, User } from '@/types/models'
+import InfoModal from '@/components/Modals/InfoModal.vue'
+
+const showInfoModal = ref(false)
+
+const MIRROR_PREFIXES = ['(Gasto Compartido)', '(Aportación Conjunta)', '(Aportacion Conjunta)']
+
+const isMirrorTransaction = (transaction: Transaction): boolean =>
+  MIRROR_PREFIXES.some(prefix => (transaction.concept ?? '').startsWith(prefix))
 
 import { getAvatarDataUrl } from '@/components/icons/AvatarIcons'
 
@@ -77,6 +88,7 @@ const activeFilters = ref<TransactionFilters>({
   categories: [],
   minAmount: null,
   maxAmount: null,
+  onlyRecurring: null,
 })
 
 const showDeleteModal = ref(false)
@@ -164,16 +176,28 @@ const onPeriodChange = () => {
     categories: [],
     minAmount: null,
     maxAmount: null,
+    onlyRecurring: null,
   }
 }
 
 const handleRowClick = (transaction: Transaction) => {
+  if (isMirrorTransaction(transaction)) {
+    showInfoModal.value = true
+    return
+  }
+
   if (transaction.split_type === 'divided') {
+    const txSplits = allSplits.value.filter(s => s.transaction_id === transaction.transaction_id)
+    if (txSplits.some(s => s.status === 'settled')) {
+      showInfoModal.value = true
+      return
+    }
     transactionToDelete.value = transaction
     showDeleteModal.value = true
-  } else {
-    router.push({ name: 'edit-transaction', params: { id: transaction.transaction_id } })
+    return
   }
+
+  router.push({ name: 'edit-transaction', params: { id: transaction.transaction_id } })
 }
 
 const confirmDeleteTransaction = async () => {

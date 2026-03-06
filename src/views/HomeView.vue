@@ -171,6 +171,7 @@ const confirmDeleteTransaction = async () => {
           :initial-limit="5"
           :load-more-increment="10"
           @transaction-click="handleTransactionClick"
+          @settled-transaction-click="showInfoModal = true"
           @transactions-loaded="handleTransactionsLoaded"
         />
       </div>

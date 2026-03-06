@@ -17,6 +17,7 @@ import TransactionCard from '@/components/HomeApp/TransactionCard.vue'
 import { useToast } from '@/composables/useToast'
 import type { AccountUI, Transaction, TransactionSplit, User } from '@/types/models'
 import { getAvatarDataUrl } from '@/components/icons/AvatarIcons'
+import InfoModal from '@/components/Modals/InfoModal.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -24,6 +25,7 @@ const transactionStore = useTransactionStore()
 const splitStore = useTransactionSplitStore()
 const accountStore = useAccountStore()
 const { showToast } = useToast()
+const showInfoModal = ref(false)
 
 // ==================== COMPUTED ====================
 
@@ -164,13 +166,31 @@ watch(
 
 // ==================== HANDLERS ====================
 
+const MIRROR_PREFIXES = ['(Gasto Compartido)', '(Aportación Conjunta)', '(Aportacion Conjunta)']
+
+const isMirrorTransaction = (transaction: Transaction): boolean => {
+  const concept = transaction.concept ?? ''
+  return MIRROR_PREFIXES.some(prefix => concept.startsWith(prefix))
+}
+
 const handleTransactionClick = (transaction: Transaction) => {
+  if (isMirrorTransaction(transaction)) {
+    showInfoModal.value = true
+    return
+  }
+
   if (transaction.split_type === 'divided') {
+    const txSplits = getSplitsForTransaction(transaction.transaction_id)
+    if (txSplits.some(s => s.status === 'settled')) {
+      showInfoModal.value = true
+      return
+    }
     transactionToDelete.value = transaction
     showDeleteModal.value = true
-  } else {
-    router.push(`/edit-transaction/${transaction.transaction_id}`)
+    return
   }
+
+  router.push(`/edit-transaction/${transaction.transaction_id}`)
 }
 
 const confirmDeleteTransaction = async () => {
