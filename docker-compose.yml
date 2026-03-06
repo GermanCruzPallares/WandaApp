@@ -1,0 +1,21 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: wanda_backend
+    environment:
+      - ConnectionStrings__wandaDb=Server=wandadb.c3skww4kiq4i.us-east-1.rds.amazonaws.com,1433;Database=wandaDb;User Id=sa;Password=yourStrong(!)Password;TrustServerCertificate=True;
+      - ASPNETCORE_HTTP_PORTS=8080
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: wanda_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
