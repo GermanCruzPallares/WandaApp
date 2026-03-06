@@ -11,7 +11,7 @@ import TransactionsHistoryComponent from '@/components/HomeApp/TransactionsHisto
 import TopNav from '@/components/Navs/TopNav.vue'
 import AsideNav from '@/components/Navs/AsideNav.vue'
 import SharedTransactionDeleteModal from '@/components/Modals/SharedTransactionDeleteModal.vue'
-import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
+import InfoModal from '@/components/Modals/InfoModal.vue'
 import { useTransactionStore } from '@/stores/TransactionStore'
 import { useToast } from '@/composables/useToast'
 import type { AccountUI, Transaction, Objective } from '@/types/models'
@@ -34,7 +34,6 @@ const activeAccount = computed(() => {
   return accounts.value.find((acc) => acc.isActive)
 })
 
-// Determina si la cuenta activa es conjunta
 const isJointAccount = computed(() => activeAccount.value?.account_type === 'joint')
 
 // ==================== ESTADO LOCAL ====================
@@ -46,6 +45,17 @@ const activeMenuItem = ref('inicio')
 const showDeleteModal = ref(false)
 const transactionToDelete = ref<Transaction | null>(null)
 const isDeleting = ref(false)
+
+const showInfoModal = ref(false)
+
+// ==================== HELPERS ====================
+
+const MIRROR_PREFIXES = ['(Gasto Compartido)', '(Aportación Conjunta)', '(Aportacion Conjunta)']
+
+const isMirrorTransaction = (transaction: Transaction): boolean => {
+  const concept = transaction.concept ?? ''
+  return MIRROR_PREFIXES.some(prefix => concept.startsWith(prefix))
+}
 
 // ==================== LIFECYCLE ====================
 
@@ -84,12 +94,21 @@ const handleAddObjective = () => {
 }
 
 const handleTransactionClick = (transaction: Transaction) => {
+  // Transacciones espejo — no editables
+  if (isMirrorTransaction(transaction)) {
+    showInfoModal.value = true
+    return
+  }
+
+  // Transacciones divididas — mostrar modal de eliminación
   if (transaction.split_type === 'divided') {
     transactionToDelete.value = transaction
     showDeleteModal.value = true
-  } else {
-    router.push(`/edit-transaction/${transaction.transaction_id}`)
+    return
   }
+
+  // Resto — navegar a editar
+  router.push(`/edit-transaction/${transaction.transaction_id}`)
 }
 
 const confirmDeleteTransaction = async () => {
@@ -102,12 +121,9 @@ const confirmDeleteTransaction = async () => {
     )
     if (success) {
       showToast('Transacción eliminada con éxito', 'success')
-      // Refresh transactions by account
       if (activeAccount.value?.account_id) {
         await transactionStore.fetchTransactions(activeAccount.value.account_id)
-        // Redirigir o simplemente dejar que el componente se actualice
-        // Como TransactionsHistory ya observa el accountId, solo necesitamos triggerear el store
-        window.location.reload() // Fuerza recarga simple o podrías emitir un evento
+        window.location.reload()
       }
     } else {
       showToast('No se pudo eliminar la transacción', 'error')
@@ -129,13 +145,10 @@ const confirmDeleteTransaction = async () => {
 
   <main class="home-content">
     <div class="home-content__header">
-      <!-- Card conjunta -->
       <JointCardComponent
         v-if="isJointAccount && activeAccount?.account_id"
         :account-id="activeAccount.account_id"
       />
-
-      <!-- Card personal -->
       <CardComponent v-else :account-id="activeAccount?.account_id" @edit="handleEditCard" />
     </div>
 
@@ -164,6 +177,15 @@ const confirmDeleteTransaction = async () => {
     </div>
   </main>
 
+  <!-- Modal transacción espejo -->
+  <InfoModal
+    :is-open="showInfoModal"
+    title="Transacción no editable"
+    content="Esta transacción es un reflejo automático de un gasto realizado en tu cuenta conjunta. Para modificarla, edita la transacción original desde la cuenta conjunta."
+    @close="showInfoModal = false"
+  />
+
+  <!-- Modal eliminar transacción dividida -->
   <SharedTransactionDeleteModal
     :is-open="showDeleteModal"
     :transaction="transactionToDelete"

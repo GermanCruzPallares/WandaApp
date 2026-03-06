@@ -57,7 +57,7 @@
         {{ formattedAmount }}
       </span>
 
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="transaction-card__arrow">
+      <svg v-if="!isMirror" width="16" height="16" viewBox="0 0 24 24" fill="none" class="transaction-card__arrow">
         <path
           d="M9 18l6-6-6-6"
           stroke="currentColor"
@@ -127,6 +127,11 @@ const description = computed(() => {
   }
   return desc
 })
+
+const isMirror = computed(() =>
+  MIRROR_PREFIXES.some(p => (props.transaction.concept ?? '').startsWith(p))
+)
+const MIRROR_PREFIXES = ['(Gasto Compartido)', '(Aportación Conjunta)', '(Aportacion Conjunta)']
 
 const formattedAmount = computed(() => {
   const f = props.transaction.amount.toFixed(2).replace('.', ',')
