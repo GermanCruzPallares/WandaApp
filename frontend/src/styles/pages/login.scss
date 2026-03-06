@@ -1,0 +1,78 @@
+@use "../base/variables" as *;
+@use "../base/mixins" as *;
+@use "../components/buttons" as *;
+
+.login {
+    background-image: linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4)),
+        url(../../images/fondo.png);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    min-height: 100vh;
+    
+}
+
+.main {
+    flex: 1;
+}
+
+.card {
+    padding: 2em;
+    max-width: 50em;
+    margin-left: auto;
+    margin-right: auto;
+
+    &__login {
+        margin-top: 25vh;
+    }
+
+    &__sign {
+        margin-top: 15vh;
+    }
+
+
+    &__header {
+        color: white;
+        text-align: center;
+
+
+    }
+
+    &__subtitle {
+        font-size: 16px;
+        font-weight: 200;
+        margin-bottom: 1rem;
+    }
+
+    &__title {
+        font-size: 32px;
+    }
+
+}
+
+.btn-primary {
+    @include standardBt;
+    width: 100%;
+    margin-top: 2vh;
+}
+
+
+.bottom {
+    display: flex;
+    flex-direction: row;
+    margin-top: 2.5vh;
+    justify-content: center;
+    gap: 0.5rem;
+
+    &__question {
+        color: white;
+    }
+
+    &__link {
+        color: #F3D047;
+        text-decoration: none;
+    }
+}

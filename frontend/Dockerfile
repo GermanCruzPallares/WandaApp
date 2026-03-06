@@ -13,6 +13,8 @@ RUN npm run build
 FROM nginx:alpine
 # Copy the build output to Nginx's HTML folder
 COPY --from=build /app/dist /usr/share/nginx/html
+# Reemplazar la configuracion por defecto
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose port 80
 EXPOSE 80
