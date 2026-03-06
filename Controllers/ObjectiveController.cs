@@ -86,7 +86,7 @@ namespace wandaAPI.Controllers
         }
 
 
-        [HttpPut("{objectiveId}")]
+        [HttpPut("objectives/{objectiveId}")]
         public async Task<IActionResult> UpdateUser(int objectiveId, [FromBody] ObjectiveUpdateDto updatedObjective)
         {
 

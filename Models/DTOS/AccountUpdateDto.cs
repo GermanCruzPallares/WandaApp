@@ -12,7 +12,7 @@ public class AccountUpdateDto
     public double Monthly_budget { get; set; }
 
     public IFormFile? ImageFile { get; set; }
-    public string Account_picture_url { get; set; }
+    public string? Account_picture_url { get; set; }
 
 
     public AccountUpdateDto()

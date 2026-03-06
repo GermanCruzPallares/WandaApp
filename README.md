@@ -1,3 +1,15 @@
+# USUARIOS
+
+## Usuarios de prueba
+| Rol        | Email                      | Contraseña |
+|------------|----------------------------|------------|
+| Admin      | admin@gmail.com            | Admin1234! |
+| Usuario1   | user1@gmail.com            | Admin1234! |
+| Usuario2   | user2@gmail.com            | Admin1234! |
+
+
+
+
 # Wanda_Backend
 
 #Setup local db (Sql server)
