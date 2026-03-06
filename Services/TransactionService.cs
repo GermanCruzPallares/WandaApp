@@ -159,21 +159,16 @@ namespace wandaAPI.Services
 
             using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
-                // 1. Ajustar Saldos y Objetivos
-                if (hasAmountChanged)
-                {
-                    await AdjustBalanceForUpdateAsync(fundingAccount, originalTx.Transaction_type, amountDifference);
-                    await AdjustObjectiveForUpdateAsync(originalTx, amountDifference);
-                }
-
-                // 2. Actualiza transaccion espejo en cuenta personal
+                
                 if (targetAccount.Account_id != fundingAccount.Account_id)
                 {
-                    string oldEspejoConcepto = originalTx.Split_type.ToLower() == "divided"
-                        ? $"(Gasto Compartido) {originalTx.Concept}"
-                        : $"(Aportación Conjunta) {originalTx.Concept}";
+                    
+                    string oldPrefix = originalTx.Split_type.ToLower() == "divided"
+                        ? "(Gasto Compartido)"
+                        : "(Aportación Conjunta)";
 
-                    // Buscamos transacción que coincida con los datos antiguos
+                    string oldEspejoConcepto = $"{oldPrefix} {originalTx.Concept}";
+
                     var personalTxs = await _transactionRepository.GetTransactionsByAccountAsync(fundingAccount.Account_id);
 
                     var mirrorTx = personalTxs.FirstOrDefault(t =>
@@ -184,13 +179,14 @@ namespace wandaAPI.Services
 
                     if (mirrorTx != null)
                     {
-                        string newEspejoConcepto = originalTx.Split_type.ToLower() == "divided"
-                            ? $"(Gasto Compartido) {dto.Concept}"
-                            : $"(Aportación Conjunta) {dto.Concept}";
+                        
+                        string newPrefix = originalTx.Split_type.ToLower() == "divided"
+                            ? "(Gasto Compartido)"
+                            : "(Aportación Conjunta)";
 
                         mirrorTx.Amount = dto.Amount;
                         mirrorTx.Category = dto.Category;
-                        mirrorTx.Concept = newEspejoConcepto;
+                        mirrorTx.Concept = $"{newPrefix} {dto.Concept}";
                         mirrorTx.Transaction_date = dto.Transaction_date;
                         mirrorTx.IsRecurring = dto.IsRecurring;
                         mirrorTx.Frequency = dto.IsRecurring ? dto.Frequency?.ToLower() : null;
