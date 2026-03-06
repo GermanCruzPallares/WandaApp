@@ -1,9 +1,17 @@
 <script setup lang="ts">
-import LoginHeader from '../components/LoginHeader.vue'
+import LoginComponent from '@/components/LoginComponent.vue'
+import EnterpriseHeader from '../components/EnterpriseHeader.vue';
 </script>
 
 <template>
+  <header>
+    <EnterpriseHeader />
+  </header>
+
+  <body class="login">
   <main>
-    <LoginHeader />
+
+    <LoginComponent />
   </main>
+  </body>
 </template>

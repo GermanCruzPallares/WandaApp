@@ -1,13 +1,9 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
+import ToastNotification from './components/ToastNotification.vue'
 </script>
 
 <template>
-  <header>
-    <nav>
-      <RouterLink to="/">Home</RouterLink>
-      <RouterLink to="/login">Login</RouterLink>
-    </nav>
-  </header>
+  <ToastNotification />
   <RouterView />
 </template>

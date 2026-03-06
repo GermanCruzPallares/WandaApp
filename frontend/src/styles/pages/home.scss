@@ -8,7 +8,7 @@ body {
 }
 
 .hero {
-    background-image: url(../images/ImagenPrincipal2.jpg);
+    background-image: url(../../images/ImagenPrincipal2.jpg);
     background-size: cover;
     background-position: center;
     min-height: 100vh;
@@ -49,6 +49,11 @@ body {
 
         button {
             @include standardBt;
+        }
+
+        a{
+            text-decoration: none;
+            color: white;
         }
 
     }

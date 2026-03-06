@@ -43,7 +43,31 @@
         justify-content: flex-end;
     }
 
-}
+    &--dark {
+        .nav-toggle .hamburger-line {
+            background-color: $color-text--dk;
+        }
+        .nav-list li a {
+            color: $color-text--dk;
+
+            &:hover {
+                color: $color-text-gray;
+            }
+        }
+
+        @media (min-width: 1000px) {
+            .nav-list li a.btn-highlight {
+                @include highlightedBt(); 
+                
+                &:hover {
+                    color: $color-white; 
+                    opacity: 0.9;
+                }
+            }
+        }
+    }
+    }
+
 
 .nav-list {
     display: none;
