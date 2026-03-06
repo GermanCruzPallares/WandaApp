@@ -48,8 +48,9 @@ const handleContributed = async () => {
 const handleAddObjective = () => { isCreateModalOpen.value = true; };
 
 const handleObjectiveCreated = async () => {
+  isCreateModalOpen.value = false;
   if (props.accountId) await loadObjectives(props.accountId);
-  router.push('/profile');
+
 };
 
 // ── Props / emits ────────────────────────────────────────────────────────
