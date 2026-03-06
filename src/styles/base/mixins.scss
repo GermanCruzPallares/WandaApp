@@ -1,0 +1,17 @@
+@use "../base/variables" as *;
+
+@mixin scale-efect {
+  transition: transform 0.3s ease;
+  &:hover {
+    transform: scale(1.07);
+  }
+}
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+}
+
+@mixin transition($property: all) {
+  transition: $property $transition-speed ease;
+}

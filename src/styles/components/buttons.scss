@@ -1,0 +1,53 @@
+@use '../base/mixins' as *;
+
+@mixin standardBt {
+    border: none; 
+    cursor: pointer; 
+    background-color: #353535; 
+    color: #ffffff;
+    padding: 10px 25px;
+    border-radius: 50px;
+    font-weight: bold;
+
+    @include scale-efect();
+
+    &:hover {
+        background-color: #fbc02d;
+    }
+
+}
+
+@mixin standardBt-bk {
+    border: none; 
+    cursor: pointer; 
+    background-color: #353535; 
+    color: #ffffff;
+    padding: 10px 25px;
+    border-radius: 50px;
+    font-weight: bold;
+
+    @include scale-efect();
+
+    &:hover {
+        background-color: black;
+    }
+
+}
+
+@mixin highlightedBt{
+
+    border: none; 
+    cursor: pointer; 
+    background-color: #fbc02d; 
+    color: #353535;
+    padding: 10px 25px;
+    border-radius: 50px;
+    font-weight: bold;
+
+    @include scale-efect();
+
+    &:hover {
+        color: white;
+    }
+}
+

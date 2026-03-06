@@ -1,0 +1,166 @@
+@use '../base/variables' as *;
+@use '../base/mixins' as *;
+@use '../components/buttons.scss' as *;
+
+
+
+.contact-page {
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+
+
+    &__container {
+        width: 100%;
+        max-width: 400px;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        margin-top: 5em;
+    }
+}
+
+.intro {
+    text-align: center;
+    margin-bottom: 0rem;
+
+    &__title {
+        font-family: $font-titles ;
+        font-size: $title__principalMobile-size2;
+        line-height: 1.1;
+        color: $color-text--dk;
+        margin-bottom: 1rem;
+    }
+
+    &__subtitle {
+        font-size: 0.9rem;
+        color: $color-text--dk;
+        font-weight: 400;
+        max-width: 300px;
+        margin: 0 auto;
+    }
+}
+
+.form-card {
+    background-color: $color-white;
+    padding: 2rem;
+    border-radius: $form_radius;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+
+    &__group {
+        margin-bottom: 1.25rem;
+    }
+
+    &__label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: $color-text--dk;
+    }
+
+    &__input {
+        width: 100%;
+        padding: 0.8rem 1rem;
+        border: 1px solid $color-border;
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 0.9rem;
+        background-color: #fff;
+        transition: border-color 0.3s ease;
+
+        &::placeholder {
+            color: #C0C0C0;
+        }
+
+        &:focus {
+            outline: none;
+            border-color: $color-border--dk;
+        }
+
+        &--textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+    }
+
+    &__actions {
+        margin-top: 2rem;
+    }
+
+    &__button {
+        @include standardBt-bk;
+        width: 100%;
+        font-size: 1rem;
+
+    }
+}
+
+
+@media (min-width: $desktop-breakpoint) {
+
+    .page-contact {
+
+        main {
+            padding-top: 3em;
+        }
+    }
+
+    .page-contact {
+        .footerDesktop {
+            flex-direction: row;
+            justify-content: center;
+            gap: 4rem;
+        }
+    }
+
+    .contact-page {
+        align-items: center;
+
+        &__container {
+            max-width: 1200px;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4rem;
+        }
+    }
+
+    .intro {
+
+        text-align: left;
+        flex: 1;
+        margin-bottom: 0;
+
+        &__subtitle {
+            max-width: 100%;
+        }
+    }
+
+    .form-card {
+        width: 600px;
+        min-width: 600px;
+        padding: 2.5rem;
+
+    }
+
+
+    .page-contact {
+
+        .nav-toggle .hamburger-line {
+            background-color: $color-text--dk ;
+        }
+
+        .nav-list li a {
+            color: $color-text--dk ;
+
+            &:hover {
+                color: $color-text-gray ;
+            }
+        }
+
+    }
+
+
+}
