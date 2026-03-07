@@ -1,34 +1,36 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+import imageMovil from '@/images/imagenMovil.png'
+import imagePortatil from '@/images/imagenPortatil.png'
+import imagePareja from '@/images/imagenPareja.png'
 
 const currentIndex = ref(0)
 
-
 const slides = [
   {
-    image: 'src/images/imagenMovil.png',
+    image: imageMovil,
     alt: 'Organización',
     title: 'Gastos claros y ordenados',
     text: 'Permite registrar y clasificar todos tus gastos diarios y fijos de forma intuitiva. Cada gasto se asigna a una categoría personalizable, para que tengas una visión clara de dónde se va tu dinero.',
-    quote: '"Si cada mes pagas alquiler, transporte y compras del supermercado, WANDA te muestra automáticamente cuánto gastas en cada categoría y cómo cambia tu consumo con el tiempo."'
+    quote:
+      '"Si cada mes pagas alquiler, transporte y compras del supermercado, WANDA te muestra automáticamente cuánto gastas en cada categoría y cómo cambia tu consumo con el tiempo."',
   },
   {
-    image: 'src/images/imagenPortatil.png',
+    image: imagePortatil,
     alt: 'Balances',
     title: 'Balances al instante',
     text: 'Visualiza tus ingresos y egresos en tiempo real con gráficas fáciles de entender.',
-    quote: '"Toma el control de tu futuro financiero hoy mismo."'
+    quote: '"Toma el control de tu futuro financiero hoy mismo."',
   },
   {
-    image: 'src/images/imagenPareja.png',
+    image: imagePareja,
     alt: 'Compartido',
     title: 'Cuentas compartidas',
     text: 'Ideal para parejas o compañeros de piso. Gestiona gastos comunes sin peleas.',
-    quote: '"La transparencia hace que la convivencia sea mejor."'
-  }
+    quote: '"La transparencia hace que la convivencia sea mejor."',
+  },
 ]
-
 
 const goToSlide = (index: number) => {
   if (index >= slides.length) {
@@ -40,11 +42,9 @@ const goToSlide = (index: number) => {
   }
 }
 
-
 const nextSlide = () => {
   goToSlide(currentIndex.value + 1)
 }
-
 
 const prevSlide = () => {
   goToSlide(currentIndex.value - 1)
