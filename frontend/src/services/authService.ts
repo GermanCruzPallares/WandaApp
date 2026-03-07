@@ -13,7 +13,7 @@ interface LoginCredentials {
 class AuthService {
   private readonly TOKEN_KEY = 'wanda_auth_token';
   private readonly USER_ID_KEY = 'wanda_user_id';
-  private readonly API_BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:7085/api';
+  private readonly API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
   private readonly ROLE_KEY = 'wanda_user_role';
 
   private decodeToken(token: string): Record<string, any> | null {
