@@ -112,7 +112,12 @@ import { useTransactionStore } from '@/stores/TransactionStore';
 import SectionTitle from '@/components/SectionTitle.vue';
 import InfoModal from '../Modals/InfoModal.vue';
 import type { Account } from '@/types/models';
+import { useUserStore } from '@/stores/UserStore';
+import { useTransactionSplitStore } from '@/stores/TransactionSplitStore';
 
+
+const userStore = useUserStore();
+const splitStore = useTransactionSplitStore();
 interface Props {
   accountId?: number;
 }
@@ -152,14 +157,16 @@ const calculateCurrentWeekExpenses = (accountId: number): number => {
   const transactions = transactionStore.getTransactionsFromCache(accountId);
   if (!transactions) return 0;
   
+  const currentUserId = userStore.userId;
+  const isJoint = account.value?.account_type === 'joint';
+  
+  // Lógica de fechas (se mantiene igual)
   const now = new Date();
   const currentDay = now.getDay();
   const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
-  
   const monday = new Date(now);
   monday.setDate(now.getDate() + mondayOffset);
   monday.setHours(0, 0, 0, 0);
-  
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
   sunday.setHours(23, 59, 59, 999);
@@ -169,24 +176,47 @@ const calculateCurrentWeekExpenses = (accountId: number): number => {
       const tDate = new Date(t.transaction_date);
       return t.transaction_type === 'expense' && 
              !t.isRecurring &&            
+             t.objective_id === 0 && 
              tDate >= monday && 
              tDate <= sunday;
     })
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => {
+      
+      if (isJoint && currentUserId) {
+        const userSplits = splitStore.getSplitsFromCache(currentUserId) || [];
+        const mySplit = userSplits.find(s => s.transaction_id === t.transaction_id);
+        
+        if (mySplit) {
+          return sum + mySplit.amount_assigned;
+        } else if (t.user_id === currentUserId) {
+          
+          
+          return sum + t.amount;
+        }
+        return sum; 
+      }
+      
+   
+      return sum + t.amount;
+    }, 0);
 };
 
 const loadAccount = async (accountId: number) => {
   isLoading.value = true;
-  
   account.value = await accountStore.fetchAccount(accountId);
   
   if (account.value) {
-    await transactionStore.fetchTransactions(accountId);
-    currentWeekExpenses.value = calculateCurrentWeekExpenses(accountId);
     
+    const promises: Promise<any>[] = [transactionStore.fetchTransactions(accountId)];
+    
+    if (account.value.account_type === 'joint' && userStore.userId) {
+      promises.push(splitStore.fetchUserSplits(userStore.userId));
+    }
+    
+    await Promise.all(promises);
+    currentWeekExpenses.value = calculateCurrentWeekExpenses(accountId);
     emit('accountLoaded', account.value);
   }
-  
   isLoading.value = false;
 };
 
